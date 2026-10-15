@@ -1,10 +1,13 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, View } from 'react-native';
+import { useState } from 'react';
 
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { DiscoveryProvider } from '@/providers/DiscoveryProvider';
 import { WalletProvider } from '@/providers/WalletProvider';
 import { canAccessCitizen } from '@/models/Access';
+import { colors } from '@/theme';
 import { useFonts } from 'expo-font';
 import { Roboto_400Regular, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto';
 
@@ -34,6 +37,15 @@ export default function RootLayout() {
 
 function Navigation() {
   const { session, role, guest, loading, recoveringPassword } = useAuth();
+  const [ready, setReady] = useState(false);
+  if (!ready && !loading) setReady(true);
+  // Delay initial routing, but keep the navigator mounted during later Auth events.
+  if (!ready)
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator color={colors.primary} accessibilityLabel="Cargando sesión" />
+      </View>
+    );
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
