@@ -10,6 +10,7 @@ export interface PointSchedule {
   closesMinute: number;
 }
 export interface GreenPoint extends Coordinates {
+  demo?: boolean;
   id: string;
   companyId: string;
   companyName: string;
@@ -23,6 +24,14 @@ export interface GreenPoint extends Coordinates {
   schedules: PointSchedule[];
 }
 export type OpeningStatus = 'open' | 'closed' | 'unknown';
+
+export function isExamplePointId(id: string): boolean {
+  return id.startsWith('example-');
+}
+
+export function canRegisterDelivery(point: GreenPoint): boolean {
+  return !point.demo && !isExamplePointId(point.id);
+}
 
 export function openingStatus(
   point: Pick<GreenPoint, 'schedules' | 'timeZone'>,

@@ -6,8 +6,10 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { DiscoveryState } from '@/components/discovery/DiscoveryState';
 import { PointsMap } from '@/components/discovery/PointsMap';
+import { InfoNote } from '@/components/rewards/RewardsUI';
 import {
   distanceKm,
+  canRegisterDelivery,
   formatDistance,
   formatScheduleMinute,
   openingStatus,
@@ -66,8 +68,9 @@ export default function PointDetailScreen() {
           <>
             <View style={styles.heading}>
               <Text style={styles.title}>{point.name}</Text>
-              <Text style={styles.company}>{point.companyName}</Text>
+              {!point.demo && <Text style={styles.company}>{point.companyName}</Text>}
             </View>
+            {point.demo && <InfoNote>{point.description}</InfoNote>}
             <Text selectable style={styles.text}>
               {point.address}
             </Text>
@@ -77,6 +80,7 @@ export default function PointDetailScreen() {
               </Text>
             )}
             <Text style={styles.status}>
+              {point.demo ? 'Horario de ejemplo · ' : ''}
               {openingStatus(point, now) === 'open'
                 ? 'Abierto ahora'
                 : openingStatus(point, now) === 'closed'
@@ -92,7 +96,9 @@ export default function PointDetailScreen() {
                 )
               }
             />
-            {point.description && <Text style={styles.text}>{point.description}</Text>}
+            {point.description && !point.demo && (
+              <Text style={styles.text}>{point.description}</Text>
+            )}
             <Text style={styles.sectionTitle}>Qué recibe este punto</Text>
             {point.categories.length ? (
               point.categories.map((c) => (
@@ -147,12 +153,20 @@ export default function PointDetailScreen() {
                 {linkError}
               </Text>
             )}
-            <Text style={styles.text}>
-              {point.pickupEnabled
-                ? 'Esta organización ofrece retiros desde este punto.'
-                : 'Este punto recibe entregas presenciales.'}
-            </Text>
-            {guest ? (
+            {!point.demo && (
+              <Text style={styles.text}>
+                {point.pickupEnabled
+                  ? 'Esta organización ofrece retiros desde este punto.'
+                  : 'Este punto recibe entregas presenciales.'}
+              </Text>
+            )}
+            {!canRegisterDelivery(point) ? (
+              <ActionButton
+                title="Ver otros puntos verdes"
+                secondary
+                onPress={() => router.replace('/green-points')}
+              />
+            ) : guest ? (
               <ActionButton title="Registrar una entrega" onPress={() => setNeedsAccount(true)} />
             ) : (
               <ActionButton

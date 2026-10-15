@@ -7,6 +7,7 @@ import { DiscoveryState } from '@/components/discovery/DiscoveryState';
 import { PointsMap } from '@/components/discovery/PointsMap';
 import { PointRow } from '@/components/discovery/PointRow';
 import { SearchBar } from '@/components/discovery/SearchBar';
+import { InfoNote } from '@/components/rewards/RewardsUI';
 import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { useScrollReset } from '@/hooks/useScrollReset';
@@ -189,8 +190,21 @@ function GreenPointsExplorer({
           <DiscoveryState loading={loading} error={error} retry={refresh} />
         ) : (
           <>
+            {points.some((p) => p.demo) && (
+              <InfoNote>
+                Todavía no hay puntos publicados. Explorá este punto verde de ejemplo; no permite
+                registrar entregas reales.
+              </InfoNote>
+            )}
             <Text style={styles.label}>
-              {filtered.length} {filtered.length === 1 ? 'punto disponible' : 'puntos disponibles'}
+              {filtered.length}{' '}
+              {points.some((p) => p.demo)
+                ? filtered.length === 1
+                  ? 'punto de ejemplo'
+                  : 'puntos de ejemplo'
+                : filtered.length === 1
+                  ? 'punto disponible'
+                  : 'puntos disponibles'}
             </Text>
             {view === 'map' && (
               <PointsMap points={filtered} location={location} onSelect={openPoint} />

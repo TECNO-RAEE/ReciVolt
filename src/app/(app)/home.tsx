@@ -7,7 +7,7 @@ import { QuickAccess } from '@/components/home/QuickAccess';
 import { HomeBotanical, ImpactPlant, LeafMark } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { PortalLink } from '@/components/portal/PortalUI';
-import { PointsCard } from '@/components/rewards/RewardsUI';
+import { InfoNote, PointsCard } from '@/components/rewards/RewardsUI';
 import { PointsMap } from '@/components/discovery/PointsMap';
 import { PointRow } from '@/components/discovery/PointRow';
 import { DiscoveryState } from '@/components/discovery/DiscoveryState';
@@ -124,6 +124,12 @@ export default function HomeScreen() {
           <DiscoveryState loading={loading} error={error} retry={refresh} />
         ) : (
           <View style={styles.mapCard}>
+            {sorted.some((p) => p.demo) && (
+              <InfoNote>
+                Explorá un punto verde de ejemplo. Las entregas estarán disponibles cuando haya
+                puntos reales publicados.
+              </InfoNote>
+            )}
             <PointsMap points={sorted} location={location} preview onSelect={openPoint} />
             {sorted.length ? (
               <PointRow

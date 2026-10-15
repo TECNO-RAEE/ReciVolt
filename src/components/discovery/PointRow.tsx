@@ -18,20 +18,22 @@ export function PointRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Ver ${point.name}`}
+      accessibilityLabel={`Ver ${point.name}${point.demo ? ', punto verde de ejemplo' : ''}`}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.65 }]}
     >
       <View style={styles.content}>
+        {point.demo && <Text style={styles.text}>Punto verde de ejemplo</Text>}
         <View style={styles.heading}>
           <Text style={styles.name}>{point.name}</Text>
           {location && (
             <Text style={styles.distance}>{formatDistance(distanceKm(location, point))}</Text>
           )}
         </View>
-        <Text style={styles.text}>{point.companyName}</Text>
+        {!point.demo && <Text style={styles.text}>{point.companyName}</Text>}
         <Text style={styles.address}>{point.address}</Text>
         <Text style={[styles.text, status === 'open' && { color: colors.primary }]}>
+          {point.demo ? 'Horario de ejemplo · ' : ''}
           {status === 'open'
             ? 'Abierto ahora'
             : status === 'closed'
