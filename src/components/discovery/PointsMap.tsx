@@ -38,7 +38,8 @@ export function PointsMap({ points, location, preview = false, onSelect }: Point
             key={point.id}
             coordinate={point}
             title={point.name}
-            description={point.companyName}
+            description={point.demo ? 'Punto verde de ejemplo' : point.companyName}
+            accessibilityLabel={`Ver ${point.name}${point.demo ? ', punto verde de ejemplo' : ''}`}
             pinColor={colors.primary}
             onPress={() => onSelect(point)}
           />

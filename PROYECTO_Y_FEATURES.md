@@ -1,6 +1,6 @@
 # TecnoRAEE — Proyecto y funcionalidades
 
-**Fecha de revisión:** 2 de octubre de 2026.
+**Fecha de revisión:** 14 de octubre de 2026.
 
 Este documento describe las funcionalidades presentes en el código del entorno de trabajo, sus flujos y los pendientes. Los resultados de pruebas previas se identifican por fecha; no constituyen una nueva comprobación del servicio remoto.
 
@@ -18,7 +18,7 @@ La plataforma reúne tres recorridos: ciudadano, empresa receptora y administrac
 | Registro, login y recuperación     | Implementado | Supabase Auth, confirmación de email y recuperación mediante código.              |
 | Acceso según rol                   | Implementado | Login común y redirección automática a ciudadano, empresa o admin.                |
 | Catálogo y descubrimiento          | Implementado | Categorías, búsqueda, filtros, mapa y detalle de puntos verdes.                   |
-| Alta de organizaciones             | Implementado | Solicitud con datos legales, documentación y revisión administrativa.             |
+| Alta de puntos e instituciones     | Implementado | Admin crea puntos e instituciones; la participación pública se dirige a Contacto. |
 | Portal de empresa                  | Implementado | Configuración de puntos verdes, tarifas de puntos, equipo y cupos.                |
 | Entregas y recepción               | Implementado | QR/código, verificación física, cantidades ajustables y acreditación.             |
 | Mis RAEE e historial empresarial   | Implementado | Entregas, estados, detalles y saldos reales.                                      |
@@ -26,20 +26,20 @@ La plataforma reúne tres recorridos: ciudadano, empresa receptora y administrac
 | Panel admin e historial de cambios | Implementado | Gestión administrativa y registro persistente de operaciones.                     |
 | Perfil                             | Parcial      | Identidad, saldos y logout; edición de datos y preferencias pendiente.            |
 | Solicitud y seguimiento de retiros | Pendiente    | Existen accesos y reconocimiento del tipo de código; falta el circuito operativo. |
-| Catálogo y canje de recompensas    | Pendiente    | La pantalla actual es un placeholder; los puntos ya se acreditan.                 |
+| Catálogo y canje de recompensas    | Implementado | Premios reales, reserva con débito global, código y confirmación empresarial.     |
 | Métricas agregadas de impacto      | Pendiente    | No hay un dashboard global de indicadores ambientales.                            |
 
 “Implementado” significa que existe código funcional del recorrido. La lectura de QR con cámara y los selectores de archivos/fotos necesitan validación adicional en dispositivos físicos.
 
 ## Personas, roles y permisos
 
-| Perfil                                   | Qué puede hacer                                                                                          | Destino de ingreso |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------ |
-| Invitado                                 | Explorar Home, categorías y puntos verdes. Las funciones personales solicitan una cuenta.                | `/home`            |
-| Ciudadano                                | Registrar entregas, consultar códigos, historial, puntos y XP; solicitar el alta de su organización.     | `/home`            |
-| Responsable de empresa (`company_owner`) | Configurar su organización, puntos verdes, tarifas y equipo; recibir entregas y consultar su historial.  | `/company`         |
-| Trabajador (`company_worker`)            | Consultar los puntos de su empresa, recibir entregas y ver su historial.                                 | `/company`         |
-| Administrador (`platform_admin`)         | Revisar solicitudes y cupos, gestionar estados de empresas, configurar XP/niveles y consultar auditoría. | `/admin`           |
+| Perfil                                   | Qué puede hacer                                                                                         | Destino de ingreso |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------ |
+| Invitado                                 | Explorar Home, categorías y puntos verdes. Las funciones personales solicitan una cuenta.               | `/home`            |
+| Ciudadano                                | Registrar entregas, consultar historial, puntos y XP; reservar premios y consultar sus códigos.         | `/home`            |
+| Responsable de empresa (`company_owner`) | Configurar su organización, puntos verdes, tarifas y equipo; recibir entregas y consultar su historial. | `/company`         |
+| Trabajador (`company_worker`)            | Consultar los puntos de su empresa, recibir entregas y ver su historial.                                | `/company`         |
+| Administrador (`platform_admin`)         | Gestionar puntos, premios, búsquedas y cupos; configurar XP/niveles y consultar auditoría.              | `/admin`           |
 
 El usuario no elige su rol en el login. Los permisos se consultan en la base de datos; las membresías deben estar activas y la empresa debe estar habilitada. Si una cuenta tiene autorización de administrador, ese acceso tiene prioridad.
 
@@ -65,7 +65,7 @@ Home ofrece búsqueda y accesos a las principales funciones. El recorrido de des
 - Ubicación solicitada sólo por acción del usuario y cálculo de distancia en línea recta.
 - Mapa web con Leaflet/OpenStreetMap y mapas nativos con `react-native-maps`.
 
-La publicación pública depende del estado del punto y de la empresa. Si no hay puntos publicados, la interfaz muestra el estado vacío real.
+La publicación pública depende del estado del punto y de la empresa. Tras cargar correctamente un catálogo vacío, la interfaz muestra Universidad de Pilar como punto verde de ejemplo, con dirección, lunes a sábado de 10 a 20 y todas las categorías cargadas. Inicio, fila, ficha y marcador identifican la muestra. El ejemplo no registra entregas reales, tampoco por URL directa, y no se añade cuando hay puntos reales. Carga/error y filtros sin coincidencias conservan estados diferenciados.
 
 ## Flujo ciudadano: entrega de RAEE
 
@@ -75,7 +75,7 @@ La publicación pública depende del estado del punto y de la empresa. Si no hay
 4. Confirma el registro y obtiene una entrega pendiente con QR y código legible.
 5. Lleva los dispositivos al punto verde para su verificación física.
 6. El responsable o trabajador recibe la entrega y confirma las cantidades reales.
-7. Mis RAEE muestra el resultado, los puntos por empresa y el XP global.
+7. Mis entregas muestra el resultado, el saldo global y el XP.
 
 Registrar una entrega **no acredita puntos**. La acreditación ocurre cuando el equipo de la empresa confirma la recepción.
 
@@ -91,7 +91,9 @@ Reglas principales:
 
 ## Flujo empresa: alta, configuración y operación
 
-### Solicitud de alta
+### Solicitud de alta: contrato histórico del backend
+
+Este contrato permanece en DB y sus pruebas. La interfaz pública actual dirige la participación a Contacto; no ofrece este formulario ni una pestaña de revisión de solicitudes en el panel admin.
 
 La organización presenta nombre comercial, razón social, CUIT, datos de contacto, responsable, dirección, actividad y documentación PDF/JPG/PNG de hasta 8 MB. El solicitante puede consultar su estado y corregir información cuando admin lo solicita.
 
@@ -104,7 +106,7 @@ La aprobación crea la empresa y reserva una invitación para el responsable en 
 El responsable acepta la invitación con la cuenta de email verificado correspondiente y puede:
 
 - Editar los datos operativos y de contacto permitidos de su organización.
-- Crear y configurar puntos verdes, ubicación, categorías, horarios, contacto y publicación.
+- Mantener los puntos verdes existentes: ubicación, categorías, horarios, contacto y publicación. El alta corresponde a admin.
 - Definir cuántos puntos otorga su empresa por cada categoría de dispositivo.
 - Invitar trabajadores y reenviar o cancelar invitaciones pendientes.
 - Deshabilitar o reactivar trabajadores, respetando el límite de cupos.
@@ -123,25 +125,34 @@ La confirmación consume el código, guarda las cantidades recibidas, acredita p
 
 Los puntos y el XP cumplen funciones distintas:
 
-- **Puntos por empresa:** cada organización define su tarifa por dispositivo. El saldo del ciudadano se mantiene separado para cada empresa y servirá como base del futuro sistema de recompensas.
+- **Puntos globales:** cada organización define su tarifa por dispositivo y se conserva la procedencia de sus créditos. El ciudadano dispone de un único saldo canjeable en toda la red, descontando las reservas de premios. Los créditos por empresa no son billeteras independientes para gastar.
 - **XP global:** lo configura la administración de TecnoRAEE y determina el nivel de impacto del ciudadano, independientemente de la empresa receptora.
 
 Las tarifas y el XP por unidad quedan guardados al registrar la entrega. Cambiar la configuración después no recalcula esa entrega ni su histórico. La acreditación final usa las cantidades físicamente recibidas.
 
-Los saldos se calculan a partir de movimientos registrados en el backend; no existe un saldo que el cliente pueda editar directamente. Mis RAEE y Perfil comparten esa información.
+Los saldos se calculan a partir de movimientos registrados en el backend; no existe un saldo que el cliente pueda editar directamente. Mis entregas, Mis puntos, Premios y Perfil comparten esa información.
+
+## Premios y canjes
+
+Admin publica premios y los asocia a una empresa activa, con costo en puntos, dirección, descripción, vigencia y stock opcional. El catálogo permite buscar por premio/comercio y filtrar por categoría. Cuando no hay publicaciones, los ejemplos se identifican y no habilitan canjes; un error de consulta no se reemplaza por muestras.
+
+El ciudadano con email confirmado y saldo suficiente reserva un premio tras confirmar el costo. La transacción descuenta puntos globales una sola vez, guarda una copia del premio y reduce stock si corresponde. El código QR, código de barras y texto quedan disponibles en Mis canjes; una recarga conserva la ficha solicitada.
+
+El equipo del comercio valida el código desde `/company/scanner` y confirma la entrega. La confirmación no vuelve a descontar puntos y repetirla devuelve el resultado original. Otros ciudadanos y empresas no pueden acceder a ese canje. Las reservas concurrentes no pueden exceder el saldo ni consumir dos veces la última unidad. El XP no se gasta.
 
 ## Administración e historial de cambios
 
-El panel tiene las secciones Inicio, Solicitudes, Empresas, Límites, Configuración global e Historial de cambios. La cabecera y las pestañas mantienen un tamaño estable; el contenido se desplaza por separado y la navegación horizontal se adapta a móvil.
+El panel actual tiene Puntos verdes, Premios, Buscador, Límites, Configuración global e Historial de cambios. La cabecera y las pestañas mantienen un tamaño estable; el contenido se desplaza por separado y la navegación horizontal se adapta a móvil.
 
 Los administradores pueden:
 
-- Revisar documentación privada, marcar solicitudes en revisión, pedir información, rechazar o aprobar empresas.
-- Suspender y reactivar empresas con motivo.
+- Dar de alta puntos verdes e instituciones responsables sin asignar permisos a cuentas automáticamente.
+- Publicar y editar premios; buscar y editar usuarios, empresas, puntos y premios.
 - Aprobar o rechazar ampliaciones de cupos.
 - Configurar XP por categoría y crear o editar niveles de impacto.
-- Reenviar invitaciones a responsables pendientes.
 - Consultar el registro de operaciones mediante filtros, búsqueda y paginación.
+
+Los comandos históricos de solicitudes, revisión documental y suspensión se conservan en el backend y en sus pruebas; eso no significa que el panel actual muestre todas esas operaciones. El ingreso público `/company-application` redirige a Contacto.
 
 El historial conserva autor, email, fecha, operación, referencia, empresa y motivo cuando corresponde. Los cambios de solicitudes, cupos, estado de empresas, XP y niveles incorporan valores anteriores y nuevos dentro de la misma transacción.
 
@@ -176,7 +187,7 @@ supabase/         Configuración y funciones
 
 Los roles se leen desde asignaciones confiables de la base, nunca desde metadatos editables del usuario. Las credenciales privilegiadas del backend no forman parte del cliente. La documentación legal privada se mantiene separada de los datos públicos de descubrimiento.
 
-Las migraciones del esquema se mantienen localmente y no se incluyen en esta branch.
+Algunas migraciones base se mantienen sólo en este entorno; el repositorio incluye las excepciones declaradas en `.gitignore`. No se puede reconstruir toda la base usando únicamente las migraciones versionadas.
 
 ## Ejecución y validación
 
@@ -198,16 +209,16 @@ npm run lint
 npx expo export --platform web
 ```
 
-Las validaciones previas documentan TypeScript, lint y exportación web aprobados, el circuito web ciudadano → empresa → acreditación y comprobaciones de permisos con rollback de fixtures. Los reportes y archivos de pruebas se conservan localmente y no forman parte del contenido publicado en esta branch.
+El cierre del alcance web de ejemplo está documentado en [tasks/validation.md](tasks/validation.md): TypeScript, lint, 38 pruebas locales (33 iniciales y cinco de muestras), 321 comprobaciones SQL locales, pruebas de concurrencia/navegación, circuito operativo entre organizaciones de prueba, seis escenarios web de muestras y recorrido conjunto final. Las capturas están en `output/verification/`. Se distinguen pruebas locales, lecturas remotas y límites físicos pendientes; no se repitieron checks aprobados sin cambios que lo justificaran.
 
 Queda por validar en dispositivos físicos la lectura óptica, la selección de documentación/fotos y los recorridos nativos completos. Las exportaciones de bundles y una vista web móvil no sustituyen esas comprobaciones. La entrega de emails de invitación a la bandeja de una persona real no está documentada como verificada en esos reportes.
 
-## Próximas funcionalidades
+## Estado y próximas funcionalidades
 
 1. **Retiros:** solicitud, asignación, seguimiento y confirmación de retiro.
-2. **Recompensas:** catálogo por empresa, canje de puntos y confirmación de entrega de la recompensa.
+2. **Muestras completadas:** Universidad de Pilar y Cafe del Pellegrini con Un café por 100 puntos globales, dirección compartida, avisos de ejemplo y entregas/canjes reales bloqueados. Módulos y revisión conjunta final verificados en web. El usuario aclaró que son ejemplos; no se crean cuentas ni operaciones reales. Tarifa universitaria diferida.
 3. **Impacto agregado:** indicadores y reportes globales basados en operaciones confirmadas.
 4. **Perfil y preferencias:** edición de datos personales, ubicación, notificaciones y configuración.
 5. **Operación y publicación:** validación nativa física, URLs/deep links del entorno publicado y comprobación de invitaciones de extremo a extremo.
 
-La base operativa actual permite descubrir puntos, incorporar empresas y completar entregas con acreditación e historial. Los retiros y canjes deben desarrollarse sobre esa base sin presentar sus accesos existentes como flujos terminados.
+La base actual permite descubrir puntos, registrar y recibir entregas, acreditar puntos globales, reservar premios y confirmar su entrega. Las muestras no habilitan esas operaciones. Retiros y otras funciones futuras no se presentan como operativas. La publicación comercial requiere completar altas operativas, responsables, contacto y términos, además de la validación física. Sigue identificado el recorte de etiquetas de navegación inferior observado con texto ampliado mediante CSS; no se declara accesibilidad completa aprobada.

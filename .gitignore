@@ -20,11 +20,18 @@ node_modules/
 /supabase/tests/*
 !/supabase/tests/global-rewards.test.sql
 !/supabase/tests/admin-search-edit.test.sql
+!/supabase/tests/admin-green-points.test.sql
+!/supabase/tests/portals.test.sql
+!/tests/integration/
+/tests/integration/*
+!/tests/integration/*.test.mjs
+/output/verification/
 
 # Expo
 .expo/
 dist/
 dist-rewards/
+dist-closure/
 web-build/
 expo-env.d.ts
 

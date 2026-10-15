@@ -40,13 +40,15 @@ export function PointsMap({ points, location, preview = false, onSelect }: Point
         points.forEach((point) => {
           const coordinate: [number, number] = [point.latitude, point.longitude];
           bounds.push(coordinate);
+          const title = `${point.name}${point.demo ? ' · Punto verde de ejemplo' : ''}`;
           const label = document.createElement('span');
-          label.textContent = `${point.name} · ${point.companyName}`;
-          const marker = L.marker(coordinate, { icon, title: point.name, alt: point.name })
-            .addTo(map)
-            .bindTooltip(label);
+          label.textContent = point.demo ? title : `${title} · ${point.companyName}`;
+          const marker = L.marker(coordinate, { icon, title, alt: title }).bindTooltip(label);
+          marker.on('add', () => {
+            marker.getElement()?.setAttribute('aria-label', `Ver ${title}`);
+          });
           marker.on('click', () => onSelect(point));
-          marker.getElement()?.setAttribute('aria-label', `Ver ${point.name}`);
+          marker.addTo(map);
         });
         if (location) {
           const coordinate: [number, number] = [location.latitude, location.longitude];

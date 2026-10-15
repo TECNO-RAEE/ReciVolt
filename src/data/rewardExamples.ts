@@ -17,7 +17,7 @@ export const rewardExamples: Reward[] = [
     50,
     'photo-1517836357463-d25dfeac3438',
   ],
-  ['cafe', 'Café gratis', 'Café del Parque', 'food', 15, 'photo-1509042239860-f550ce710b93'],
+  ['cafe', 'Un café', 'Cafe del Pellegrini', 'food', 100, 'photo-1509042239860-f550ce710b93'],
   [
     'libros',
     'Descuento en librería',
@@ -51,8 +51,13 @@ export const rewardExamples: Reward[] = [
   pointsCost: Number(pointsCost),
   imageUrl: `https://images.unsplash.com/${photo}?auto=format&fit=crop&w=800&q=85`,
   description:
-    'Un ejemplo de los beneficios que podés disfrutar al darle una nueva vida a tu tecnología. Los premios reales aparecerán cuando los comercios los publiquen.',
-  address: '',
+    id === 'cafe'
+      ? 'Premio de ejemplo: un café en Cafe del Pellegrini por 100 puntos globales. Esta muestra no permite canjes reales.'
+      : 'Un ejemplo de los beneficios que podés disfrutar al darle una nueva vida a tu tecnología. Los premios reales aparecerán cuando los comercios los publiquen.',
+  address:
+    id === 'cafe'
+      ? 'Av. Honorio Pueyrredón, Ruta 25 Nº1837, Villa Rosa, Provincia de Buenos Aires'
+      : '',
   hours: '',
   latitude: null,
   longitude: null,

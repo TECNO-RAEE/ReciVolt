@@ -13,6 +13,7 @@ import type { Coordinates, GreenPoint } from '@/models/GreenPoint';
 import { canAccessCitizen } from '@/models/Access';
 import { getGreenPoints } from '@/services/green-point.service';
 import { getDeviceCategories } from '@/services/device-category.service';
+import { getDiscoveryPoints } from '@/data/greenPointExamples';
 import { useAuth } from './AuthProvider';
 
 interface DiscoveryContextValue {
@@ -55,7 +56,13 @@ export function DiscoveryProvider({ children }: Readonly<{ children: ReactNode }
     void Promise.all([getGreenPoints(controller.signal), getDeviceCategories()])
       .then(([newPoints, newCategories]) => {
         if (!controller.signal.aborted)
-          setData({ revision, scope, points: newPoints, categories: newCategories, error: null });
+          setData({
+            revision,
+            scope,
+            points: getDiscoveryPoints(newPoints, newCategories),
+            categories: newCategories,
+            error: null,
+          });
       })
       .catch(() => {
         if (!controller.signal.aborted)

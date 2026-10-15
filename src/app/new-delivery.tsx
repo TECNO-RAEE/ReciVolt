@@ -14,7 +14,7 @@ import {
 } from '@/components/portal/PortalUI';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { deliveryQuantity } from '@/models/Delivery';
-import type { GreenPoint } from '@/models/GreenPoint';
+import { canRegisterDelivery, isExamplePointId, type GreenPoint } from '@/models/GreenPoint';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import {
@@ -31,6 +31,18 @@ export default function NewDeliveryScreen() {
   const { points, loading, error, refresh } = useDiscovery();
   const [search, setSearch] = useState('');
   const point = points.find((p) => p.id === pointId);
+  const deliveryPoints = points.filter(canRegisterDelivery);
+  if (isExamplePointId(pointId) || point?.demo)
+    return (
+      <PortalPage title="Registrar entrega" back="/green-points">
+        <Text style={s.subtitle}>Punto verde de ejemplo</Text>
+        <Text style={s.body}>
+          Podés explorar este punto, pero no registrar entregas reales. Elegí un punto publicado
+          para entregar tus dispositivos.
+        </Text>
+        <ActionButton title="Ver puntos verdes" onPress={() => router.replace('/green-points')} />
+      </PortalPage>
+    );
   if (!session) return <AccountRequired title="Registrá tu entrega" />;
   return (
     <PortalPage
@@ -56,7 +68,7 @@ export default function NewDeliveryScreen() {
               value={search}
               onChangeText={setSearch}
             />
-            {points
+            {deliveryPoints
               .filter((p) =>
                 `${p.name} ${p.address} ${p.companyName}`
                   .toLocaleLowerCase('es')
@@ -71,7 +83,7 @@ export default function NewDeliveryScreen() {
                   <PortalLink title="Entregar en este punto" onPress={() => setPointId(p.id)} />
                 </View>
               ))}
-            {points.length === 0 && (
+            {deliveryPoints.length === 0 && (
               <Text style={s.body}>
                 Todavía no hay puntos publicados para registrar una entrega.
               </Text>
