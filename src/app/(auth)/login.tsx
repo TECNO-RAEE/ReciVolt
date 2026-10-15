@@ -20,6 +20,49 @@ import { colors, fonts } from '@/theme';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
 import { useAuth } from '@/providers/AuthProvider';
 
+function getAuthErrorCode(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    return typeof error.code === 'string' ? error.code : undefined;
+  }
+
+  return undefined;
+}
+
+function getAuthErrorStatus(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    return typeof error.status === 'number' ? error.status : undefined;
+  }
+
+  return undefined;
+}
+
+function getLoginErrorMessage(error: unknown) {
+  const code = getAuthErrorCode(error);
+  const status = getAuthErrorStatus(error);
+
+  if (code === 'email_not_confirmed') {
+    return 'Todavía no confirmaste tu correo. Revisá tu bandeja de entrada y confirmá la cuenta para ingresar.';
+  }
+
+  if (
+    code === 'over_request_rate_limit' ||
+    code === 'over_email_send_rate_limit' ||
+    status === 429
+  ) {
+    return 'Hiciste demasiados intentos. Esperá unos minutos e intentá nuevamente.';
+  }
+
+  if (
+    (status !== undefined && status >= 500) ||
+    status === 0 ||
+    (error instanceof Error && error.name === 'AuthRetryableFetchError')
+  ) {
+    return 'No pudimos conectarnos con el servicio. Intentá de nuevo en unos minutos.';
+  }
+
+  return 'No pudimos iniciar sesión. Intentá nuevamente.';
+}
+
 export default function LoginScreen() {
   const params = useLocalSearchParams<{ intent?: string; confirm?: string }>();
   const intent = parseAuthIntent(params.intent);
@@ -27,9 +70,23 @@ export default function LoginScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [authErrorVisible, setAuthErrorVisible] = useState(false);
   const passwordInputRef = useRef<TextInput>(null);
+  const restorePasswordFocusOnDismiss = useRef(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  function closeAuthError(restoreFocus: boolean) {
+    setAuthErrorVisible(false);
+
+    if (!restoreFocus) return;
+
+    if (Platform.OS === 'android') {
+      // En Android el Modal no dispara onDismiss
+      requestAnimationFrame(() => passwordInputRef.current?.focus());
+    } else {
+      restorePasswordFocusOnDismiss.current = true;
+    }
+  }
 
   async function handleLogin() {
     if (loading) return;
@@ -46,10 +103,14 @@ export default function LoginScreen() {
       await login(email, password);
 
       router.replace('/');
-    } catch {
+    } catch (error) {
       prepareAuth(null);
       Keyboard.dismiss();
-      setAuthErrorVisible(true);
+      if (getAuthErrorCode(error) === 'invalid_credentials') {
+        setAuthErrorVisible(true);
+      } else {
+        setFormError(getLoginErrorMessage(error));
+      }
     } finally {
       setLoading(false);
     }
@@ -164,8 +225,13 @@ export default function LoginScreen() {
         animationType="fade"
         statusBarTranslucent
         onRequestClose={() => {
-          setAuthErrorVisible(false);
-          requestAnimationFrame(() => passwordInputRef.current?.focus());
+          closeAuthError(true);
+        }}
+        onDismiss={() => {
+          if (restorePasswordFocusOnDismiss.current) {
+            restorePasswordFocusOnDismiss.current = false;
+            passwordInputRef.current?.focus();
+          }
         }}
       >
         <View style={styles.modalOverlay}>
@@ -186,8 +252,7 @@ export default function LoginScreen() {
               accessibilityRole="button"
               style={({ pressed }) => [styles.modalPrimaryButton, pressed && styles.pressed]}
               onPress={() => {
-                setAuthErrorVisible(false);
-                requestAnimationFrame(() => passwordInputRef.current?.focus());
+                closeAuthError(true);
               }}
             >
               <Text style={styles.modalPrimaryButtonText}>Reintentar</Text>
@@ -197,7 +262,7 @@ export default function LoginScreen() {
               accessibilityRole="button"
               style={({ pressed }) => [styles.modalSecondaryButton, pressed && styles.pressed]}
               onPress={() => {
-                setAuthErrorVisible(false);
+                closeAuthError(false);
                 router.push('/forgot-password');
               }}
             >
