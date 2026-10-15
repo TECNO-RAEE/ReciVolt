@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, ReactNode, Ref } from 'react';
 import { StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 
 import { colors, fonts } from '@/theme';
@@ -9,12 +9,14 @@ type IconName = ComponentProps<typeof Ionicons>['name'];
 type AuthTextFieldProps = TextInputProps & {
   label?: string;
   iconName: IconName;
+  inputRef?: Ref<TextInput>;
   trailing?: ReactNode;
 };
 
 export function AuthTextField({
   label,
   iconName,
+  inputRef,
   trailing,
   style,
   ...inputProps
@@ -27,6 +29,7 @@ export function AuthTextField({
         <Ionicons name={iconName} size={25} color={colors.text} style={styles.inputIcon} />
 
         <TextInput
+          ref={inputRef}
           accessibilityLabel={label}
           style={[styles.input, style]}
           placeholderTextColor={colors.text}
