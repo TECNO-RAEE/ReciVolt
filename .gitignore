@@ -16,12 +16,15 @@ node_modules/
 !/supabase/migrations/20261003012055_global_points_rewards.sql
 !/supabase/migrations/20261003061458_admin_search_edit.sql
 !/supabase/migrations/20261003063021_admin_search_hardening.sql
+!/supabase/migrations/20261019020455_retire_xp_and_levels.sql
 !/supabase/tests/
 /supabase/tests/*
 !/supabase/tests/global-rewards.test.sql
 !/supabase/tests/admin-search-edit.test.sql
 !/supabase/tests/admin-green-points.test.sql
 !/supabase/tests/portals.test.sql
+!/supabase/tests/retire-xp.test.sql
+!/supabase/tests/admin-changelog.test.sql
 !/tests/integration/
 /tests/integration/*
 !/tests/integration/*.test.mjs

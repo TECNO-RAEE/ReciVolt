@@ -294,7 +294,7 @@ function CategoryPoints({
   return (
     <View style={s.stack}>
       <Text style={s.body}>
-        Estos puntos se suman al saldo global de cada ciudadano. El XP lo administra {brand.name}.
+        Estos puntos se suman al saldo global de cada ciudadano y se pueden canjear por premios.
         Se acreditan al confirmar la recepción de los dispositivos.
       </Text>
       {data.categories.map((c) => (

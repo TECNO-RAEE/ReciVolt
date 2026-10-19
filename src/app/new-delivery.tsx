@@ -118,10 +118,9 @@ function DeliveryForm({
       const qty = Number(quantities[c.id]);
       return {
         points: total.points + (Number.isInteger(qty) ? qty : 0) * (rates?.points[c.id] ?? 0),
-        xp: total.xp + (Number.isInteger(qty) ? qty : 0) * (rates?.xp[c.id] ?? 0),
       };
     },
-    { points: 0, xp: 0 }
+    { points: 0 }
   );
   return (
     <View style={s.stack}>
@@ -148,9 +147,7 @@ function DeliveryForm({
                 editable={!action.busy}
                 onChangeText={(v) => setQuantities((q) => ({ ...q, [c.id]: v }))}
               />
-              <Text style={s.hint}>
-                {rates.points[c.id] ?? 0} puntos globales · {rates.xp[c.id] ?? 0} XP por unidad
-              </Text>
+              <Text style={s.hint}>{rates.points[c.id] ?? 0} puntos globales por unidad</Text>
             </View>
           ))}
           <PortalField
@@ -193,8 +190,8 @@ function DeliveryForm({
             />
           )}
           <Text style={s.body}>
-            Estimado: {estimate.points} puntos globales + {estimate.xp} XP. El equipo verificará las
-            cantidades antes de acreditar.
+            Estimado: {estimate.points} puntos globales. El equipo verificará las cantidades antes
+            de acreditar.
           </Text>
           <ActionButton
             title="Confirmar y generar QR"

@@ -39,12 +39,12 @@ test('vencimiento sólo afecta pendientes, sin alterar confirmadas o canceladas'
     'CONFIRMED'
   );
 });
-test('estimaciones separan puntos de XP y usan cantidades físicas ajustadas', () => {
+test('estimaciones de puntos usan cantidades físicas ajustadas', () => {
   const items = [
-    { categoryId: 'a', declaredQuantity: 3, pointsSnapshot: 100, xpSnapshot: 10 },
-    { categoryId: 'b', declaredQuantity: 2, pointsSnapshot: 25, xpSnapshot: 5 },
+    { categoryId: 'a', declaredQuantity: 3, pointsSnapshot: 100 },
+    { categoryId: 'b', declaredQuantity: 2, pointsSnapshot: 25 },
   ];
-  assert.deepEqual(deliveryEstimate(items), { points: 350, xp: 40 });
-  assert.deepEqual(deliveryEstimate(items, { a: '2', b: '0' }), { points: 200, xp: 20 });
+  assert.deepEqual(deliveryEstimate(items), { points: 350 });
+  assert.deepEqual(deliveryEstimate(items, { a: '2', b: '0' }), { points: 200 });
   assert.throws(() => deliveryEstimate(items, { a: '1.1', b: '0' }));
 });

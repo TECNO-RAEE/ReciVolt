@@ -308,7 +308,7 @@ Los campos tienen etiqueta persistente, borde suave y fondo blanco. El placehold
 
 ### Tarjetas, puntos y premios
 
-`PointsCard` muestra “Tus puntos”, moneda ecológica y saldo global con protagonismo. El resumen general no se presenta como una cuenta distinta por empresa. Cualquier dato por entidad o XP debe estar identificado con su significado real, sin mezclarlo visualmente con el saldo canjeable.
+`PointsCard` muestra “Tus puntos”, moneda ecológica y saldo global con protagonismo. El resumen general no se presenta como una cuenta distinta por empresa. Los puntos canjeables son el único saldo del ciudadano. No hay XP, niveles ni barras de progreso. El impacto se explica con orientación para entregar RAEE, sin métricas inventadas.
 
 Un premio muestra foto, título, entidad, costo en puntos y “Ver detalle”. El costo debe ser fácil de encontrar. Usar fotos pertinentes, con recorte consistente; si falta la imagen, usar el placeholder existente. Los chips cambian de fondo claro a verde profundo al seleccionarse; conservar el texto legible y comunicar la selección a tecnologías de asistencia.
 
@@ -344,7 +344,7 @@ Los controles nuevos deben ofrecer un área de interacción de al menos (44 × 4
 - Crear una identidad diferente por rol, una fuente nueva o una paleta alternativa sin aprobación explícita.
 - Copiar un header, botón o tarjeta compartidos para modificarlos sólo en una pantalla.
 - Usar el mockup o una captura antigua para revertir navegación y contenido ya acordados.
-- Confundir saldo global, XP, datos de muestra o información pendiente con datos confirmados.
+- Confundir saldo global, datos de muestra o información pendiente con datos confirmados.
 - Añadir sombras fuertes, degradados de pantalla, emojis como iconos o animaciones decorativas continuas.
 - Inventar datos de contacto, stock, impacto o estados de éxito para completar un diseño.
 

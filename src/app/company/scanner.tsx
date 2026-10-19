@@ -225,7 +225,7 @@ function Scanner({
                       throw new Error(
                         'El código venció antes de la recepción. No se acreditaron puntos.'
                       );
-                  }, 'Recepción confirmada. Puntos y XP acreditados.')
+                  }, 'Recepción confirmada. Puntos acreditados.')
                 }
               />
             </View>

@@ -45,15 +45,12 @@ export function DeliverySummary({
               ? `${i.confirmedQuantity} recibidos · ${i.declaredQuantity} declarados`
               : `${i.declaredQuantity} declarados`}
           </Text>
-          <Text style={s.hint}>
-            {i.pointsSnapshot} puntos globales + {i.xpSnapshot} XP por unidad
-          </Text>
+          <Text style={s.hint}>{i.pointsSnapshot} puntos globales por unidad</Text>
         </View>
       ))}
       {status === 'CONFIRMED' ? (
         <View style={s.stack}>
           <Text style={s.subtitle}>+{delivery.points} puntos globales</Text>
-          <Text style={s.subtitle}>+{delivery.xp} XP global</Text>
           <Text style={s.body}>
             Recepción confirmada el {new Date(delivery.confirmedAt!).toLocaleString('es-AR')}. El
             código ya fue utilizado.
@@ -61,12 +58,12 @@ export function DeliverySummary({
         </View>
       ) : status === 'PENDING_RECEPTION' ? (
         <Text style={s.body}>
-          Estimado: {estimate.points} puntos globales y {estimate.xp} XP. Se acreditan después de
-          verificar la recepción física.
+          Estimado: {estimate.points} puntos globales. Se acreditan después de verificar la
+          recepción física.
         </Text>
       ) : (
         <Text style={s.body}>
-          Esta entrega no acredita puntos ni XP. Podés registrar una nueva entrega desde Mis RAEE.
+          Esta entrega no acredita puntos. Podés registrar una nueva entrega desde Mis RAEE.
         </Text>
       )}
       {!!delivery.notes && <Text style={s.body}>Notas: {delivery.notes}</Text>}

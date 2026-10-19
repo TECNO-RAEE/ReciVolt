@@ -36,11 +36,7 @@ export function DeliveryHistory({ companyId = null }: Readonly<{ companyId?: str
               .map((i) => `${i.categoryName} × ${i.confirmedQuantity ?? i.declaredQuantity}`)
               .join(' · ')}
           </Text>
-          {d.status === 'CONFIRMED' && (
-            <Text style={s.body}>
-              +{d.points} puntos globales · +{d.xp} XP
-            </Text>
-          )}
+          {d.status === 'CONFIRMED' && <Text style={s.body}>+{d.points} puntos globales</Text>}
           <PortalLink
             title={companyId ? 'Ver recepción' : 'Ver entrega / QR'}
             onPress={() =>

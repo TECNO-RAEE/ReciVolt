@@ -6,7 +6,7 @@ Este documento describe las funcionalidades presentes en el código del entorno 
 
 ## Qué es TecnoRAEE
 
-TecnoRAEE conecta personas que tienen residuos de aparatos eléctricos y electrónicos (RAEE) con organizaciones que los reciben. Permite encontrar puntos verdes, registrar una entrega, comprobar su recepción física y reconocer la participación del ciudadano mediante puntos y experiencia de impacto (XP).
+TecnoRAEE conecta personas que tienen residuos de aparatos eléctricos y electrónicos (RAEE) con organizaciones que los reciben. Permite encontrar puntos verdes, registrar una entrega, comprobar su recepción física y reconocer la participación del ciudadano mediante puntos canjeables.
 
 La plataforma reúne tres recorridos: ciudadano, empresa receptora y administración. Cada cuenta accede al recorrido que corresponda a sus permisos reales.
 
@@ -22,7 +22,6 @@ La plataforma reúne tres recorridos: ciudadano, empresa receptora y administrac
 | Portal de empresa                  | Implementado | Configuración de puntos verdes, tarifas de puntos, equipo y cupos.                |
 | Entregas y recepción               | Implementado | QR/código, verificación física, cantidades ajustables y acreditación.             |
 | Mis RAEE e historial empresarial   | Implementado | Entregas, estados, detalles y saldos reales.                                      |
-| XP y niveles de impacto            | Implementado | XP global y umbrales configurables por admin.                                     |
 | Panel admin e historial de cambios | Implementado | Gestión administrativa y registro persistente de operaciones.                     |
 | Perfil                             | Parcial      | Identidad, saldos y logout; edición de datos y preferencias pendiente.            |
 | Solicitud y seguimiento de retiros | Pendiente    | Existen accesos y reconocimiento del tipo de código; falta el circuito operativo. |
@@ -36,10 +35,10 @@ La plataforma reúne tres recorridos: ciudadano, empresa receptora y administrac
 | Perfil                                   | Qué puede hacer                                                                                         | Destino de ingreso |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------ |
 | Invitado                                 | Explorar Home, categorías y puntos verdes. Las funciones personales solicitan una cuenta.               | `/home`            |
-| Ciudadano                                | Registrar entregas, consultar historial, puntos y XP; reservar premios y consultar sus códigos.         | `/home`            |
+| Ciudadano                                | Registrar entregas, consultar historial y puntos; reservar premios y consultar sus códigos.         | `/home`            |
 | Responsable de empresa (`company_owner`) | Configurar su organización, puntos verdes, tarifas y equipo; recibir entregas y consultar su historial. | `/company`         |
 | Trabajador (`company_worker`)            | Consultar los puntos de su empresa, recibir entregas y ver su historial.                                | `/company`         |
-| Administrador (`platform_admin`)         | Gestionar puntos, premios, búsquedas y cupos; configurar XP/niveles y consultar auditoría.              | `/admin`           |
+| Administrador (`platform_admin`)         | Gestionar puntos, premios, búsquedas y cupos; consultar auditoría.              | `/admin`           |
 
 El usuario no elige su rol en el login. Los permisos se consultan en la base de datos; las membresías deben estar activas y la empresa debe estar habilitada. Si una cuenta tiene autorización de administrador, ese acceso tiene prioridad.
 
@@ -75,7 +74,7 @@ La publicación pública depende del estado del punto y de la empresa. Tras carg
 4. Confirma el registro y obtiene una entrega pendiente con QR y código legible.
 5. Lleva los dispositivos al punto verde para su verificación física.
 6. El responsable o trabajador recibe la entrega y confirma las cantidades reales.
-7. Mis entregas muestra el resultado, el saldo global y el XP.
+7. Mis entregas muestra el resultado y el saldo global.
 
 Registrar una entrega **no acredita puntos**. La acreditación ocurre cuando el equipo de la empresa confirma la recepción.
 
@@ -119,16 +118,17 @@ Las invitaciones pendientes reservan un cupo. El responsable no puede elevar el 
 
 El equipo puede escanear el QR con cámara o ingresar manualmente su contenido/código. Antes de confirmar, consulta ciudadano, punto, categorías, cantidades declaradas, notas y foto privada, si existe.
 
-La confirmación consume el código, guarda las cantidades recibidas, acredita puntos y XP y registra la operación en una sola transacción. Repetir la confirmación devuelve el resultado original y no duplica la acreditación.
+La confirmación consume el código, guarda las cantidades recibidas, acredita puntos y registra la operación en una sola transacción. Repetir la confirmación devuelve el resultado original y no duplica la acreditación.
 
-## Puntos, XP y niveles
+## Puntos canjeables
 
-Los puntos y el XP cumplen funciones distintas:
+Se retiraron la XP y los niveles. Mi impacto ofrece orientación ambiental sin un saldo adicional. Los campos históricos se conservan en la base para no borrar operaciones anteriores; la migración de retiro desactiva su acreditación y configuración.
+
+El ciudadano tiene un único saldo de puntos:
 
 - **Puntos globales:** cada organización define su tarifa por dispositivo y se conserva la procedencia de sus créditos. El ciudadano dispone de un único saldo canjeable en toda la red, descontando las reservas de premios. Los créditos por empresa no son billeteras independientes para gastar.
-- **XP global:** lo configura la administración de TecnoRAEE y determina el nivel de impacto del ciudadano, independientemente de la empresa receptora.
 
-Las tarifas y el XP por unidad quedan guardados al registrar la entrega. Cambiar la configuración después no recalcula esa entrega ni su histórico. La acreditación final usa las cantidades físicamente recibidas.
+Las tarifas por unidad quedan guardadas al registrar la entrega. Cambiar la configuración después no recalcula esa entrega ni su histórico. La acreditación final usa las cantidades físicamente recibidas.
 
 Los saldos se calculan a partir de movimientos registrados en el backend; no existe un saldo que el cliente pueda editar directamente. Mis entregas, Mis puntos, Premios y Perfil comparten esa información.
 
@@ -138,7 +138,7 @@ Admin publica premios y los asocia a una empresa activa, con costo en puntos, di
 
 El ciudadano con email confirmado y saldo suficiente reserva un premio tras confirmar el costo. La transacción descuenta puntos globales una sola vez, guarda una copia del premio y reduce stock si corresponde. El código QR, código de barras y texto quedan disponibles en Mis canjes; una recarga conserva la ficha solicitada.
 
-El equipo del comercio valida el código desde `/company/scanner` y confirma la entrega. La confirmación no vuelve a descontar puntos y repetirla devuelve el resultado original. Otros ciudadanos y empresas no pueden acceder a ese canje. Las reservas concurrentes no pueden exceder el saldo ni consumir dos veces la última unidad. El XP no se gasta.
+El equipo del comercio valida el código desde `/company/scanner` y confirma la entrega. La confirmación no vuelve a descontar puntos y repetirla devuelve el resultado original. Otros ciudadanos y empresas no pueden acceder a ese canje. Las reservas concurrentes no pueden exceder el saldo ni consumir dos veces la última unidad.
 
 ## Administración e historial de cambios
 
@@ -149,12 +149,11 @@ Los administradores pueden:
 - Dar de alta puntos verdes e instituciones responsables sin asignar permisos a cuentas automáticamente.
 - Publicar y editar premios; buscar y editar usuarios, empresas, puntos y premios.
 - Aprobar o rechazar ampliaciones de cupos.
-- Configurar XP por categoría y crear o editar niveles de impacto.
 - Consultar el registro de operaciones mediante filtros, búsqueda y paginación.
 
 Los comandos históricos de solicitudes, revisión documental y suspensión se conservan en el backend y en sus pruebas; eso no significa que el panel actual muestre todas esas operaciones. El ingreso público `/company-application` redirige a Contacto.
 
-El historial conserva autor, email, fecha, operación, referencia, empresa y motivo cuando corresponde. Los cambios de solicitudes, cupos, estado de empresas, XP y niveles incorporan valores anteriores y nuevos dentro de la misma transacción.
+El historial conserva autor, email, fecha, operación, referencia, empresa y motivo cuando corresponde. Los cambios de solicitudes, cupos, estado de empresas incorporan valores anteriores y nuevos dentro de la misma transacción.
 
 También se registran las consultas de documentación privada desde admin y los intentos y resultados de envío de invitaciones. La identidad del autor queda guardada aunque después cambie su nombre o pierda sus permisos.
 

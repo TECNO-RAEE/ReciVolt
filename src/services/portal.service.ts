@@ -70,7 +70,6 @@ function category(r: Row) {
     id: str(r, 'id'),
     name: str(r, 'name'),
     slug: str(r, 'slug'),
-    impactXp: Number(r.impact_xp),
   };
 }
 export async function portalCommand(
@@ -204,19 +203,11 @@ export async function getAdminPortal(): Promise<AdminPortalData> {
       .from('company_limit_requests')
       .select('*, companies(name)')
       .order('created_at', { ascending: false }),
-    supabase.from('device_categories').select('*').order('sort_order'),
-    supabase.from('impact_levels').select('*').order('minimum_xp'),
   ]);
   for (const result of results) if (result.error) throw result.error;
   return {
     companies: (results[0].data ?? []).map(company),
     limitRequests: (results[1].data ?? []).map(limit),
-    categories: (results[2].data ?? []).map(category),
-    levels: (results[3].data ?? []).map((l) => ({
-      id: l.id,
-      name: l.name,
-      minimumXp: l.minimum_xp,
-    })),
   };
 }
 export interface AdminPointSummary {

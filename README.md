@@ -10,7 +10,7 @@ El nombre comercial está centralizado en `src/config/brand.json`. La guía [Cam
 
 Aplicación de gestión de RAEE con React Native, Expo SDK 57, Expo Router, TypeScript y Supabase. El código activo está en `src/app/`; servicios en `src/services/`, modelos en `src/models/` y estilos compartidos en `src/theme/`.
 
-La app permite explorar puntos verdes, registrar entregas con QR, confirmar cantidades recibidas, sumar puntos globales y canjear premios. El equipo del comercio confirma la entrega del premio sin un segundo débito. La procedencia de los créditos se conserva por empresa; el saldo canjeable es único para toda la red y el XP es independiente.
+La app permite explorar puntos verdes, registrar entregas con QR, confirmar cantidades recibidas, sumar puntos globales y canjear premios. El equipo del comercio confirma la entrega del premio sin un segundo débito. La procedencia de los créditos se conserva por empresa; el saldo canjeable es único para toda la red.
 
 ## Ejecutar
 
@@ -44,7 +44,7 @@ Se preserva `profiles` y su trigger. Las tablas nuevas tienen RLS y grants expl�
 
 Para usar documentación/invitaciones/fotos localmente se necesita Storage, Mailpit y Edge Runtime; el stack mínimo del comando anterior sólo cubre Auth/DB. Las URLs de retorno de Auth e invitaciones deben configurarse para el entorno de despliegue.
 
-Registrar una entrega requiere una cuenta con email confirmado y un punto publicado por una empresa activa. Crear el QR no acredita puntos: owner o worker debe confirmar la recepción desde `/company/scanner`. Se permite ingresar el código manualmente, sin cámara. Fotos opcionales privadas, JPG/PNG hasta 5 MB; el QR vence en 7 días. Mis entregas y Perfil muestran el saldo global real y el XP.
+Registrar una entrega requiere una cuenta con email confirmado y un punto publicado por una empresa activa. Crear el QR no acredita puntos: owner o worker debe confirmar la recepción desde `/company/scanner`. Se permite ingresar el código manualmente, sin cámara. Fotos opcionales privadas, JPG/PNG hasta 5 MB; el QR vence en 7 días. Mis entregas y Perfil muestran el saldo global real.
 
 Admin da de alta los puntos verdes y publica premios; el responsable mantiene los puntos existentes y las tarifas de su empresa. El ciudadano reserva un premio con saldo suficiente y recibe un código persistente en Mis canjes. Sólo el equipo del comercio correspondiente puede confirmar su entrega.
 

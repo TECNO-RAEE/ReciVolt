@@ -83,7 +83,7 @@ export interface CompanyPortalData {
   company: PortalCompany;
   details: CompanyDetails | null;
   points: ManagedPoint[];
-  categories: (DeviceCategory & { impactXp: number })[];
+  categories: DeviceCategory[];
   categoryPoints: { id: string; points: number }[];
   members: {
     id: string;
@@ -97,11 +97,6 @@ export interface CompanyPortalData {
 export interface PointInput extends Omit<ManagedPoint, 'id'> {
   id?: string;
   companyId: string;
-}
-export interface ImpactLevel {
-  id: string;
-  name: string;
-  minimumXp: number;
 }
 export interface AuditEntry {
   id: string;
@@ -118,6 +113,4 @@ export interface AuditEntry {
 export interface AdminPortalData {
   companies: PortalCompany[];
   limitRequests: CompanyLimitRequest[];
-  categories: (DeviceCategory & { impactXp: number })[];
-  levels: ImpactLevel[];
 }
