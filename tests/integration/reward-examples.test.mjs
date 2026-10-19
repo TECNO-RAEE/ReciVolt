@@ -170,7 +170,7 @@ test('ciudadano con saldo de lectura simulado suficiente no reserva la muestra n
     });
     await page.route('**/rest/v1/rpc/my_delivery_balance', (route) =>
       route.fulfill({
-        json: { points: 500, xp: 0, level: null, nextLevel: null, companies: [] },
+        json: { points: 500, companies: [] },
       })
     );
     await page.goto(base + '/login', { waitUntil: 'networkidle' });

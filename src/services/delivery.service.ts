@@ -22,14 +22,12 @@ export function mapDelivery(row: Row): Delivery {
     createdAt: String(row.created_at),
     confirmedAt: row.confirmed_at == null ? null : String(row.confirmed_at),
     points: Number(row.confirmed_points),
-    xp: Number(row.confirmed_xp),
     items: items.map((i) => ({
       categoryId: String(i.device_category_id),
       categoryName: String(i.category_name),
       declaredQuantity: Number(i.declared_quantity),
       confirmedQuantity: i.confirmed_quantity == null ? null : Number(i.confirmed_quantity),
       pointsSnapshot: Number(i.points_snapshot),
-      xpSnapshot: Number(i.impact_xp_snapshot),
     })),
   };
 }
@@ -63,13 +61,8 @@ export async function getDeliveryHistory(companyId: string | null, page = 0): Pr
 export async function getDeliveryBalance(): Promise<DeliveryBalance> {
   const { data, error } = await supabase.rpc('my_delivery_balance');
   if (error) throw error;
-  const level = (l: Row | null) =>
-    l ? { name: String(l.name), minimumXp: Number(l.minimum_xp) } : null;
   return {
     points: Number(data.points),
-    xp: Number(data.xp),
-    level: level(data.level),
-    nextLevel: level(data.nextLevel),
     companies: (data.companies as Row[]).map((c) => ({
       id: String(c.company_id),
       name: String(c.company_name),
@@ -78,23 +71,15 @@ export async function getDeliveryBalance(): Promise<DeliveryBalance> {
   };
 }
 export async function getDeliveryRates(companyId: string) {
-  const [points, categories] = await Promise.all([
-    supabase
-      .from('company_device_points')
-      .select('device_category_id, points')
-      .eq('company_id', companyId),
-    supabase.from('device_categories').select('id, impact_xp').eq('active', true),
-  ]);
+  const points = await supabase
+    .from('company_device_points')
+    .select('device_category_id, points')
+    .eq('company_id', companyId);
   if (points.error) throw points.error;
-  if (categories.error) throw categories.error;
   return {
     points: Object.fromEntries(
       (points.data ?? []).map((p) => [p.device_category_id, p.points])
     ) as Record<string, number>,
-    xp: Object.fromEntries((categories.data ?? []).map((c) => [c.id, c.impact_xp])) as Record<
-      string,
-      number
-    >,
   };
 }
 export async function pickDeliveryPhoto(

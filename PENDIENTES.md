@@ -67,6 +67,6 @@ Referencias: `src/app/(app)/_layout.tsx`, `src/components/rewards/RewardsUI.tsx`
 
 ## Lo que ya funciona y no debe tratarse como pendiente
 
-El cierre comprobó descubrimiento, acceso/recuperación local, entregas y recepción, saldo global separado de XP, premios/canjes y portales existentes. Se verificaron permisos, idempotencia y concurrencia con datos controlados. Universidad de Pilar y Cafe del Pellegrini están terminados como ejemplos, con operaciones reales bloqueadas.
+El cierre comprobó descubrimiento, acceso/recuperación local, entregas y recepción, saldo global de puntos canjeables, premios/canjes y portales existentes. Se verificaron permisos, idempotencia y concurrencia con datos controlados. Universidad de Pilar y Cafe del Pellegrini están terminados como ejemplos, con operaciones reales bloqueadas.
 
 Los resultados detallados y límites por entorno están en [el informe de validación](tasks/validation.md). Este backlog conserva la diferencia entre un defecto observado, una mejora solicitada y una función futura; ninguna tarea aquí marcada como pendiente fue implementada por generar el documento.

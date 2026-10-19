@@ -5,7 +5,6 @@ export interface DeliveryItem {
   declaredQuantity: number;
   confirmedQuantity: number | null;
   pointsSnapshot: number;
-  xpSnapshot: number;
 }
 export interface Delivery {
   id: string;
@@ -23,14 +22,10 @@ export interface Delivery {
   createdAt: string;
   confirmedAt: string | null;
   points: number;
-  xp: number;
   items: DeliveryItem[];
 }
 export interface DeliveryBalance {
   points: number;
-  xp: number;
-  level: { name: string; minimumXp: number } | null;
-  nextLevel: { name: string; minimumXp: number } | null;
   companies: { id: string; name: string; points: number }[];
 }
 export const deliveryStatusNames: Record<DeliveryStatus, string> = {
@@ -80,9 +75,8 @@ export function deliveryEstimate(items: DeliveryItem[], quantities?: Record<stri
         : item.declaredQuantity;
       return {
         points: total.points + quantity * item.pointsSnapshot,
-        xp: total.xp + quantity * item.xpSnapshot,
       };
     },
-    { points: 0, xp: 0 }
+    { points: 0 }
   );
 }
