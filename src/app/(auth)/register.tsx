@@ -18,6 +18,47 @@ import { register } from '@/services/auth.service';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
 import { useAuth } from '@/providers/AuthProvider';
 
+function getAuthErrorCode(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    return typeof error.code === 'string' ? error.code : undefined;
+  }
+  return undefined;
+}
+
+function getAuthErrorStatus(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    return typeof error.status === 'number' ? error.status : undefined;
+  }
+  return undefined;
+}
+
+function getRegisterErrorMessage(error: unknown) {
+  const code = getAuthErrorCode(error);
+  const status = getAuthErrorStatus(error);
+
+  if (code === 'user_already_exists') {
+    return 'Ya existe una cuenta con ese correo. Iniciá sesión o recuperá tu contraseña.';
+  }
+
+  if (
+    code === 'over_request_rate_limit' ||
+    code === 'over_email_send_rate_limit' ||
+    status === 429
+  ) {
+    return 'Hiciste demasiados intentos. Esperá unos minutos e intentá nuevamente.';
+  }
+
+  if (
+    (status !== undefined && status >= 500) ||
+    status === 0 ||
+    (error instanceof Error && error.name === 'AuthRetryableFetchError')
+  ) {
+    return 'No pudimos conectarnos con el servicio. Intentá de nuevo en unos minutos.';
+  }
+
+  return 'No pudimos crear la cuenta. Intentá nuevamente.';
+}
+
 export default function CreateAccountScreen() {
   const params = useLocalSearchParams<{ intent?: string }>();
   const intent = parseAuthIntent(params.intent);
@@ -76,10 +117,8 @@ export default function CreateAccountScreen() {
         });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No pudimos crear la cuenta.';
-
       prepareAuth(null);
-      setError(message);
+      setError(getRegisterErrorMessage(error));
     } finally {
       setLoading(false);
     }

@@ -19,6 +19,80 @@ import { colors, fonts } from '@/theme';
 const OTP_LENGTH = 6;
 const OTP_SLOTS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'] as const;
 
+function getAuthErrorCode(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    return typeof error.code === 'string' ? error.code : undefined;
+  }
+  return undefined;
+}
+
+function getAuthErrorStatus(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    return typeof error.status === 'number' ? error.status : undefined;
+  }
+  return undefined;
+}
+
+function getSendCodeErrorMessage(error: unknown) {
+  const code = getAuthErrorCode(error);
+  const status = getAuthErrorStatus(error);
+
+  if (
+    code === 'over_request_rate_limit' ||
+    code === 'over_email_send_rate_limit' ||
+    status === 429
+  ) {
+    return 'Hiciste demasiados intentos. Esperá unos minutos e intentá nuevamente.';
+  }
+
+  if (
+    (status !== undefined && status >= 500) ||
+    status === 0 ||
+    (error instanceof Error && error.name === 'AuthRetryableFetchError')
+  ) {
+    return 'No pudimos conectarnos con el servicio. Intentá de nuevo en unos minutos.';
+  }
+
+  return 'No pudimos enviar el código. Intentá nuevamente.';
+}
+
+
+function getVerifyCodeErrorMessage(error: unknown) {
+  const code = getAuthErrorCode(error);
+  const status = getAuthErrorStatus(error);
+
+  // Límite de intentos
+  if (
+    code === 'over_request_rate_limit' ||
+    status === 429
+  ) {
+    return 'Hiciste demasiados intentos. Esperá unos minutos e intentá nuevamente.';
+  }
+
+  // Problemas de conexión o servidor
+  if (
+    (status !== undefined && status >= 500) ||
+    status === 0 ||
+    (error instanceof Error && error.name === 'AuthRetryableFetchError')
+  ) {
+    return 'No pudimos conectarnos con el servicio. Intentá de nuevo en unos minutos.';
+  }
+
+  // Código inválido o vencido
+  if (
+    code === 'otp_expired' ||
+    code === 'token_expired' ||
+    (error instanceof Error &&
+      (error.message.toLowerCase().includes('expired') ||
+        error.message.toLowerCase().includes('invalid')))
+  ) {
+    return 'El código ingresado no es válido o ya venció. Solicitá uno nuevo.';
+  }
+
+  return 'No pudimos verificar el código. Revisá el código e intentá nuevamente.';
+}
+
+
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -54,9 +128,7 @@ export default function ForgotPasswordScreen() {
 
       codeInputRef.current?.focus();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No pudimos enviar el código.';
-
-      setError(message);
+      setError(getSendCodeErrorMessage(error));
     } finally {
       setBusy(null);
     }
@@ -80,9 +152,7 @@ export default function ForgotPasswordScreen() {
       await verifyRecoveryCode(email, code);
       router.replace('/new-password');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'El código ingresado no es válido.';
-
-      setError(message);
+      setError(getVerifyCodeErrorMessage(error));
     } finally {
       setBusy(null);
     }
