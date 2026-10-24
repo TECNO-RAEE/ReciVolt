@@ -2,7 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import type { Href } from 'expo-router';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors, fonts } from '@/theme';
 import type { Reward } from '@/models/Reward';
@@ -106,26 +106,62 @@ export function RewardPhoto({
   reward,
   height = 104,
 }: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'>; height?: number }>) {
-  const [failed, setFailed] = useState(false);
-  return reward.imageUrl && !failed ? (
-    <Image
-      source={{ uri: reward.imageUrl }}
-      style={{ width: '100%', height }}
-      contentFit="cover"
-      transition={150}
-      accessibilityLabel={reward.title}
-      onError={() => setFailed(true)}
-    />
-  ) : (
-    <View
-      style={{
-        height,
-        backgroundColor: colors.primarySoft,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Ionicons name="gift-outline" size={44} color={colors.primaryDark} />
+  const [imageState, setImageState] = useState({
+    url: reward.imageUrl,
+    failed: false,
+    loading: Boolean(reward.imageUrl),
+  });
+  const isCurrentSource = imageState.url === reward.imageUrl;
+  const failed = isCurrentSource && imageState.failed;
+  const loading = Boolean(reward.imageUrl) && (!isCurrentSource || imageState.loading);
+
+  if (!reward.imageUrl || failed) {
+    return (
+      <View
+        accessibilityRole="image"
+        accessibilityLabel={`Foto no disponible para ${reward.title}`}
+        style={[styles.photoFallback, { height }]}
+      >
+        <Ionicons name="gift-outline" size={36} color={colors.primaryDark} />
+        <Text style={styles.photoFallbackText}>Foto no disponible</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ height, backgroundColor: colors.primarySoft }}>
+      <Image
+        source={{ uri: reward.imageUrl }}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        transition={150}
+        accessibilityLabel={reward.title}
+        onLoad={() => {
+          setImageState((current) =>
+            current.url === reward.imageUrl
+              ? { url: reward.imageUrl, failed: false, loading: false }
+              : current
+          );
+        }}
+        onError={() => {
+          setImageState((current) =>
+            current.url === reward.imageUrl
+              ? { url: reward.imageUrl, failed: true, loading: false }
+              : current
+          );
+        }}
+      />
+      {loading && (
+        <View
+          pointerEvents="none"
+          accessibilityRole="progressbar"
+          accessibilityLabel={`Cargando foto de ${reward.title}`}
+          style={styles.photoLoading}
+        >
+          <ActivityIndicator size="small" color={colors.primaryDark} />
+          <Text style={styles.photoLoadingText}>Cargando foto…</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -246,6 +282,21 @@ const styles = StyleSheet.create({
     boxShadow: '0 3px 12px rgba(22,65,39,0.06)',
   },
   photo: { margin: 6, borderRadius: 12, overflow: 'hidden' },
+  photoLoading: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: colors.primarySoft,
+  },
+  photoLoadingText: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
+  photoFallback: {
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  photoFallbackText: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
   stockBadge: {
     position: 'absolute',
     right: 8,
