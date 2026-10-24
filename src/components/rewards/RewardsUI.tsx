@@ -106,21 +106,28 @@ export function RewardPhoto({
   reward,
   height = 104,
 }: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'>; height?: number }>) {
-  const [imageState, setImageState] = useState({
-    url: reward.imageUrl,
-    failed: false,
-    loading: Boolean(reward.imageUrl),
-  });
-  const isCurrentSource = imageState.url === reward.imageUrl;
-  const failed = isCurrentSource && imageState.failed;
-  const loading = Boolean(reward.imageUrl) && (!isCurrentSource || imageState.loading);
+  return (
+    <RewardPhotoSource
+      key={`photo:${reward.imageUrl ?? ''}`}
+      reward={reward}
+      height={height}
+    />
+  );
+}
+
+function RewardPhotoSource({
+  reward,
+  height,
+}: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'>; height: number }>) {
+  const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(Boolean(reward.imageUrl));
 
   if (!reward.imageUrl || failed) {
     return (
       <View
         accessibilityRole="image"
         accessibilityLabel={`Foto no disponible para ${reward.title}`}
-        style={[styles.photoFallback, { height }]}
+        style={[styles.photoFallback, { height, width: '100%' }]}
       >
         <Ionicons name="gift-outline" size={36} color={colors.primaryDark} />
         <Text style={styles.photoFallbackText}>Foto no disponible</Text>
@@ -129,26 +136,17 @@ export function RewardPhoto({
   }
 
   return (
-    <View style={{ height, backgroundColor: colors.primarySoft }}>
+    <View style={{ height, width: '100%', backgroundColor: colors.primarySoft }}>
       <Image
         source={{ uri: reward.imageUrl }}
         style={StyleSheet.absoluteFill}
         contentFit="cover"
         transition={150}
         accessibilityLabel={reward.title}
-        onLoad={() => {
-          setImageState((current) =>
-            current.url === reward.imageUrl
-              ? { url: reward.imageUrl, failed: false, loading: false }
-              : current
-          );
-        }}
+        onLoad={() => setLoading(false)}
         onError={() => {
-          setImageState((current) =>
-            current.url === reward.imageUrl
-              ? { url: reward.imageUrl, failed: true, loading: false }
-              : current
-          );
+          setLoading(false);
+          setFailed(true);
         }}
       />
       {loading && (
@@ -283,7 +281,11 @@ const styles = StyleSheet.create({
   },
   photo: { margin: 6, borderRadius: 12, overflow: 'hidden' },
   photoLoading: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
