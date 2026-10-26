@@ -9,10 +9,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { sendRecoveryCode, verifyRecoveryCode } from '@/services/auth.service';
 import { colors, fonts } from '@/theme';
 
@@ -101,7 +103,7 @@ export default function ForgotPasswordScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const codeInputRef = useRef<TextInput>(null);
+  const codeInputRef = useRef<TextInputInstance>(null);
 
   async function handleSendCode(resend = false) {
     if (busy) return;
@@ -263,18 +265,12 @@ export default function ForgotPasswordScreen() {
             <Text style={styles.resendText}>Reenviar código</Text>
           </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={Boolean(busy)}
-            style={({ pressed }) => [styles.verifyButton, pressed && styles.pressed]}
-            onPress={handleVerifyCode}
-          >
-            {busy === 'verify' ? (
-              <ActivityIndicator color={colors.textOnPrimary} />
-            ) : (
-              <Text style={styles.verifyButtonText}>Verificar Código</Text>
-            )}
-          </Pressable>
+          <ActionButton
+            title="Verificar código"
+            onPress={() => void handleVerifyCode()}
+            loading={busy === 'verify'}
+            disabled={busy === 'send'}
+          />
           {error && (
             <Text accessibilityRole="alert" style={styles.error}>
               {error}
@@ -339,13 +335,5 @@ const styles = StyleSheet.create({
   },
   resendButton: { minHeight: 44, alignSelf: 'flex-end', justifyContent: 'center' },
   resendText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.primaryDark },
-  verifyButton: {
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-  },
-  verifyButtonText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.textOnPrimary },
   notice: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 21, color: colors.primary },
 });
