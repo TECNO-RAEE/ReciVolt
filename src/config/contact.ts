@@ -1,10 +1,12 @@
-// Leave unset until TecnoRAEE has an official contact address.
+import { brand } from './brand';
+
+// Leave unset until EcoRAEE has an official contact address.
 export const contactEmail = process.env.EXPO_PUBLIC_CONTACT_EMAIL?.trim() || '';
 
 export const contactTopics = {
   point: {
     title: 'Sumarme como punto verde',
-    subject: 'Quiero sumarme como punto verde a TecnoRAEE',
+    subject: `Quiero sumarme como punto verde a ${brand.name}`,
     fields: [
       'Nombre del punto verde o institución',
       'Nombre del responsable',
@@ -16,7 +18,7 @@ export const contactTopics = {
   },
   reward: {
     title: 'Ofrecer un premio',
-    subject: 'Propuesta de premio para TecnoRAEE',
+    subject: `Propuesta de premio para ${brand.name}`,
     fields: [
       'Nombre del comercio u organización',
       'Nombre del responsable',

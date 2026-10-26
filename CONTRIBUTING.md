@@ -1,4 +1,4 @@
-# Contribuir a TecnoRAEE
+# Contribuir a EcoRAEE
 
 Estas reglas se aplican a desarrolladores, diseñadores y agentes de IA. Una tarea de Trello, una PR o una herramienta distinta no cambia el lenguaje de diseño compartido.
 

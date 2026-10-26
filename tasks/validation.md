@@ -1,4 +1,4 @@
-# Validación del cierre de TecnoRAEE
+# Validación del cierre de EcoRAEE
 
 Fecha de inicio: 13 de octubre de 2026. Especificación y plan aprobados por el usuario.
 
@@ -9,7 +9,7 @@ Fecha de inicio: 13 de octubre de 2026. Especificación y plan aprobados por el 
 - Node 26.3.1; CLI Supabase 2.120.0 obtenida mediante npx; Docker disponible.
 - La app apunta por defecto al proyecto `awzmweclcgellphiromh`.
 - El 13 de octubre el remoto estaba inactivo: SQL/listado de migraciones devolvían `28P01` y el dominio de API `ENOTFOUND`. El 14 de octubre, tras el aviso del usuario, se confirmó `ACTIVE_HEALTHY` y conexión SQL funcional.
-- No estaba iniciado un stack local de TecnoRAEE. No se tocaron los contenedores de los otros proyectos.
+- No estaba iniciado un stack local de EcoRAEE. No se tocaron los contenedores de los otros proyectos.
 - Se encontraron 14 migraciones locales, incluidas las bases ignoradas por Git. Por tanto existe material para intentar reconstruir el entorno local; sólo tres migraciones están actualmente exceptuadas en `.gitignore`.
 - `supabase test db --help` confirma que acepta múltiples rutas. Las suites existentes usan fixtures y rollback.
 

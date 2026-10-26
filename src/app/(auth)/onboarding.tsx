@@ -6,6 +6,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { useAuth } from '@/providers/AuthProvider';
 import { colors, fonts } from '@/theme';
+import { brand } from '@/config/brand';
 
 const slides = [
   {
@@ -47,7 +48,7 @@ export default function OnboardingScreen() {
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title="Conocé TecnoRAEE"
+        title={`Conocé ${brand.name}`}
         back="/"
         onBack={() => {
           if (saving) return;
