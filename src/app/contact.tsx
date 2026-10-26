@@ -5,6 +5,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { contactEmail, contactTopics } from '@/config/contact';
+import { brand } from '@/config/brand';
 import { colors } from '@/theme';
 
 export default function ContactScreen() {
@@ -88,7 +89,7 @@ export default function ContactScreen() {
         onPress={() => {
           if (!contactEmail) return;
           setError(null);
-          const body = `Hola, equipo de TecnoRAEE.\n\n${topic.fields.map((field) => `${field}: `).join('\n')}\n\nGracias.`;
+          const body = `Hola, equipo de ${brand.name}.\n\n${topic.fields.map((field) => `${field}: `).join('\n')}\n\nGracias.`;
           void Linking.openURL(
             `mailto:${contactEmail}?subject=${encodeURIComponent(topic.subject)}&body=${encodeURIComponent(body)}`
           ).catch(() =>

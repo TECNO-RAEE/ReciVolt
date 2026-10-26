@@ -4,6 +4,7 @@ import { Linking, Text, View } from 'react-native';
 import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { termsUrl } from '@/config/legal';
+import { brand } from '@/config/brand';
 import { colors } from '@/theme';
 
 export default function TermsScreen() {
@@ -17,7 +18,7 @@ export default function TermsScreen() {
         </Text>
         <Text style={[s.body, { textAlign: 'center' }]}>
           {termsUrl
-            ? 'Consultá el documento vigente con las condiciones de uso de TecnoRAEE.'
+            ? `Consultá el documento vigente con las condiciones de uso de ${brand.name}.`
             : 'Cuando estén disponibles, podrás consultar el documento desde esta sección.'}
         </Text>
       </View>

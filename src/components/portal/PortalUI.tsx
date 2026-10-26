@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { Href } from 'expo-router';
-import { useEffect, useRef, type ComponentProps, type ReactNode } from 'react';
+import { useEffect, useRef, type ComponentProps, type ComponentRef, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -255,7 +255,7 @@ export function PortalNav({
   selected,
   onSelect,
 }: Readonly<{ items: readonly string[]; selected: string; onSelect: (item: string) => void }>) {
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const positions = useRef<Record<string, number>>({});
   useEffect(() => {
     scroll.current?.scrollTo({

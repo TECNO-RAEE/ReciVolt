@@ -104,7 +104,7 @@ export default function CompanyScreen() {
               {data.points.length === 0 && (
                 <PortalMenuItem
                   title="Sumá un punto verde"
-                  description="Coordiná el alta con el equipo de TecnoRAEE."
+                  description={`Coordiná el alta con el equipo de ${brand.name}.`}
                   icon="leaf-outline"
                   onPress={() => router.push('/contact?topic=point')}
                 />
@@ -244,13 +244,13 @@ function CompanyPoints({
     <View style={s.stack}>
       <Text style={s.body}>
         {owner
-          ? 'Revisá la ubicación, los horarios y qué dispositivos recibe cada punto. El alta de nuevos puntos la realiza TecnoRAEE.'
+          ? `Revisá la ubicación, los horarios y qué dispositivos recibe cada punto. El alta de nuevos puntos la realiza ${brand.name}.`
           : 'Consultá los puntos de recepción y los dispositivos que reciben.'}
       </Text>
       <PortalField label="Buscar puntos por nombre o ID" value={search} onChangeText={setSearch} />
       {data.points.length === 0 && (
         <Text style={s.body}>
-          Todavía no hay puntos verdes. El equipo de TecnoRAEE coordina el alta de nuevos puntos.
+          Todavía no hay puntos verdes. El equipo de {brand.name} coordina el alta de nuevos puntos.
         </Text>
       )}
       {data.points

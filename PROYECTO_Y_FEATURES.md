@@ -1,12 +1,12 @@
-# TecnoRAEE — Proyecto y funcionalidades
+# EcoRAEE — Proyecto y funcionalidades
 
 **Fecha de revisión:** 14 de octubre de 2026.
 
 Este documento describe las funcionalidades presentes en el código del entorno de trabajo, sus flujos y los pendientes. Los resultados de pruebas previas se identifican por fecha; no constituyen una nueva comprobación del servicio remoto.
 
-## Qué es TecnoRAEE
+## Qué es EcoRAEE
 
-TecnoRAEE conecta personas que tienen residuos de aparatos eléctricos y electrónicos (RAEE) con organizaciones que los reciben. Permite encontrar puntos verdes, registrar una entrega, comprobar su recepción física y reconocer la participación del ciudadano mediante puntos canjeables.
+EcoRAEE conecta personas que tienen residuos de aparatos eléctricos y electrónicos (RAEE) con organizaciones que los reciben. Permite encontrar puntos verdes, registrar una entrega, comprobar su recepción física y reconocer la participación del ciudadano mediante puntos canjeables.
 
 La plataforma reúne tres recorridos: ciudadano, empresa receptora y administración. Cada cuenta accede al recorrido que corresponda a sus permisos reales.
 

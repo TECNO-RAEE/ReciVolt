@@ -4,6 +4,7 @@ import { usePortalData } from '@/hooks/usePortalData';
 import { getRewards } from '@/services/reward.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import { RewardPhoto } from '@/components/rewards/RewardsUI';
+import { brand } from '@/config/brand';
 import { PortalField, PortalLoading, portalStyles as s } from './PortalUI';
 
 export function CompanyRewards({ companyId }: Readonly<{ companyId: string }>) {
@@ -14,7 +15,7 @@ export function CompanyRewards({ companyId }: Readonly<{ companyId: string }>) {
   return (
     <View style={s.stack}>
       <Text style={s.body}>
-        Premios de tu empresa. TecnoRAEE administra su publicación; tu equipo valida los códigos al
+        Premios de tu empresa. {brand.name} administra su publicación; tu equipo valida los códigos al
         entregarlos.
       </Text>
       <PortalField label="Buscar premios por nombre o ID" value={search} onChangeText={setSearch} />

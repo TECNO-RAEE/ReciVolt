@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-import type { ColorValue } from 'react-native';
 
+
+import type { ColorValue } from 'react-native';
 import { colors, fonts } from '@/theme';
 
 type TabIconName = 'home' | 'map' | 'gift' | 'person';
@@ -12,7 +13,7 @@ function tabIcon(name: TabIconName) {
     size,
     focused,
   }: Readonly<{ color: ColorValue; size: number; focused: boolean }>) {
-    return <Ionicons name={focused ? name : `${name}-outline`} size={size} color={color} />;
+    return <Ionicons name={focused ? name : `${name}-outline`} size={size} color={color ? (color as string) : undefined} />;
   };
 }
 
