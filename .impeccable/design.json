@@ -3,6 +3,17 @@
   "generatedAt": "2026-10-03T18:05:41.108Z",
   "title": "Design System: TecnoRAEE",
   "extensions": {
+    "contributionRules": {
+      "instructions": "AGENTS.md",
+      "contributing": "CONTRIBUTING.md",
+      "designAuthority": "DESIGN.md",
+      "reviewTemplate": ".github/pull_request_template.md",
+      "scope": "Agentes de IA, desarrolladores, diseñadores y cualquier colaborador que cambie la interfaz.",
+      "completion": "Revisar contra DESIGN.md, corregir las desviaciones introducidas y registrar evidencia y pendientes antes de considerar terminada una contribución de interfaz.",
+      "evidence": "Capturas de las pantallas afectadas en móvil y escritorio, estados comprobados y limitaciones reales. Para cambios sin efecto visual, indicar que no aplica y explicar el motivo.",
+      "enforcement": "Revisión del autor y del revisor; no configura un bloqueo automático de GitHub.",
+      "approvedPendingNavigation": "Decisión del 26/10/2026 pendiente de implementación: Inicio · Puntos verdes · Premios · Marketplace · Perfil. Dispositivos reacondicionados en catálogo de Empresa, vista previa de hasta cuatro productos en el punto verde y catálogo global de Marketplace. La muestra HTML conserva la navegación implementada hasta realizar ese cambio."
+    },
     "colorMeta": {
       "primary": {
         "displayName": "Verde bosque",
@@ -426,6 +437,11 @@
       "Español cercano con voseo y nombres consistentes."
     ],
     "rules": [
+      {
+        "name": "Revisión obligatoria",
+        "body": "Toda contribución de interfaz, humana o asistida por IA, debe leerse y revisarse contra `DESIGN.md` antes de considerarse terminada. Corregir las desviaciones introducidas y registrar la evidencia de revisión y los pendientes. Una revisión no realizada no se declara aprobada.",
+        "section": "overview"
+      },
       {
         "name": "Una sola identidad",
         "body": "Cambiar de rol cambia las tareas disponibles, no la marca, la familia tipográfica ni el header.",

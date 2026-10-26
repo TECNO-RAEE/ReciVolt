@@ -182,6 +182,16 @@ Los valores del frontmatter son la referencia documentada. Su implementación es
 
 Si código y guía difieren, identificar la desviación y corregirla dentro del alcance del trabajo. No convertir un estilo aislado en una nueva regla ni cambiar la identidad global de manera incidental. Cuando se apruebe un cambio del sistema, actualizar componente, tema, esta guía y su representación en `.impeccable/design.json` juntos. Los ejemplos de ese archivo son muestras estáticas para documentación, no componentes de producción.
 
+### Acuerdo para agentes y colaboradores
+
+**The Revisión obligatoria Rule.** Toda contribución de interfaz, humana o asistida por IA, debe leerse y revisarse contra `DESIGN.md` antes de considerarse terminada. Corregir las desviaciones introducidas y registrar la evidencia de revisión y los pendientes. Una revisión no realizada no se declara aprobada.
+
+Antes de trabajar, leer [AGENTS.md](AGENTS.md) y [CONTRIBUTING.md](CONTRIBUTING.md), e identificar los componentes compartidos que se reutilizarán. Esto incluye prototipos, imágenes de referencia y trabajos iniciados desde Trello. Las skills y los generadores se adaptan a esta guía. Las reglas locales de una herramienta deben remitir a estos documentos para evitar versiones contradictorias.
+
+La entrega de una tarea o PR con cambios visuales incluye capturas de las pantallas afectadas en móvil y escritorio, los estados comprobados y cualquier limitación de la revisión. Si falta una comprobación, registrarla como pendiente; una captura no acredita pruebas físicas ni cumplimiento completo de accesibilidad. Los cambios sin efecto visual pueden indicar que este criterio no aplica y explicar por qué.
+
+El autor y quien revisa usan la checklist final de esta guía. Una desviación de identidad requiere una decisión explícita del usuario; documentar esa decisión y actualizar las fuentes compartidas al implementarla. Crear una imagen o registrar una tarea no cambia por sí solo la interfaz en producción.
+
 ## Colors
 
 Usar los nombres semánticos del tema mediante `@/theme`. Las ilustraciones y el mapa pueden tener sus propios colores; esos colores no crean variantes de botones ni una segunda paleta para formularios.
@@ -298,6 +308,8 @@ Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del
 
 La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en ese orden. Sección activa en verde con icono lleno; inactiva con icono de contorno. “Mis entregas” se encuentra en Perfil; el acceso rápido de Inicio puede llevar allí. La sección del mapa se llama “Puntos verdes”. El mapa ocupa el bloque de Inicio que antes mostraba premios destacados. Las capturas antiguas con otra navegación no son referencia de estructura.
 
+**Decisión aprobada el 26/10/2026, pendiente de implementación:** agregar Marketplace junto a Premios: **Inicio · Puntos verdes · Premios · Marketplace · Perfil**. La sección se llama Marketplace y sus productos, “Dispositivos reacondicionados”. Empresa administra su catálogo; el detalle del punto verde muestra hasta cuatro productos y “Ver catálogo completo”; Marketplace reúne los productos de todas las empresas. Las tareas MK-01 a MK-08 están en Trello. Esta decisión no significa que las pantallas ya estén implementadas; al implementarlas, actualizar también la muestra de navegación de `.impeccable/design.json`.
+
 Las pestañas operativas de empresa y admin permanecen debajo del mismo header. No reemplazarlo por un sidebar, una barra oscura o un título distinto por cada pestaña.
 
 ### Botones y campos
@@ -356,5 +368,6 @@ Los controles nuevos deben ofrecer un área de interacción de al menos (44 × 4
 4. No hay recortes, superposiciones ni scroll horizontal de lectura en móvil y escritorio.
 5. Los estados y la navegación conservan el comportamiento acordado y los permisos reales.
 6. Si cambió un componente o token del sistema, también se actualizaron esta guía y el sidecar.
+7. La tarea o PR incluye evidencia de la revisión, estados y tamaños comprobados, y pendientes explícitos. Autor y revisor no dan por aprobadas comprobaciones que no realizaron.
 
 Las fuentes concretas son los archivos enlazados y la implementación actual de Inicio, Perfil, Puntos verdes y Premios. La estructura documental sigue el [formato DESIGN.md](https://raw.githubusercontent.com/google-labs-code/design.md/main/docs/spec.md); las decisiones visuales pertenecen a TecnoRAEE.
