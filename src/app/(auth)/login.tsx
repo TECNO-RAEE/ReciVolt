@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -10,11 +9,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
+  type TextInputInstance,
   View,
 } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { login } from '@/services/auth.service';
 import { colors, fonts } from '@/theme';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
@@ -69,7 +69,7 @@ export default function LoginScreen() {
   const { prepareAuth } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [authErrorVisible, setAuthErrorVisible] = useState(false);
-  const passwordInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInputInstance>(null);
   const restorePasswordFocusOnDismiss = useRef(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -132,7 +132,7 @@ export default function LoginScreen() {
           {/* Correo */}
           <View style={styles.emailField}>
             <AuthTextField
-              label="Correo Electrónico"
+              label="Correo electrónico"
               iconName="mail-outline"
               value={email}
               onChangeText={setEmail}
@@ -174,22 +174,11 @@ export default function LoginScreen() {
           </Pressable>
 
           {/* Iniciar sesión */}
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.loginButton,
-              pressed && styles.pressed,
-              loading && styles.disabled,
-            ]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.textOnPrimary} />
-            ) : (
-              <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-            )}
-          </Pressable>
+          <ActionButton
+            title="Iniciar sesión"
+            onPress={() => void handleLogin()}
+            loading={loading}
+          />
 
           {formError && (
             <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>
@@ -207,14 +196,12 @@ export default function LoginScreen() {
           <View style={styles.createAccountSection}>
             <Text style={styles.createAccountLabel}>¿Todavía no tenés una cuenta?</Text>
 
-            <Pressable
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.createAccountButton, pressed && styles.pressed]}
+            <ActionButton
+              title="Crear cuenta"
+              secondary
               onPress={() => router.push(authRoute('/register', intent))}
               disabled={loading}
-            >
-              <Text style={styles.createAccountButtonText}>Crear Cuenta</Text>
-            </Pressable>
+            />
           </View>
         </View>
       </ScrollView>
@@ -248,26 +235,17 @@ export default function LoginScreen() {
               El correo o la contraseña no son correctos. Revisá los datos e intentá nuevamente.
             </Text>
 
-            <Pressable
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.modalPrimaryButton, pressed && styles.pressed]}
-              onPress={() => {
-                closeAuthError(true);
-              }}
-            >
-              <Text style={styles.modalPrimaryButtonText}>Reintentar</Text>
-            </Pressable>
-
-            <Pressable
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.modalSecondaryButton, pressed && styles.pressed]}
-              onPress={() => {
-                closeAuthError(false);
-                router.push('/forgot-password');
-              }}
-            >
-              <Text style={styles.modalSecondaryButtonText}>Recuperar contraseña</Text>
-            </Pressable>
+            <View style={styles.modalActions}>
+              <ActionButton title="Reintentar" onPress={() => closeAuthError(true)} />
+              <ActionButton
+                title="Recuperar contraseña"
+                secondary
+                onPress={() => {
+                  closeAuthError(false);
+                  router.push('/forgot-password');
+                }}
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -279,8 +257,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
   screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 18 },
-  pressed: { opacity: 0.75 },
-  disabled: { opacity: 0.6 },
   error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
 
   subtitle: {
@@ -293,14 +269,6 @@ const styles = StyleSheet.create({
   passwordField: { width: '100%' },
   forgotPassword: { minHeight: 44, alignSelf: 'flex-end', justifyContent: 'center' },
   forgotPasswordText: { fontFamily: fonts.regular, fontSize: 14, color: colors.primaryDark },
-  loginButton: {
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-  },
-  loginButtonText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.textOnPrimary },
   feedback: {
     fontFamily: fonts.regular,
     fontSize: 15,
@@ -314,16 +282,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.text,
   },
-  createAccountButton: {
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.borderPrimary,
-    backgroundColor: colors.surface,
-  },
-  createAccountButtonText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.primaryDark },
 
   modalOverlay: {
     flex: 1,
@@ -373,33 +331,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textSecondary,
   },
-  modalPrimaryButton: {
-    width: '100%',
-    minHeight: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-  },
-  modalPrimaryButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textOnPrimary,
-  },
-  modalSecondaryButton: {
-    width: '100%',
-    minHeight: 48,
-    marginTop: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.borderPrimary,
-    backgroundColor: colors.surface,
-  },
-  modalSecondaryButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.primaryDark,
-  },
+  modalActions: { width: '100%', gap: 8 },
 });

@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { colors, fonts } from '@/theme';
 
 export default function NewPasswordScreen() {
@@ -77,7 +77,7 @@ export default function NewPasswordScreen() {
           {/* Nueva contraseña */}
           <View style={styles.passwordField}>
             <AuthTextField
-              label="Nueva Contraseña"
+              label="Nueva contraseña"
               iconName="lock-closed-outline"
               value={password}
               onChangeText={setPassword}
@@ -106,7 +106,7 @@ export default function NewPasswordScreen() {
           {/* Confirmación */}
           <View style={styles.confirmPasswordField}>
             <AuthTextField
-              label="Confirmar Contraseña"
+              label="Confirmar contraseña"
               iconName="lock-closed-outline"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -133,18 +133,11 @@ export default function NewPasswordScreen() {
             />
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={saving}
-            style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]}
-            onPress={handleSavePassword}
-          >
-            {saving ? (
-              <ActivityIndicator color={colors.textOnPrimary} />
-            ) : (
-              <Text style={styles.saveButtonText}>Guardar Contraseña</Text>
-            )}
-          </Pressable>
+          <ActionButton
+            title="Guardar contraseña"
+            onPress={() => void handleSavePassword()}
+            loading={saving}
+          />
           {error && (
             <Text accessibilityRole="alert" style={styles.error}>
               {error}
@@ -160,8 +153,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
   screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 18 },
-  pressed: { opacity: 0.75 },
-  disabled: { opacity: 0.6 },
   error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
 
   description: {
@@ -173,12 +164,4 @@ const styles = StyleSheet.create({
   passwordField: { width: '100%' },
   confirmPasswordField: { width: '100%' },
   eyeButton: { width: 45, height: '100%', alignItems: 'center', justifyContent: 'center' },
-  saveButton: {
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-  },
-  saveButtonText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.textOnPrimary },
 });

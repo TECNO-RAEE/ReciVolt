@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { colors, fonts } from '@/theme';
 import { register } from '@/services/auth.service';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
@@ -172,7 +172,7 @@ export default function CreateAccountScreen() {
           {/* Correo */}
           <View style={styles.emailField}>
             <AuthTextField
-              label="Correo Electrónico"
+              label="Correo electrónico"
               iconName="mail-outline"
               value={email}
               onChangeText={setEmail}
@@ -217,7 +217,7 @@ export default function CreateAccountScreen() {
           {/* Confirmar contraseña */}
           <View style={styles.confirmPasswordField}>
             <AuthTextField
-              label="Confirmar Contraseña"
+              label="Confirmar contraseña"
               iconName="lock-closed-outline"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -251,35 +251,22 @@ export default function CreateAccountScreen() {
           )}
 
           {/* Crear cuenta */}
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [
-              styles.createButton,
-              pressed && styles.pressed,
-              loading && styles.disabled,
-            ]}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.textOnPrimary} />
-            ) : (
-              <Text style={styles.createButtonText}>Crear cuenta</Text>
-            )}
-          </Pressable>
+          <ActionButton
+            title="Crear cuenta"
+            onPress={() => void handleRegister()}
+            loading={loading}
+          />
 
           {/* Login */}
           <View style={styles.loginSection}>
             <Text style={styles.loginLabel}>¿Ya tenés cuenta?</Text>
 
-            <Pressable
-              style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}
-              accessibilityRole="button"
+            <ActionButton
+              title="Iniciar sesión"
+              secondary
               onPress={() => router.replace(authRoute('/login', registrationIntent))}
               disabled={loading}
-            >
-              <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-            </Pressable>
+            />
           </View>
         </View>
       </ScrollView>
@@ -304,15 +291,6 @@ const styles = StyleSheet.create({
   passwordField: { width: '100%' },
   confirmPasswordField: { width: '100%' },
   eyeButton: { width: 45, height: '100%', alignItems: 'center', justifyContent: 'center' },
-  createButton: {
-    minHeight: 50,
-    marginTop: 6,
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  createButtonText: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.textOnPrimary },
   loginSection: { gap: 8 },
   loginLabel: {
     fontFamily: fonts.regular,
@@ -320,15 +298,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textSecondary,
   },
-  loginButton: {
-    minHeight: 50,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loginButtonText: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.primary },
   companyLink: {
     flexDirection: 'row',
     alignItems: 'center',
