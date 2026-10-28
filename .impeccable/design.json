@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-03T18:05:41.108Z",
-  "title": "Design System: EcoRAEE",
+  "title": "Design System: ReciVolt",
   "extensions": {
     "contributionRules": {
       "instructions": "AGENTS.md",
@@ -428,7 +428,7 @@
   ],
   "narrative": {
     "northStar": "Naturaleza cercana",
-    "overview": "EcoRAEE debe sentirse clara, amable y confiable. La referencia principal es la vista del ciudadano: verde natural, fondo casi blanco, tarjetas suaves, Roboto y acciones fáciles de reconocer. Las ilustraciones de hojas y planeta acompañan el impacto ambiental; los datos, mapas y acciones tienen prioridad visual.\n\nEste documento es obligatorio para agentes, desarrolladores, diseñadores y cualquier persona que cambie la interfaz. Se aplica a la vista del ciudadano, autenticación, empresa y administración. Empresa y admin admiten mayor densidad de información; conservan la identidad de la app.",
+    "overview": "ReciVolt debe sentirse clara, amable y confiable. La referencia principal es la vista del ciudadano: verde natural, fondo casi blanco, tarjetas suaves, Roboto y acciones fáciles de reconocer. Las ilustraciones de hojas y planeta acompañan el impacto ambiental; los datos, mapas y acciones tienen prioridad visual.\n\nEste documento es obligatorio para agentes, desarrolladores, diseñadores y cualquier persona que cambie la interfaz. Se aplica a la vista del ciudadano, autenticación, empresa y administración. Empresa y admin admiten mayor densidad de información; conservan la identidad de la app.",
     "keyCharacteristics": [
       "Verde profundo para acciones y selección; verde suave para información y acompañamiento.",
       "Texto oscuro, títulos claros y espacios que permiten leer sin esfuerzo.",

@@ -234,7 +234,7 @@ otp_expiry = 3600
 
 # The app verifies a six-digit recovery code instead of following a session link.
 [auth.email.template.recovery]
-subject = "Recuperá tu contraseña de EcoRAEE"
+subject = "Recuperá tu contraseña de ReciVolt"
 content_path = "./supabase/templates/recovery.html"
 
 # Use a production-ready SMTP server

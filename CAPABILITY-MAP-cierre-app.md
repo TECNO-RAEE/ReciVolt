@@ -1,4 +1,4 @@
-# Mapa de capacidades: cierre del alcance actual de EcoRAEE
+# Mapa de capacidades: cierre del alcance actual de ReciVolt
 
 Estado: los cuatro módulos (`cierre-flujos`, `alta-universidad`, `alta-cafe`, `validacion-cierre`) están aprobados y completados para el alcance web de ejemplo el 14 de octubre de 2026. Alcance actualizado con la aclaración «es de ejemplo»; module ids y dependencias conservados. Evidencia y límites en `tasks/validation.md`. Sin despliegue ni altas operativas.
 

@@ -1,5 +1,5 @@
 ---
-name: EcoRAEE
+name: ReciVolt
 description: Lenguaje de diseño compartido basado en la vista del ciudadano.
 colors:
   primary: '#246440'
@@ -154,13 +154,13 @@ components:
     padding: 18px 16px
 ---
 
-# Lenguaje de diseño de EcoRAEE
+# Lenguaje de diseño de ReciVolt
 
 ## Overview
 
 **Creative North Star: "Naturaleza cercana"**
 
-EcoRAEE debe sentirse clara, amable y confiable. La referencia principal es la vista del ciudadano: verde natural, fondo casi blanco, tarjetas suaves, Roboto y acciones fáciles de reconocer. Las ilustraciones de hojas y planeta acompañan el impacto ambiental; los datos, mapas y acciones tienen prioridad visual.
+ReciVolt debe sentirse clara, amable y confiable. La referencia principal es la vista del ciudadano: verde natural, fondo casi blanco, tarjetas suaves, Roboto y acciones fáciles de reconocer. Las ilustraciones de hojas y planeta acompañan el impacto ambiental; los datos, mapas y acciones tienen prioridad visual.
 
 Este documento es obligatorio para agentes, desarrolladores, diseñadores y cualquier persona que cambie la interfaz. Se aplica a la vista del ciudadano, autenticación, empresa y administración. Empresa y admin admiten mayor densidad de información; conservan la identidad de la app.
 
@@ -370,4 +370,4 @@ Los controles nuevos deben ofrecer un área de interacción de al menos (44 × 4
 6. Si cambió un componente o token del sistema, también se actualizaron esta guía y el sidecar.
 7. La tarea o PR incluye evidencia de la revisión, estados y tamaños comprobados, y pendientes explícitos. Autor y revisor no dan por aprobadas comprobaciones que no realizaron.
 
-Las fuentes concretas son los archivos enlazados y la implementación actual de Inicio, Perfil, Puntos verdes y Premios. La estructura documental sigue el [formato DESIGN.md](https://raw.githubusercontent.com/google-labs-code/design.md/main/docs/spec.md); las decisiones visuales pertenecen a EcoRAEE.
+Las fuentes concretas son los archivos enlazados y la implementación actual de Inicio, Perfil, Puntos verdes y Premios. La estructura documental sigue el [formato DESIGN.md](https://raw.githubusercontent.com/google-labs-code/design.md/main/docs/spec.md); las decisiones visuales pertenecen a ReciVolt.

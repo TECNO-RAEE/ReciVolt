@@ -52,7 +52,7 @@ export function parseOperationCode(value: string): {
 } {
   const normalized = value.trim().toUpperCase();
   const match =
-    /^(?:(?:TECNO-RAEE|ECO-RAEE):(DELIVERY|PICKUP|REWARD):)?(TRR?-[A-F0-9]{8}(?:-[A-F0-9]{8}){3})$/.exec(
+    /^(?:(?:TECNO-RAEE|ECO-RAEE|RECIVOLT):(DELIVERY|PICKUP|REWARD):)?(TRR?-[A-F0-9]{8}(?:-[A-F0-9]{8}){3})$/.exec(
       normalized
     );
   if (!match) throw new Error('Ingresá o escaneá un código válido.');
