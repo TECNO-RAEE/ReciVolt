@@ -1,6 +1,6 @@
 import { brand } from './brand';
 
-// Leave unset until EcoRAEE has an official contact address.
+// Leave unset until ReciVolt has an official contact address.
 export const contactEmail = process.env.EXPO_PUBLIC_CONTACT_EMAIL?.trim() || '';
 
 export const contactTopics = {

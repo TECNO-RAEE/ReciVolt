@@ -6,7 +6,7 @@ Estado: aprobada el 13 de octubre de 2026; cierre técnico verificado el 14 de o
 
 ## Objetivo
 
-Dejar los recorridos ya implementados de EcoRAEE coherentes y verificables para ciudadano, empresa y administración, como base de las altas de Universidad de Pilar y Cafe del Pellegrini. El cierre se mide por comportamiento observado y persistido, no por la presencia de pantallas o por reportes anteriores.
+Dejar los recorridos ya implementados de ReciVolt coherentes y verificables para ciudadano, empresa y administración, como base de las altas de Universidad de Pilar y Cafe del Pellegrini. El cierre se mide por comportamiento observado y persistido, no por la presencia de pantallas o por reportes anteriores.
 
 ## Supuestos y alcance
 

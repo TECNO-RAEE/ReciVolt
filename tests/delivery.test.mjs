@@ -16,6 +16,8 @@ test('lector identifica entregas, retiros y recompensas; admite código manual',
   assert.equal(parseOperationCode(`TECNO-RAEE:REWARD:${code}`).type, 'REWARD');
   assert.equal(parseOperationCode(`ECO-RAEE:PICKUP:${code}`).type, 'PICKUP');
   assert.equal(parseOperationCode(`ECO-RAEE:REWARD:${code}`).type, 'REWARD');
+  assert.equal(parseOperationCode(`RECIVOLT:PICKUP:${code}`).type, 'PICKUP');
+  assert.equal(parseOperationCode(`RECIVOLT:REWARD:${code}`).type, 'REWARD');
   for (const invalid of ['TR-1234', 'https://example.com', `EVIL:DELIVERY:${code}`, `${code}x`])
     assert.throws(() => parseOperationCode(invalid));
 });

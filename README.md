@@ -1,4 +1,4 @@
-# EcoRAEE
+# ReciVolt
 
 La descripción funcional del proyecto, los recorridos por rol y los pendientes están en [Proyecto y funcionalidades](PROYECTO_Y_FEATURES.md).
 
@@ -40,7 +40,7 @@ npx supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta
 npx supabase status
 ```
 
-Puertos de EcoRAEE: API 55321 y PostgreSQL 55322. Las migraciones se conservan localmente y no se incluyen en esta branch. Para reproducir el esquema en otro entorno se necesitan esos archivos por separado.
+Puertos de ReciVolt: API 55321 y PostgreSQL 55322. Las migraciones se conservan localmente y no se incluyen en esta branch. Para reproducir el esquema en otro entorno se necesitan esos archivos por separado.
 
 Se preserva `profiles` y su trigger. Las tablas nuevas tienen RLS y grants explícitos. La función del trigger no se puede invocar directamente desde la API pública. Los comandos de empresa/admin verifican los permisos en DB y ejecutan cambios relacionados en una transacción. Las invitaciones usan la Edge Function `company-invitation`, desplegada en el remoto y autenticada dentro de la función.
 
