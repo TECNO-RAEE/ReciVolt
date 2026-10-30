@@ -204,7 +204,7 @@ Usar los nombres semánticos del tema mediante `@/theme`. Las ilustraciones y el
 | Superficies claras | `background`, `surface`, `tabBarBackground`, `border` | Fondo de pantalla, tarjetas, navegación y separación de contenido.                          |
 | Tinta y gris       | `text`, `textSecondary`, `brandDark`                  | Títulos, contenido principal, ayudas y metadatos.                                           |
 | Estado crítico     | `danger`, `dangerBackground`                          | Errores y acciones destructivas con texto que explique su efecto.                           |
-| Apoyos existentes  | `avatarBackground`, `navInactive`                     | Avatar sin foto y navegación inactiva, en sus componentes actuales.                         |
+| Apoyos existentes  | `avatarBackground`, `navInactive`, `overlay`         | Avatar sin foto, navegación inactiva y capa modal translúcida.                             |
 
 **The Color con significado Rule.** El verde identifica acciones y selección; el rojo identifica problemas o consecuencias destructivas. Un estado siempre lleva texto o icono comprensible además del color.
 
