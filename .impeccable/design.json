@@ -438,6 +438,22 @@
       "description": "PointsCard con moneda y cifra global. Saldo ilustrativo de documentación.",
       "html": "<article class=\"ds-points\"><svg aria-hidden=\"true\" width=\"80\" height=\"80\" viewBox=\"0 0 88 88\"><defs><linearGradient id=\"ds-ring\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop stop-color=\"#D7EAC8\"/><stop offset=\"1\" stop-color=\"#9CCFA2\"/></linearGradient><linearGradient id=\"ds-coin\" x1=\"0\" y1=\"0\" x2=\".9\" y2=\"1\"><stop stop-color=\"#72AC66\"/><stop offset=\".55\" stop-color=\"#34834D\"/><stop offset=\"1\" stop-color=\"#125234\"/></linearGradient></defs><circle cx=\"44\" cy=\"44\" r=\"43\" fill=\"url(#ds-ring)\"/><circle cx=\"44\" cy=\"44\" r=\"35.5\" fill=\"url(#ds-coin)\" stroke=\"#88BD86\" stroke-width=\"2\"/><path d=\"M17 52A30 30 0 0 0 63 66\" fill=\"none\" stroke=\"#C3E5BD\" stroke-opacity=\".3\" stroke-width=\"2\"/><g transform=\"translate(25 25)\"><path d=\"M8 30C2 13 15 4 34 3C35 19 29 30 15 30L29 9C21 15 15 22 8 35Z\" fill=\"#fff\"/></g></svg><div class=\"ds-points-copy\"><span class=\"ds-points-label\">Tus puntos</span><strong class=\"ds-points-value\">128</strong><span class=\"ds-points-hint\">Ejemplo de saldo global.</span></div></article>",
       "css": ".ds-points{display:flex;align-items:center;gap:14px;min-height:136px;padding:18px 16px;border:1px solid #fff;border-radius:22px;background:#E7F3EB;color:#102530;box-shadow:0 7px 20px rgba(22,65,39,.10)}.ds-points svg{flex-shrink:0}.ds-points-copy{display:flex;flex-direction:column;gap:4px}.ds-points-label{font:500 14px Roboto,sans-serif}.ds-points-value{font:700 40px/44px Roboto,sans-serif;font-variant-numeric:tabular-nums}.ds-points-hint{color:#53676D;font:400 13px/17px Roboto,sans-serif}"
+    },
+    {
+      "name": "Tarjeta informativa",
+      "kind": "card",
+      "refersTo": "info-card",
+      "description": "InfoCard unificada con icono de 44x44 px (radio 12), textos y accesorio o contenido expandible. Muestra de documentación.",
+      "html": "<article class=\"ds-info-card\"><div class=\"ds-info-card-row\"><div class=\"ds-info-icon\"><svg aria-hidden=\"true\" width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg></div><div class=\"ds-info-text\"><strong class=\"ds-info-title\">Punto verde de ejemplo</strong><span class=\"ds-info-subtitle\">Dirección de ejemplo</span></div><span class=\"ds-code-pill\">TR-11112222</span></div></article>",
+      "css": ".ds-info-card{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:#fff;border:1px solid #E2EBE6}.ds-info-card-row{display:flex;align-items:center;gap:12px}.ds-info-icon{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:#E7F3EB;color:#246440}.ds-info-text{display:flex;flex-direction:column;flex:1;gap:2px}.ds-info-title{font:600 16px/22px Roboto,sans-serif;color:#102530}.ds-info-subtitle{font:400 13px/18px Roboto,sans-serif;color:#53676D}.ds-code-pill{padding:4px 10px;border-radius:8px;background:#F1F7F3;border:1px solid #E2EBE6;font:700 12px Roboto,sans-serif;color:#102530;letter-spacing:.5px}"
+    },
+    {
+      "name": "Selector numérico",
+      "kind": "input",
+      "refersTo": "numeric-stepper",
+      "description": "NumericStepper con botones circulares accesibles (+ / -) de 44x44 px (radio 22). Muestra de documentación.",
+      "html": "<div class=\"ds-stepper\"><button class=\"ds-stepper-btn\" type=\"button\" aria-label=\"Disminuir cantidad\"><svg aria-hidden=\"true\" width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14\"/></svg></button><span class=\"ds-stepper-val\">1</span><button class=\"ds-stepper-btn\" type=\"button\" aria-label=\"Aumentar cantidad\"><svg aria-hidden=\"true\" width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5v14\"/></svg></button></div>",
+      "css": ".ds-stepper{display:flex;align-items:center;justify-content:center;gap:16px}.ds-stepper-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid #E2EBE6;border-radius:22px;background:#fff;color:#246440;cursor:pointer}.ds-stepper-btn:hover{opacity:.85}.ds-stepper-btn:active{opacity:.7}.ds-stepper-val{min-width:52px;text-align:center;font:700 24px/28px Roboto,sans-serif;color:#102530}"
     }
   ],
   "narrative": {

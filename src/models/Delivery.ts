@@ -67,16 +67,32 @@ export function deliveryQuantity(value: string, allowZero = false): number {
     throw new Error(`Usá cantidades enteras entre ${allowZero ? 0 : 1} y 999.`);
   return Number(normalized);
 }
-export function deliveryEstimate(items: DeliveryItem[], quantities?: Record<string, string>) {
+export function deliveryEstimate(
+  items: DeliveryItem[],
+  quantities?: Record<string, string | number>
+) {
   return items.reduce(
     (total, item) => {
-      const quantity = quantities
-        ? deliveryQuantity(quantities[item.categoryId] ?? '', true)
-        : item.declaredQuantity;
+      const raw = quantities ? quantities[item.categoryId] : undefined;
+      const quantity =
+        raw !== undefined ? deliveryQuantity(String(raw), true) : (item.confirmedQuantity ?? item.declaredQuantity);
       return {
         points: total.points + quantity * item.pointsSnapshot,
       };
     },
     { points: 0 }
   );
+}
+export function deliveryTotalUnits(
+  items: DeliveryItem[],
+  quantities?: Record<string, string | number>
+): number {
+  return items.reduce((sum, item) => {
+    const raw = quantities ? quantities[item.categoryId] : undefined;
+    const qty =
+      raw !== undefined
+        ? deliveryQuantity(String(raw), true)
+        : (item.confirmedQuantity ?? item.declaredQuantity);
+    return sum + qty;
+  }, 0);
 }

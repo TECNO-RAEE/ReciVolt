@@ -293,6 +293,8 @@ Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Header de pantalla                                  | [ScreenHeader](src/components/ui/ScreenHeader.tsx)                                                |
 | Acción principal o secundaria                       | [ActionButton](src/components/ui/ActionButton.tsx)                                                |
+| Tarjeta informativa, fila de datos y código         | [InfoCard](src/components/ui/InfoCard.tsx)                                                        |
+| Selector numérico accesible (+ / -)                 | [NumericStepper](src/components/ui/NumericStepper.tsx)                                             |
 | Página, tarjetas, saldo, premio y aviso ciudadano   | [RewardsUI](src/components/rewards/RewardsUI.tsx)                                                 |
 | Página, campos, menú, pestañas y estados de gestión | [PortalUI](src/components/portal/PortalUI.tsx) y [AdminPage](src/components/portal/AdminPage.tsx) |
 | Campo de autenticación                              | [AuthTextField](src/components/auth/AuthTextField.tsx)                                            |
@@ -319,6 +321,8 @@ Las pestañas operativas de empresa y admin permanecen debajo del mismo header. 
 Los campos tienen etiqueta persistente, borde suave y fondo blanco. El placeholder muestra un ejemplo o una pista y no reemplaza la etiqueta. Reutilizar la variante de autenticación o gestión según el contexto. Los campos compactos numéricos de gestión usan el ancho existente (96); no aplicar ese ancho a direcciones o nombres. Mostrar validación junto al campo y conservar el contenido cuando falla el envío.
 
 ### Tarjetas, puntos y premios
+
+`InfoCard` provee la estructura unificada de tarjeta con icono circular, título, subtítulo, accesorio lateral (`CodePill` o badge de estado) y contenido expandible opcional (stepper, subtotales o divisores). Soporta variante estándar y destacada (`highlight`).
 
 `PointsCard` muestra “Tus puntos”, moneda ecológica y saldo global con protagonismo. El resumen general no se presenta como una cuenta distinta por empresa. Los puntos canjeables son el único saldo del ciudadano. No hay XP, niveles ni barras de progreso. El impacto se explica con orientación para entregar RAEE, sin métricas inventadas.
 

@@ -1,53 +1,82 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Ionicons } from '@expo/vector-icons';
+import { useCameraPermissions } from 'expo-camera';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
-import { ActionButton } from '@/components/ui/ActionButton';
-import { DeliverySummary } from '@/components/delivery/DeliverySummary';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
-  PortalPage,
-  PortalField,
-  PortalLink,
-  PortalFeedback,
-  portalStyles as s,
-} from '@/components/portal/PortalUI';
+  DeliveryConfirmationView,
+  RedemptionConfirmationView,
+  ScannerHelpModal,
+  ScannerLookupView,
+} from '@/components/scanner';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { usePortalAction } from '@/hooks/usePortalData';
+import { useScrollReset } from '@/hooks/useScrollReset';
 import {
   deliveryQuantity,
   effectiveDeliveryStatus,
   parseOperationCode,
   type Delivery,
 } from '@/models/Delivery';
+import type { Redemption } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { deliveryCommand } from '@/services/delivery.service';
 import { rewardCommand } from '@/services/reward.service';
-import type { Redemption } from '@/models/Reward';
+import { colors, fonts } from '@/theme';
 
 export default function ScannerScreen() {
   const { company } = useAuth();
   const { code: initialCode } = useLocalSearchParams<{ code?: string }>();
-  if (!company)
+
+  if (!company) {
     return (
-      <PortalPage title="Recepción">
-        <Text style={s.body}>Seleccioná una empresa activa.</Text>
-      </PortalPage>
+      <View style={styles.screen}>
+        <ScreenHeader title="Validar código" back="/company" />
+        <View style={styles.centerContainer}>
+          <View style={styles.emptyIconCircle}>
+            <Ionicons name="business-outline" size={36} color={colors.textSecondary} />
+          </View>
+          <Text style={styles.emptyTitle}>Seleccioná una empresa activa</Text>
+          <Text style={styles.emptySubtitle}>
+            Para escanear y validar entregas o premios debés tener una empresa activa asignada.
+          </Text>
+          <ActionButton
+            title="Ir al panel de empresa"
+            onPress={() => router.replace('/company')}
+          />
+        </View>
+      </View>
     );
+  }
+
   return (
-    <Scanner key={company.companyId} companyId={company.companyId} initialCode={initialCode} />
+    <Scanner
+      key={company.companyId}
+      companyId={company.companyId}
+      companyName={company.companyName}
+      initialCode={initialCode}
+    />
   );
 }
+
 function Scanner({
   companyId,
+  companyName,
   initialCode,
-}: Readonly<{ companyId: string; initialCode?: string }>) {
+}: Readonly<{ companyId: string; companyName: string; initialCode?: string }>) {
   const [permission, requestPermission] = useCameraPermissions();
   const [camera, setCamera] = useState(false);
   const scanLock = useRef(false);
   const [code, setCode] = useState(initialCode ?? '');
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [redemption, setRedemption] = useState<Redemption | null>(null);
-  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [helpModalVisible, setHelpModalVisible] = useState(false);
+
+  const scroll = useScrollReset();
   const action = usePortalAction();
+
   useFocusEffect(
     useCallback(
       () => () => {
@@ -56,6 +85,7 @@ function Scanner({
       []
     )
   );
+
   async function lookup(raw: string) {
     setDelivery(null);
     setRedemption(null);
@@ -66,188 +96,229 @@ function Scanner({
       setRedemption(found);
       return;
     }
-    if (parsed.type !== 'DELIVERY')
+    if (parsed.type !== 'DELIVERY') {
       throw new Error(
         parsed.type === 'PICKUP'
           ? 'Este código es de retiro. Ese flujo todavía no está habilitado.'
           : 'Este código es de recompensa. Ese flujo todavía no está habilitado.'
       );
-    setDelivery(null);
+    }
     const found = await deliveryCommand('lookup', { companyId, code: parsed.code });
     setCode(parsed.code);
     setDelivery(found);
     setQuantities(
       Object.fromEntries(
-        found.items.map((i) => [i.categoryId, String(i.confirmedQuantity ?? i.declaredQuantity)])
+        found.items.map((i) => [i.categoryId, i.confirmedQuantity ?? i.declaredQuantity])
       )
     );
   }
-  return (
-    <PortalPage
-      title="Entregas y canjes"
-      subtitle="Verificá los dispositivos o el premio antes de confirmar."
-      back="/company"
+
+  const handleToggleCamera = () => {
+    void action.run(async () => {
+      if (camera) {
+        setCamera(false);
+        return;
+      }
+      const granted = permission?.granted || (await requestPermission()).granted;
+      if (!granted) {
+        throw new Error(
+          'Podés habilitar la cámara desde los ajustes o ingresar el código manualmente.'
+        );
+      }
+      scanLock.current = false;
+      setCamera(true);
+    }, '');
+  };
+
+  const handleConfirmDelivery = () => {
+    if (!delivery) return;
+    void action.run(async () => {
+      const received = await deliveryCommand('confirm', {
+        companyId,
+        code: delivery.code,
+        items: delivery.items.map((i) => ({
+          categoryId: i.categoryId,
+          quantity: deliveryQuantity(
+            String(quantities[i.categoryId] ?? (i.confirmedQuantity ?? i.declaredQuantity)),
+            true
+          ),
+        })),
+      });
+      setDelivery(received);
+      if (received.status !== 'CONFIRMED') {
+        throw new Error('El código venció antes de la recepción. No se acreditaron puntos.');
+      }
+    }, 'Recepción confirmada. Puntos acreditados con éxito.');
+  };
+
+  const handleConfirmRedemption = () => {
+    if (!redemption) return;
+    void action.run(async () => {
+      const received = await rewardCommand('confirm', {
+        companyId,
+        code: redemption.code,
+      });
+      setRedemption(received);
+    }, 'Premio entregado. El código ya no puede volver a usarse.');
+  };
+
+  const handleReset = () => {
+    setDelivery(null);
+    setRedemption(null);
+    setCode('');
+    setCamera(false);
+  };
+
+  // Screen header help action button
+  const headerAction = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Ayuda sobre cómo validar códigos"
+      style={styles.headerHelpBtn}
+      onPress={() => setHelpModalVisible(true)}
     >
-      {!delivery && !redemption && (
-        <>
-          <ActionButton
-            title={camera ? 'Cerrar cámara' : 'Escanear QR / código de barras'}
-            secondary
-            loading={action.busy}
-            onPress={() =>
+      <Ionicons name="help-circle-outline" size={24} color={colors.primaryDark} />
+    </Pressable>
+  );
+
+  let title = 'Validar código';
+  if (delivery) {
+    const status = effectiveDeliveryStatus(delivery);
+    title = status === 'PENDING_RECEPTION' ? 'Confirmar entrega' : 'Detalle de entrega';
+  } else if (redemption) {
+    title = 'Validar canje';
+  }
+
+  return (
+    <View style={styles.screen}>
+      <ScreenHeader title={title} back="/company" action={headerAction} />
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {!delivery && !redemption && (
+          <ScannerLookupView
+            camera={camera}
+            permissionGranted={Boolean(permission?.granted)}
+            onMountError={() => {
+              setCamera(false);
               void action.run(async () => {
-                if (camera) {
-                  setCamera(false);
-                  return;
-                }
-                const granted = permission?.granted || (await requestPermission()).granted;
-                if (!granted)
-                  throw new Error(
-                    'Podés habilitar la cámara desde los ajustes o ingresar el código manualmente.'
-                  );
-                scanLock.current = false;
-                setCamera(true);
-              }, '')
-            }
-          />
-          {camera && permission?.granted && (
-            <CameraView
-              style={{ height: 300, width: '100%' }}
-              facing="back"
-              mode="picture"
-              barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128'] }}
-              onMountError={() => {
-                setCamera(false);
-                void action.run(async () => {
-                  throw new Error('No pudimos abrir la cámara. Ingresá el código manualmente.');
-                });
-              }}
-              onBarcodeScanned={({ data }) => {
-                if (scanLock.current) return;
-                scanLock.current = true;
-                setCamera(false);
-                void action.run(() => lookup(data), 'Código identificado.');
-              }}
-            />
-          )}
-          <PortalField
-            label="Código de entrega o premio"
-            placeholder="TR-… o contenido del QR"
-            value={code}
-            onChangeText={setCode}
-            editable={!action.busy}
-            autoCapitalize="characters"
-          />
-          <ActionButton
-            title="Buscar código"
-            loading={action.busy}
-            onPress={() => {
+                throw new Error(
+                  'No pudimos abrir la cámara. Ingresá el código manualmente.'
+                );
+              });
+            }}
+            onBarcodeScanned={(data) => {
+              if (scanLock.current) return;
+              scanLock.current = true;
+              setCamera(false);
+              void action.run(() => lookup(data), 'Código identificado.');
+            }}
+            onToggleCamera={handleToggleCamera}
+            onCloseCamera={() => setCamera(false)}
+            code={code}
+            onChangeCode={(val) => setCode(val.toUpperCase())}
+            onClearCode={() => setCode('')}
+            onSearch={() => {
               setCamera(false);
               void action.run(() => lookup(code), 'Código identificado.');
             }}
+            busy={action.busy}
+            error={action.error}
+            notice={action.notice}
           />
-        </>
-      )}
-      {redemption && (
-        <View style={s.stack}>
-          <Text style={s.subtitle}>{redemption.reward.title}</Text>
-          <Text style={s.body}>
-            {redemption.reward.businessName} · {redemption.citizenName}
-          </Text>
-          <Text style={s.body}>
-            {redemption.status === 'RESERVED' ? 'Pendiente de uso' : 'Premio ya entregado'}
-          </Text>
-          <Text style={s.hint}>
-            {redemption.pointsCost} puntos globales ya descontados al reservar.
-          </Text>
-          {redemption.status === 'RESERVED' && (
-            <ActionButton
-              title="Confirmar entrega del premio"
-              loading={action.busy}
-              onPress={() =>
-                void action.run(async () => {
-                  const received = await rewardCommand('confirm', {
-                    companyId,
-                    code: redemption.code,
-                  });
-                  setRedemption(received);
-                }, 'Premio entregado. El código ya no puede volver a usarse.')
-              }
-            />
-          )}
-          <ActionButton
-            title="Escanear otro código"
-            secondary
-            disabled={action.busy}
-            onPress={() => {
-              setRedemption(null);
-              setCode('');
-            }}
+        )}
+
+        {delivery && (
+          <DeliveryConfirmationView
+            delivery={delivery}
+            companyName={companyName}
+            quantities={quantities}
+            onQuantityChange={(categoryId, quantity) =>
+              setQuantities((prev) => ({ ...prev, [categoryId]: quantity }))
+            }
+            busy={action.busy}
+            error={action.error}
+            notice={action.notice}
+            onConfirmDelivery={handleConfirmDelivery}
+            onRefresh={() => void action.run(() => lookup(delivery.code), '')}
+            onReset={handleReset}
           />
-        </View>
-      )}
-      {delivery && (
-        <>
-          <Text style={s.subtitle}>{delivery.citizenName}</Text>
-          <DeliverySummary delivery={delivery} />
-          {effectiveDeliveryStatus(delivery) === 'PENDING_RECEPTION' && (
-            <View style={s.section}>
-              <Text style={s.subtitle}>Cantidades recibidas</Text>
-              <Text style={s.body}>
-                Ajustá lo recibido. Usá 0 para las categorías que no llegaron.
-              </Text>
-              {delivery.items.map((i) => (
-                <PortalField
-                  key={i.categoryId}
-                  label={`${i.categoryName} · ${i.declaredQuantity} declarados`}
-                  value={quantities[i.categoryId] ?? ''}
-                  onChangeText={(v) => setQuantities((q) => ({ ...q, [i.categoryId]: v }))}
-                  keyboardType="number-pad"
-                  maxLength={3}
-                  editable={!action.busy}
-                />
-              ))}
-              <ActionButton
-                title="Confirmar recepción y acreditar"
-                loading={action.busy}
-                onPress={() =>
-                  void action.run(async () => {
-                    const received = await deliveryCommand('confirm', {
-                      companyId,
-                      code: delivery.code,
-                      items: delivery.items.map((i) => ({
-                        categoryId: i.categoryId,
-                        quantity: deliveryQuantity(quantities[i.categoryId], true),
-                      })),
-                    });
-                    setDelivery(received);
-                    if (received.status !== 'CONFIRMED')
-                      throw new Error(
-                        'El código venció antes de la recepción. No se acreditaron puntos.'
-                      );
-                  }, 'Recepción confirmada. Puntos acreditados.')
-                }
-              />
-            </View>
-          )}
-          <PortalLink
-            title="Consultar de nuevo"
-            disabled={action.busy}
-            onPress={() => void action.run(() => lookup(delivery.code), '')}
+        )}
+
+        {redemption && (
+          <RedemptionConfirmationView
+            redemption={redemption}
+            companyName={companyName}
+            busy={action.busy}
+            error={action.error}
+            notice={action.notice}
+            onConfirmRedemption={handleConfirmRedemption}
+            onRefresh={() => void action.run(() => lookup(redemption.code), '')}
+            onReset={handleReset}
           />
-          <ActionButton
-            title="Recibir otra entrega"
-            secondary
-            disabled={action.busy}
-            onPress={() => {
-              setDelivery(null);
-              setCode('');
-            }}
-          />
-        </>
-      )}
-      <PortalFeedback error={action.error} notice={action.notice} />
-      <PortalLink title="Volver al portal" onPress={() => router.replace('/company')} />
-    </PortalPage>
+        )}
+      </ScrollView>
+
+      <ScannerHelpModal
+        visible={helpModalVisible}
+        onClose={() => setHelpModalVisible(false)}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  container: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    gap: 14,
+  },
+  emptyIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: colors.surfaceSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    maxWidth: 320,
+    marginBottom: 10,
+  },
+  headerHelpBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
