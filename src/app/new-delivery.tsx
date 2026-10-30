@@ -65,6 +65,12 @@ export default function NewDeliveryScreen() {
     };
   }, []);
 
+  // Trade-off documentado: una vez despachado el comando de creación al servidor, marcamos la
+  // foto como despachada para que el cleanup de unmount NO la elimine. Esto previene pérdida de datos
+  // si el backend persistió la entrega pero la respuesta cliente se perdió por timeout o red caída.
+  // Contrapartida aceptada: si el create falla de forma definitiva (ej. validación del servidor)
+  // y el usuario sale de la pantalla, la foto queda huérfana en Storage para privilegiar la integridad
+  // de datos sobre la recolección de basura.
   const handleRequestDispatched = useCallback(() => {
     dispatchedRequestRef.current = true;
   }, []);
@@ -360,6 +366,8 @@ function DeliveryForm({
       if (!request.current || request.current.signature !== signature) {
         request.current = { id: Crypto.randomUUID(), signature };
       }
+      // Notificar despacho antes del comando. Si la respuesta se pierde o entra en timeout pero
+      // el servidor sí creó la entrega, el cleanup del unmount conservará la foto en Storage.
       onRequestDispatched();
       const delivery = await deliveryCommand('create', {
         ...payload,
