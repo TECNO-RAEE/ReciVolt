@@ -75,7 +75,7 @@ export function deliveryEstimate(
     (total, item) => {
       const raw = quantities ? quantities[item.categoryId] : undefined;
       const quantity =
-        raw !== undefined ? deliveryQuantity(String(raw), true) : item.declaredQuantity;
+        raw !== undefined ? deliveryQuantity(String(raw), true) : (item.confirmedQuantity ?? item.declaredQuantity);
       return {
         points: total.points + quantity * item.pointsSnapshot,
       };

@@ -69,3 +69,18 @@ test('scanner deliveryTotalUnits calcula unidades físicas reales y detecta entr
   // Soporta valores numéricos y en string
   assert.equal(deliveryTotalUnits(items, { 'cat-1': '2', 'cat-2': '5' }), 7);
 });
+
+test("scanner deliveryEstimate y deliveryTotalUnits usan el mismo fallback ante claves faltantes", () => {
+  const items = [
+    { categoryId: "cat-1", categoryName: "Notebook", declaredQuantity: 1, confirmedQuantity: 2, pointsSnapshot: 200 },
+    { categoryId: "cat-2", categoryName: "Cables", declaredQuantity: 3, confirmedQuantity: null, pointsSnapshot: 10 },
+  ];
+
+  // Sin quantities: cat-1 usa confirmed (2), cat-2 usa declared (3)
+  assert.equal(deliveryTotalUnits(items), 5);
+  assert.deepEqual(deliveryEstimate(items), { points: 2 * 200 + 3 * 10 });
+
+  // Con quantities parcial (solo cat-2 ajustado a 1): cat-1 cae en fallback confirmed (2)
+  assert.equal(deliveryTotalUnits(items, { "cat-2": 1 }), 3);
+  assert.deepEqual(deliveryEstimate(items, { "cat-2": 1 }), { points: 2 * 200 + 1 * 10 });
+});
