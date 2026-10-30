@@ -1,5 +1,5 @@
 import { supabase } from '@/config/supabase';
-import type { DeviceCategory } from '@/models/DeviceCategory';
+import { getDeviceCategoryGroupKey, type DeviceCategory } from '@/models/DeviceCategory';
 
 export async function getDeviceCategories(): Promise<DeviceCategory[]> {
   const { data, error } = await supabase
@@ -8,5 +8,5 @@ export async function getDeviceCategories(): Promise<DeviceCategory[]> {
     .eq('active', true)
     .order('sort_order');
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map((row) => ({ ...row, groupKey: getDeviceCategoryGroupKey(row) }));
 }

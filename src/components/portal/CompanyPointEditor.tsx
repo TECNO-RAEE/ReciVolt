@@ -11,8 +11,9 @@ import {
 } from './PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData, ManagedPoint, PointInput } from '@/models/Portal';
+import { getDeviceCategoryGroupKey, type DeviceIntakeMode } from '@/models/DeviceCategory';
 import { weekdays, parseSchedules, scheduleText } from '@/models/PointSchedule';
-import { portalCommand } from '@/services/portal.service';
+import { portalCommand, saveGreenPointDevicePolicy } from '@/services/portal.service';
 import { AddressField } from './AddressField';
 import { LocationPicker } from './LocationPicker';
 import { joinPointAddress, splitPointAddress } from '@/models/PointAddress';
@@ -42,10 +43,36 @@ export function CompanyPointEditor({
     [description, setDescription] = useState(point?.description ?? '');
   const [timeZone, setTimeZone] = useState(point?.timeZone ?? 'America/Argentina/Buenos_Aires');
   const [active, setActive] = useState(point?.active ?? false),
-    [pickupEnabled, setPickupEnabled] = useState(point?.pickupEnabled ?? false);
-  const [categories, setCategories] = useState<string[]>(point?.categories ?? []);
+    [pickupEnabled, setPickupEnabled] = useState(
+      point?.pickupEnabled || Object.values(point?.intakePolicies ?? {}).includes('pickup')
+    );
+  const [intakePolicies, setIntakePolicies] = useState<Record<string, DeviceIntakeMode>>(
+    point?.intakePolicies ??
+      Object.fromEntries((point?.categories ?? []).map((id) => [id, 'onsite' as const]))
+  );
+  const [intakeConfirmed, setIntakeConfirmed] = useState(point?.intakeConfirmed ?? false);
+  const intakeGroups = [
+    { key: 'informatica', title: 'Informática y comunicación' },
+    { key: 'electrodomesticos', title: 'Electrodomésticos' },
+    { key: 'insumos', title: 'Insumos eléctricos' },
+    { key: 'herramientas', title: 'Herramientas' },
+    { key: 'juguetes', title: 'Juguetes y equipos' },
+    { key: 'especiales', title: 'Residuos especiales' },
+    { key: 'otros', title: 'Otros dispositivos' },
+  ]
+    .map((group) => ({
+      ...group,
+      categories: data.categories.filter(
+        (category) => getDeviceCategoryGroupKey(category) === group.key
+      ),
+    }))
+    .filter((group) => group.categories.length > 0);
   const [days, setDays] = useState(scheduleText(point?.schedules ?? []));
   const action = usePortalAction();
+  const setIntakeMode = (categoryId: string, mode: DeviceIntakeMode) => {
+    setIntakePolicies((current) => ({ ...current, [categoryId]: mode }));
+    if (mode === 'pickup') setPickupEnabled(true);
+  };
   const lat = Number(latitude.replace(',', '.')),
     lng = Number(longitude.replace(',', '.'));
   const coordinate = useMemo(
@@ -158,22 +185,45 @@ export function CompanyPointEditor({
           editable={!action.busy}
         />
       )}
-      <Text style={s.subtitle}>Dispositivos recibidos</Text>
-      {data.categories.map((c) => (
-        <PortalChoice
-          key={c.id}
-          label={c.name}
-          selected={categories.includes(c.id)}
-          disabled={action.busy}
-          onPress={() =>
-            setCategories(
-              categories.includes(c.id)
-                ? categories.filter((id) => id !== c.id)
-                : [...categories, c.id]
-            )
-          }
-        />
+      <Text style={s.subtitle}>Qué dispositivos recibe este punto</Text>
+      <Text style={s.hint}>
+        Indicá si se reciben en el lugar, si requieren coordinar un retiro o si no se reciben. Dejá
+        sin seleccionar lo que todavía no esté confirmado.
+      </Text>
+      {intakeGroups.map((group) => (
+        <View key={group.key} style={s.section}>
+          <Text style={s.subtitle}>{group.title}</Text>
+          {group.categories.map((c) => (
+            <View key={c.id} style={s.section}>
+              <Text style={s.body}>{c.name}</Text>
+              <PortalChoice
+                label="Se recibe en el lugar"
+                selected={intakePolicies[c.id] === 'onsite'}
+                disabled={action.busy}
+                onPress={() => setIntakeMode(c.id, 'onsite')}
+              />
+              <PortalChoice
+                label="Requiere coordinar retiro"
+                selected={intakePolicies[c.id] === 'pickup'}
+                disabled={action.busy}
+                onPress={() => setIntakeMode(c.id, 'pickup')}
+              />
+              <PortalChoice
+                label="No se recibe"
+                selected={intakePolicies[c.id] === 'not_accepted'}
+                disabled={action.busy}
+                onPress={() => setIntakeMode(c.id, 'not_accepted')}
+              />
+            </View>
+          ))}
+        </View>
       ))}
+      <PortalToggle
+        label="Confirmo que la información está actualizada para este punto"
+        value={intakeConfirmed}
+        onChange={setIntakeConfirmed}
+        disabled={action.busy}
+      />
       <Text style={s.subtitle}>Horarios</Text>
       <Text style={s.hint}>
         Usá 09:00-18:00. Para horario cortado: 09:00-13:00, 15:00-19:00. Dejá vacío si está cerrado.
@@ -220,7 +270,11 @@ export function CompanyPointEditor({
               lon > 180
             )
               throw new Error('Ingresá coordenadas válidas para ubicar el punto en el mapa.');
-            await savePoint({
+            if (intakeConfirmed && data.categories.some((category) => !intakePolicies[category.id]))
+              throw new Error(
+                'Asigná un estado a cada dispositivo antes de confirmar la política.'
+              );
+            const saved = await savePoint({
               id: point?.id,
               companyId: data.company.id,
               name,
@@ -232,9 +286,23 @@ export function CompanyPointEditor({
               timeZone,
               active,
               pickupEnabled,
-              categories,
+              categories: data.categories
+                .filter((category) => intakePolicies[category.id] === 'onsite')
+                .map((category) => category.id),
               schedules: parseSchedules(days),
             });
+            const savedId =
+              point?.id ??
+              (saved && typeof saved === 'object' && 'id' in saved
+                ? String((saved as { id: unknown }).id)
+                : '');
+            if (!savedId)
+              throw new Error('No pudimos identificar el punto para guardar su política.');
+            const entries = Object.entries(intakePolicies).map(([deviceCategoryId, mode]) => ({
+              deviceCategoryId,
+              mode,
+            }));
+            await saveGreenPointDevicePolicy(savedId, intakeConfirmed, entries);
             await onSaved();
           })
         }

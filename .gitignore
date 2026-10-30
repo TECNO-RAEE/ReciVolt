@@ -17,6 +17,7 @@ node_modules/
 !/supabase/migrations/20261003061458_admin_search_edit.sql
 !/supabase/migrations/20261003063021_admin_search_hardening.sql
 !/supabase/migrations/20261019020455_retire_xp_and_levels.sql
+!/supabase/migrations/20261030090000_point_device_intake_policy.sql
 !/supabase/tests/
 /supabase/tests/*
 !/supabase/tests/global-rewards.test.sql

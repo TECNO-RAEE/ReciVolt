@@ -28,6 +28,8 @@ export function RewardLocation({
               timeZone: 'America/Argentina/Buenos_Aires',
               pickupEnabled: false,
               categories: [],
+              intakeConfirmed: false,
+              intakePolicies: [],
               schedules: [],
             },
           ]

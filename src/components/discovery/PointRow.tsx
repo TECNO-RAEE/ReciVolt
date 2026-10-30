@@ -15,6 +15,12 @@ export function PointRow({
   onPress,
 }: Readonly<{ point: GreenPoint; location: Coordinates | null; now: Date; onPress: () => void }>) {
   const status = openingStatus(point, now);
+  const listedCategories = [
+    ...point.categories.map((category) => category.name),
+    ...point.intakePolicies
+      .filter((policy) => policy.mode === 'pickup' && policy.category)
+      .map((policy) => `${policy.category!.name} (retiro)`),
+  ];
   return (
     <Pressable
       accessibilityRole="button"
@@ -39,12 +45,11 @@ export function PointRow({
             : status === 'closed'
               ? 'Cerrado ahora'
               : 'Horario sin informar'}
+          {point.intakeConfirmed ? '' : ' · Política de dispositivos pendiente de confirmar'}
           {point.pickupEnabled ? ' · Ofrece retiros' : ''}
         </Text>
         <Text style={styles.address} numberOfLines={2}>
-          {point.categories.length
-            ? point.categories.map((c) => c.name).join(' · ')
-            : 'Categorías sin informar'}
+          {listedCategories.length ? listedCategories.join(' · ') : 'Categorías sin informar'}
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color={colors.primary} />

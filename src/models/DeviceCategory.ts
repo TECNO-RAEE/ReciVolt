@@ -5,6 +5,41 @@ export interface DeviceCategory {
   name: string;
   slug: string;
   description?: string;
+  groupKey?: string;
+}
+
+export type DeviceIntakeMode = 'onsite' | 'pickup' | 'not_accepted';
+
+export interface DeviceIntakePolicy {
+  categoryId: string;
+  mode: DeviceIntakeMode;
+  category?: DeviceCategory;
+}
+
+export function getDeviceCategoryGroupKey(category: {
+  name?: string;
+  slug?: string;
+  groupKey?: string | null;
+}): string {
+  if (category.groupKey) return category.groupKey;
+  const value = `${category.slug ?? ''} ${category.name ?? ''}`
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
+  if (/(pila|bateria|mercurio|termometro|fluorescente|medic|dialisis|cardiologia)/.test(value))
+    return 'especiales';
+  if (/(comput|notebook|tablet|celular|telefono|impres|fax|parlante|audio|comunic)/.test(value))
+    return 'informatica';
+  if (
+    /(electro|heladera|freezer|lavar|cocina|microonda|radio|televisor|aspiradora|ventilador)/.test(
+      value
+    )
+  )
+    return 'electrodomesticos';
+  if (/(cable|enchufe|zapatilla|aplique|cargador|insumo)/.test(value)) return 'insumos';
+  if (/(herramienta|soldar|cortar)/.test(value)) return 'herramientas';
+  if (/(juguete|consola|videojuego|deportivo|tren)/.test(value)) return 'juguetes';
+  return 'otros';
 }
 
 export interface CategoryVisual {
@@ -19,8 +54,8 @@ export interface CategoryVisual {
 export function getCategoryVisual(
   input: { name?: string; slug?: string; description?: string } | string
 ): CategoryVisual {
-  const name = typeof input === 'string' ? input : input.name ?? '';
-  const slug = typeof input === 'string' ? '' : input.slug ?? '';
+  const name = typeof input === 'string' ? input : (input.name ?? '');
+  const slug = typeof input === 'string' ? '' : (input.slug ?? '');
   const customDesc = typeof input === 'string' ? undefined : input.description;
 
   const target = `${slug} ${name}`.toLowerCase();
@@ -108,9 +143,7 @@ export function getCategoryVisual(
   }
 
   // 9. Baterías y pilas
-  if (
-    /\b(bateria|baterias|batería|baterías|pila|pilas|acumulador|acumuladores)\b/i.test(target)
-  ) {
+  if (/\b(bateria|baterias|batería|baterías|pila|pilas|acumulador|acumuladores)\b/i.test(target)) {
     return {
       icon: 'battery-charging',
       description: customDesc || 'Baterías y acumuladores eléctricos.',

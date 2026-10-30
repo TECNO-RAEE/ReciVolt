@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { AccountRequired } from '@/components/auth/AccountRequired';
@@ -15,6 +16,7 @@ import {
   openingStatus,
   weekdayNames,
 } from '@/models/GreenPoint';
+import { getCategoryVisual } from '@/models/DeviceCategory';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { colors, fonts } from '@/theme';
@@ -100,17 +102,75 @@ export default function PointDetailScreen() {
               <Text style={styles.text}>{point.description}</Text>
             )}
             <Text style={styles.sectionTitle}>Qué recibe este punto</Text>
-            {point.categories.length ? (
-              point.categories.map((c) => (
-                <Text style={styles.text} key={c.id}>
-                  {c.name}
-                </Text>
-              ))
+            {!point.intakeConfirmed && (
+              <InfoNote>
+                La política de recepción de este punto todavía está pendiente de confirmar.
+              </InfoNote>
+            )}
+            {point.intakePolicies.some((policy) => policy.mode === 'onsite') ? (
+              point.intakePolicies
+                .filter((policy) => policy.mode === 'onsite')
+                .map((policy) => {
+                  const category = policy.category;
+                  return category ? (
+                    <View style={styles.categoryRow} key={policy.categoryId}>
+                      <MaterialCommunityIcons
+                        name={getCategoryVisual(category).icon}
+                        size={22}
+                        color={colors.brandDark}
+                        accessibilityElementsHidden
+                        importantForAccessibility="no"
+                      />
+                      <Text style={styles.categoryText}>{category.name}</Text>
+                    </View>
+                  ) : null;
+                })
             ) : (
               <Text style={styles.text}>
-                El punto todavía no informó sus categorías. Consultá antes de acercarte.
+                {point.intakePolicies.length
+                  ? 'Este punto no recibe dispositivos para entrega presencial.'
+                  : 'El punto todavía no informó qué dispositivos recibe. Consultá antes de acercarte.'}
               </Text>
             )}
+            {point.intakePolicies.some((policy) => policy.mode === 'pickup') && (
+              <>
+                <Text style={styles.sectionTitle}>Requieren coordinar retiro</Text>
+                {point.intakePolicies
+                  .filter((policy) => policy.mode === 'pickup')
+                  .map((policy) => {
+                    const category = policy.category;
+                    return category ? (
+                      <View style={styles.categoryRow} key={policy.categoryId}>
+                        <MaterialCommunityIcons
+                          name={getCategoryVisual(category).icon}
+                          size={22}
+                          color={colors.brandDark}
+                          accessibilityElementsHidden
+                          importantForAccessibility="no"
+                        />
+                        <Text style={styles.categoryText}>{category.name}</Text>
+                      </View>
+                    ) : null;
+                  })}
+                <Text style={styles.caption}>
+                  Contactá al punto para consultar cómo coordinar el retiro.
+                </Text>
+              </>
+            )}
+            <ActionButton
+              title="Ver lista completa de recepción"
+              secondary
+              onPress={() =>
+                router.push({ pathname: '/device-categories', params: { pointId: point.id } })
+              }
+            />
+            <ActionButton
+              title="Ver qué no recibe"
+              secondary
+              onPress={() =>
+                router.push({ pathname: '/device-unaccepted', params: { pointId: point.id } })
+              }
+            />
             <Text style={styles.sectionTitle}>Horarios</Text>
             <Text style={styles.caption}>Hora local del punto · {point.timeZone}</Text>
             {point.schedules.length ? (
@@ -155,9 +215,11 @@ export default function PointDetailScreen() {
             )}
             {!point.demo && (
               <Text style={styles.text}>
-                {point.pickupEnabled
-                  ? 'Esta organización ofrece retiros desde este punto.'
-                  : 'Este punto recibe entregas presenciales.'}
+                {point.intakePolicies.some((policy) => policy.mode === 'pickup')
+                  ? 'Algunos dispositivos requieren coordinar el retiro con este punto.'
+                  : point.pickupEnabled
+                    ? 'Este punto ofrece retiros. Consultá qué dispositivos incluye.'
+                    : 'Este punto recibe entregas presenciales.'}
               </Text>
             )}
             {!canRegisterDelivery(point) ? (
@@ -198,6 +260,14 @@ const styles = StyleSheet.create({
   text: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.text },
   status: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 16 },
   sectionTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.text, marginTop: 8 },
+  categoryRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  categoryText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.text,
+  },
   caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.brandDark },
   schedule: {
     flexDirection: 'row',
