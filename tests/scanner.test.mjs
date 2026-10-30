@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   deliveryEstimate,
-  deliveryQuantity,
+  deliveryTotalUnits,
   parseOperationCode,
 } from '../src/models/Delivery.ts';
 
@@ -51,23 +51,21 @@ test('scanner deliveryEstimate soporta números enteros directos desde NumericSt
   assert.deepEqual(deliveryEstimate(items, { 'cat-pc': 0, 'cat-bat': 0 }), { points: 0 });
 });
 
-test('scanner detecta entrega vacía (todas las categorías en 0)', () => {
+test('scanner deliveryTotalUnits calcula unidades físicas reales y detecta entrega en 0', () => {
   const items = [
-    { categoryId: 'cat-1', categoryName: 'Notebook', declaredQuantity: 1, pointsSnapshot: 200 },
-    { categoryId: 'cat-2', categoryName: 'Cables', declaredQuantity: 3, pointsSnapshot: 5 },
+    { categoryId: 'cat-1', categoryName: 'Notebook', declaredQuantity: 1, pointsSnapshot: 200, confirmedQuantity: null },
+    { categoryId: 'cat-2', categoryName: 'Cables', declaredQuantity: 3, pointsSnapshot: 5, confirmedQuantity: null },
   ];
 
-  const quantitiesAllZero = { 'cat-1': 0, 'cat-2': 0 };
-  const totalZero = items.reduce(
-    (sum, item) => sum + (quantitiesAllZero[item.categoryId] ?? item.declaredQuantity),
-    0
-  );
-  assert.equal(totalZero, 0, 'El total de unidades físicas debe ser 0 cuando todo se ajusta a 0');
+  // Sin cantidades ajustadas toma lo declarado (1 + 3 = 4)
+  assert.equal(deliveryTotalUnits(items), 4);
 
-  const quantitiesWithItems = { 'cat-1': 1, 'cat-2': 0 };
-  const totalWithItems = items.reduce(
-    (sum, item) => sum + (quantitiesWithItems[item.categoryId] ?? item.declaredQuantity),
-    0
-  );
-  assert.equal(totalWithItems, 1, 'El total de unidades físicas debe ser mayor a 0');
+  // Con cantidades ajustadas parcialmente (1 + 0 = 1)
+  assert.equal(deliveryTotalUnits(items, { 'cat-1': 1, 'cat-2': 0 }), 1);
+
+  // Cuando todo se ajusta a 0, detecta 0 unidades físicas para bloquear confirmación
+  assert.equal(deliveryTotalUnits(items, { 'cat-1': 0, 'cat-2': 0 }), 0);
+
+  // Soporta valores numéricos y en string
+  assert.equal(deliveryTotalUnits(items, { 'cat-1': '2', 'cat-2': '5' }), 7);
 });

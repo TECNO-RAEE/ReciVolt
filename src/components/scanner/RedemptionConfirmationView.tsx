@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
 import type { Redemption } from '@/models/Reward';
@@ -99,17 +99,22 @@ export function RedemptionConfirmationView({
           />
         ) : null}
         <ActionButton
-          title="Consultar de nuevo"
-          secondary
-          disabled={busy}
-          onPress={onRefresh}
-        />
-        <ActionButton
           title="Escanear otro código"
           secondary={isRedemptionReserved}
           disabled={busy}
           onPress={onReset}
         />
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Consultar de nuevo el estado original del código"
+          style={styles.refreshLinkBtn}
+          disabled={busy}
+          onPress={onRefresh}
+        >
+          <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
+          <Text style={styles.refreshLinkText}>Consultar estado original del código</Text>
+        </Pressable>
       </View>
 
       {/* Mensajes de error y notice siempre visibles */}
@@ -157,6 +162,20 @@ const styles = StyleSheet.create({
   actionCol: {
     gap: 12,
     marginTop: 8,
+  },
+  refreshLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  refreshLinkText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   errorText: {
     fontFamily: fonts.regular,

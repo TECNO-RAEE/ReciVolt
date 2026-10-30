@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { DeliveryPhotoPreview } from './DeliveryPhotoPreview';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
@@ -7,6 +7,7 @@ import { NumericStepper } from '@/components/ui/NumericStepper';
 import {
   deliveryEstimate,
   deliveryStatusNames,
+  deliveryTotalUnits,
   effectiveDeliveryStatus,
   type Delivery,
 } from '@/models/Delivery';
@@ -42,10 +43,7 @@ export function DeliveryConfirmationView({
   const isPending = status === 'PENDING_RECEPTION';
 
   const totalAccreditedPoints = deliveryEstimate(delivery.items, quantities).points;
-  const totalPhysicalUnits = delivery.items.reduce((sum, item) => {
-    const qty = quantities[item.categoryId] ?? (item.confirmedQuantity ?? item.declaredQuantity);
-    return sum + qty;
-  }, 0);
+  const totalPhysicalUnits = deliveryTotalUnits(delivery.items, quantities);
 
   return (
     <>
@@ -162,17 +160,22 @@ export function DeliveryConfirmationView({
               onPress={onConfirmDelivery}
             />
             <ActionButton
-              title="Consultar de nuevo"
-              secondary
-              disabled={busy}
-              onPress={onRefresh}
-            />
-            <ActionButton
               title="Cancelar y volver"
               secondary
               disabled={busy}
               onPress={onReset}
             />
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Consultar de nuevo el estado original del código"
+              style={styles.refreshLinkBtn}
+              disabled={busy}
+              onPress={onRefresh}
+            >
+              <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
+              <Text style={styles.refreshLinkText}>Consultar estado original del código</Text>
+            </Pressable>
           </View>
         </>
       ) : (
@@ -201,13 +204,18 @@ export function DeliveryConfirmationView({
           />
 
           <View style={styles.actionCol}>
-            <ActionButton
-              title="Consultar de nuevo"
-              secondary
+            <ActionButton title="Escanear otro código" onPress={onReset} />
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Consultar de nuevo el estado original del código"
+              style={styles.refreshLinkBtn}
               disabled={busy}
               onPress={onRefresh}
-            />
-            <ActionButton title="Escanear otro código" onPress={onReset} />
+            >
+              <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
+              <Text style={styles.refreshLinkText}>Consultar estado original del código</Text>
+            </Pressable>
           </View>
         </>
       )}
@@ -320,6 +328,20 @@ const styles = StyleSheet.create({
   actionCol: {
     gap: 12,
     marginTop: 8,
+  },
+  refreshLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  refreshLinkText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   errorText: {
     fontFamily: fonts.regular,

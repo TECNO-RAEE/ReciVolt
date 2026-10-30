@@ -9,12 +9,19 @@ import {
 } from 'react-native';
 import { colors, fonts } from '@/theme';
 
-export type InfoCardIcon = {
-  name: string;
-  type?: 'ionicons' | 'material';
-  color?: string;
-  backgroundColor?: string;
-};
+export type InfoCardIcon =
+  | {
+      name: keyof typeof Ionicons.glyphMap;
+      type?: 'ionicons';
+      color?: string;
+      backgroundColor?: string;
+    }
+  | {
+      name: keyof typeof MaterialCommunityIcons.glyphMap;
+      type: 'material';
+      color?: string;
+      backgroundColor?: string;
+    };
 
 export type InfoCardProps = {
   readonly title: React.ReactNode;
@@ -23,7 +30,7 @@ export type InfoCardProps = {
   readonly icon?: InfoCardIcon | React.ReactNode;
   readonly right?: React.ReactNode;
   readonly children?: React.ReactNode;
-  readonly variant?: 'default' | 'soft' | 'highlight' | 'warning';
+  readonly variant?: 'default' | 'highlight';
   readonly style?: StyleProp<ViewStyle>;
 };
 
@@ -39,33 +46,44 @@ export function InfoCard({
 }: InfoCardProps) {
   const variantStyle = variantStyles[variant];
 
+  const hasTitle = title !== undefined && title !== null && title !== '';
+  const hasSubtitle = subtitle !== undefined && subtitle !== null && subtitle !== '';
+
+  const renderedTitle =
+    typeof title === 'string' ? (
+      <Text style={[styles.title, variantStyle.title]}>{title}</Text>
+    ) : (
+      title
+    );
+
+  const renderedSubtitle =
+    typeof subtitle === 'string' ? (
+      <Text style={[styles.subtitle, variantStyle.subtitle]}>{subtitle}</Text>
+    ) : (
+      subtitle
+    );
+
   return (
     <View style={[styles.card, variantStyle.card, style]}>
-      {(icon != null || title != null || subtitle != null || right != null) && (
+      {(icon != null || hasTitle || hasSubtitle || right != null) && (
         <View style={styles.headerRow}>
           {renderIcon(icon, variantStyle.iconBg, variantStyle.iconColor)}
 
-          <View style={styles.textCol}>
-            {subtitleFirst ? (
-              <>
-                {subtitle && <Text style={[styles.subtitle, variantStyle.subtitle]}>{subtitle}</Text>}
-                {typeof title === 'string' ? (
-                  <Text style={[styles.title, variantStyle.title]}>{title}</Text>
-                ) : (
-                  title
-                )}
-              </>
-            ) : (
-              <>
-                {typeof title === 'string' ? (
-                  <Text style={[styles.title, variantStyle.title]}>{title}</Text>
-                ) : (
-                  title
-                )}
-                {subtitle && <Text style={[styles.subtitle, variantStyle.subtitle]}>{subtitle}</Text>}
-              </>
-            )}
-          </View>
+          {(hasTitle || hasSubtitle) ? (
+            <View style={styles.textCol}>
+              {subtitleFirst ? (
+                <>
+                  {hasSubtitle ? renderedSubtitle : null}
+                  {hasTitle ? renderedTitle : null}
+                </>
+              ) : (
+                <>
+                  {hasTitle ? renderedTitle : null}
+                  {hasSubtitle ? renderedSubtitle : null}
+                </>
+              )}
+            </View>
+          ) : null}
 
           {right}
         </View>
@@ -103,13 +121,13 @@ function renderIcon(
     <View style={[styles.iconCircle, { backgroundColor: bg }]}>
       {iconConfig.type === 'material' ? (
         <MaterialCommunityIcons
-          name={iconConfig.name as keyof typeof MaterialCommunityIcons.glyphMap}
+          name={iconConfig.name}
           size={22}
           color={color}
         />
       ) : (
         <Ionicons
-          name={iconConfig.name as keyof typeof Ionicons.glyphMap}
+          name={iconConfig.name}
           size={22}
           color={color}
         />
@@ -129,16 +147,6 @@ const variantStyles = {
     title: { color: colors.text },
     subtitle: { color: colors.textSecondary },
   },
-  soft: {
-    card: {
-      backgroundColor: colors.surfaceSoft,
-      borderColor: colors.border,
-    },
-    iconBg: colors.surface,
-    iconColor: colors.textSecondary,
-    title: { color: colors.text },
-    subtitle: { color: colors.textSecondary },
-  },
   highlight: {
     card: {
       backgroundColor: colors.primarySoft,
@@ -147,16 +155,6 @@ const variantStyles = {
     iconBg: colors.surface,
     iconColor: colors.primaryDark,
     title: { color: colors.primaryDark },
-    subtitle: { color: colors.textSecondary },
-  },
-  warning: {
-    card: {
-      backgroundColor: colors.surfaceSoft,
-      borderColor: colors.border,
-    },
-    iconBg: colors.surface,
-    iconColor: colors.primaryDark,
-    title: { color: colors.text },
     subtitle: { color: colors.textSecondary },
   },
 };

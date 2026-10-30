@@ -83,3 +83,16 @@ export function deliveryEstimate(
     { points: 0 }
   );
 }
+export function deliveryTotalUnits(
+  items: DeliveryItem[],
+  quantities?: Record<string, string | number>
+): number {
+  return items.reduce((sum, item) => {
+    const raw = quantities ? quantities[item.categoryId] : undefined;
+    const qty =
+      raw !== undefined
+        ? deliveryQuantity(String(raw), true)
+        : (item.confirmedQuantity ?? item.declaredQuantity);
+    return sum + qty;
+  }, 0);
+}
