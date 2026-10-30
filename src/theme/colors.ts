@@ -12,6 +12,7 @@ export const colors = {
   // Feedback
   danger: '#A30303',
   dangerBackground: 'rgba(179, 38, 30, 0.16)',
+  overlay: 'rgba(16, 40, 44, 0.55)',
 
   // Backgrounds
   background: '#F8FBF9',
