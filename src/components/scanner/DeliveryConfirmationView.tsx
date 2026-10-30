@@ -1,9 +1,11 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { DeliveryPhotoPreview } from './DeliveryPhotoPreview';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { CodePill, InfoCard } from '@/components/ui/InfoCard';
 import { NumericStepper } from '@/components/ui/NumericStepper';
 import {
+  deliveryEstimate,
   deliveryStatusNames,
   effectiveDeliveryStatus,
   type Delivery,
@@ -16,10 +18,11 @@ type DeliveryConfirmationViewProps = {
   readonly companyName: string;
   readonly quantities: Record<string, number>;
   readonly onQuantityChange: (categoryId: string, quantity: number) => void;
-  readonly totalAccreditedPoints: number;
   readonly busy: boolean;
   readonly error?: string | null;
+  readonly notice?: string | null;
   readonly onConfirmDelivery: () => void;
+  readonly onRefresh: () => void;
   readonly onReset: () => void;
 };
 
@@ -28,45 +31,39 @@ export function DeliveryConfirmationView({
   companyName,
   quantities,
   onQuantityChange,
-  totalAccreditedPoints,
   busy,
   error,
+  notice,
   onConfirmDelivery,
+  onRefresh,
   onReset,
 }: DeliveryConfirmationViewProps) {
   const status = effectiveDeliveryStatus(delivery);
   const isPending = status === 'PENDING_RECEPTION';
 
+  const totalAccreditedPoints = deliveryEstimate(delivery.items, quantities).points;
+  const totalPhysicalUnits = delivery.items.reduce((sum, item) => {
+    const qty = quantities[item.categoryId] ?? (item.confirmedQuantity ?? item.declaredQuantity);
+    return sum + qty;
+  }, 0);
+
   return (
     <>
       {/* Card: Organización y Punto */}
-      <View style={styles.card}>
-        <View style={styles.cardRow}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="business" size={22} color={colors.primaryDark} />
-          </View>
-          <View style={styles.cardTextCol}>
-            <Text style={styles.cardTitle}>{delivery.pointName}</Text>
-            <Text style={styles.cardSubtitle}>{delivery.companyName || companyName}</Text>
-          </View>
-        </View>
-      </View>
+      <InfoCard
+        icon={{ name: 'business', color: colors.primaryDark }}
+        title={delivery.pointName}
+        subtitle={delivery.companyName || companyName}
+      />
 
       {/* Card: Datos del Ciudadano */}
-      <View style={styles.card}>
-        <View style={styles.cardRow}>
-          <View style={[styles.iconCircle, { backgroundColor: colors.surfaceSoft }]}>
-            <Ionicons name="person" size={22} color={colors.primary} />
-          </View>
-          <View style={styles.cardTextCol}>
-            <Text style={styles.cardSubtitle}>Ciudadano que entrega</Text>
-            <Text style={styles.cardTitle}>{delivery.citizenName}</Text>
-          </View>
-          <View style={styles.codePill}>
-            <Text style={styles.codePillText}>{delivery.code}</Text>
-          </View>
-        </View>
-      </View>
+      <InfoCard
+        icon={{ name: 'person', color: colors.primary, backgroundColor: colors.surfaceSoft }}
+        subtitleFirst
+        subtitle="Ciudadano que entrega"
+        title={delivery.citizenName}
+        right={<CodePill code={delivery.code} />}
+      />
 
       {/* Vistas según estado */}
       {isPending ? (
@@ -78,30 +75,23 @@ export function DeliveryConfirmationView({
               Ajustá la cantidad efectivamente recibida en el local.
             </Text>
 
-            {delivery.items.map((item, index) => {
+            {delivery.items.map((item) => {
               const visual = getCategoryVisual({ name: item.categoryName });
               const currentQty =
                 quantities[item.categoryId] ??
                 (item.confirmedQuantity ?? item.declaredQuantity);
 
               return (
-                <View key={`${item.categoryId}-${index}`} style={styles.card}>
-                  <View style={styles.cardRow}>
-                    <View style={styles.iconCircle}>
-                      <MaterialCommunityIcons
-                        name={visual.icon}
-                        size={22}
-                        color={colors.primaryDark}
-                      />
-                    </View>
-                    <View style={styles.cardTextCol}>
-                      <Text style={styles.cardTitle}>{item.categoryName}</Text>
-                      <Text style={styles.cardSubtitle}>
-                        Declarado: {item.declaredQuantity} u. · {item.pointsSnapshot} pts c/u
-                      </Text>
-                    </View>
-                  </View>
-
+                <InfoCard
+                  key={item.categoryId}
+                  icon={{
+                    name: visual.icon,
+                    type: 'material',
+                    color: colors.primaryDark,
+                  }}
+                  title={item.categoryName}
+                  subtitle={`Declarado: ${item.declaredQuantity} u. · ${item.pointsSnapshot} pts c/u`}
+                >
                   <View style={styles.cardDivider} />
 
                   <View style={styles.stepperSectionRow}>
@@ -119,27 +109,18 @@ export function DeliveryConfirmationView({
                   <Text style={styles.itemSubtotalText}>
                     Subtotal: {(currentQty * item.pointsSnapshot).toLocaleString('es-AR')} pts
                   </Text>
-                </View>
+                </InfoCard>
               );
             })}
           </View>
 
           {/* Tarjeta destacada: Puntos a acreditar */}
-          <View style={styles.pointsAccreditedCard}>
-            <View style={styles.cardRow}>
-              <View style={styles.pointsIconCircle}>
-                <Ionicons name="sparkles" size={24} color={colors.primaryDark} />
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.pointsAccreditedValue}>
-                  +{totalAccreditedPoints.toLocaleString('es-AR')} puntos a acreditar
-                </Text>
-                <Text style={styles.pointsAccreditedHint}>
-                  Se acreditarán en la cuenta de {delivery.citizenName} al confirmar.
-                </Text>
-              </View>
-            </View>
-          </View>
+          <InfoCard
+            variant="highlight"
+            icon={{ name: 'sparkles', color: colors.primaryDark, backgroundColor: colors.surface }}
+            title={`+${totalAccreditedPoints.toLocaleString('es-AR')} puntos a acreditar`}
+            subtitle={`Se acreditarán en la cuenta de ${delivery.citizenName} al confirmar.`}
+          />
 
           {/* Advertencia preventiva */}
           <View style={styles.warningAlertCard}>
@@ -150,21 +131,26 @@ export function DeliveryConfirmationView({
             </Text>
           </View>
 
+          {/* Validación si todo quedó en 0 */}
+          {totalPhysicalUnits === 0 && (
+            <View style={styles.zeroUnitsAlertCard}>
+              <Ionicons name="information-circle-outline" size={22} color={colors.danger} />
+              <Text style={styles.zeroUnitsAlertText}>
+                No se puede confirmar la recepción con 0 unidades. Si el ciudadano no entregó ningún
+                dispositivo, utilizá &quot;Cancelar y volver&quot;.
+              </Text>
+            </View>
+          )}
+
           {/* Foto adjunta opcional */}
           {delivery.photoPath ? <DeliveryPhotoPreview path={delivery.photoPath} /> : null}
 
           {/* Notas opcionales */}
           {delivery.notes ? (
-            <View style={styles.card}>
+            <View style={styles.notesCard}>
               <Text style={styles.notesLabel}>Notas del ciudadano:</Text>
               <Text style={styles.notesContent}>{delivery.notes}</Text>
             </View>
-          ) : null}
-
-          {error ? (
-            <Text accessibilityRole="alert" style={styles.errorText}>
-              {error}
-            </Text>
           ) : null}
 
           {/* Botones de acción */}
@@ -172,7 +158,14 @@ export function DeliveryConfirmationView({
             <ActionButton
               title="Confirmar recepción"
               loading={busy}
+              disabled={busy || totalPhysicalUnits === 0}
               onPress={onConfirmDelivery}
+            />
+            <ActionButton
+              title="Consultar de nuevo"
+              secondary
+              disabled={busy}
+              onPress={onRefresh}
             />
             <ActionButton
               title="Cancelar y volver"
@@ -185,102 +178,53 @@ export function DeliveryConfirmationView({
       ) : (
         <>
           {/* Entrega ya confirmada, cancelada o vencida */}
-          <View style={styles.card}>
-            <View style={styles.cardRow}>
-              <View
-                style={[
-                  styles.iconCircle,
-                  {
-                    backgroundColor:
-                      status === 'CONFIRMED'
-                        ? colors.primarySoft
-                        : colors.dangerBackground,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={
-                    status === 'CONFIRMED'
-                      ? 'checkmark-circle'
-                      : status === 'CANCELLED'
-                        ? 'close-circle'
-                        : 'time'
-                  }
-                  size={24}
-                  color={status === 'CONFIRMED' ? colors.primary : colors.danger}
-                />
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.cardTitle}>{deliveryStatusNames[status]}</Text>
-                <Text style={styles.cardSubtitle}>
-                  {status === 'CONFIRMED'
-                    ? `Acreditados ${delivery.points.toLocaleString('es-AR')} puntos globales.`
-                    : status === 'CANCELLED'
-                      ? 'Esta entrega fue cancelada por el usuario.'
-                      : 'El código venció antes de ser recibido.'}
-                </Text>
-              </View>
-            </View>
-          </View>
+          <InfoCard
+            icon={{
+              name:
+                status === 'CONFIRMED'
+                  ? 'checkmark-circle'
+                  : status === 'CANCELLED'
+                    ? 'close-circle'
+                    : 'time',
+              color: status === 'CONFIRMED' ? colors.primary : colors.danger,
+              backgroundColor:
+                status === 'CONFIRMED' ? colors.primarySoft : colors.dangerBackground,
+            }}
+            title={deliveryStatusNames[status]}
+            subtitle={
+              status === 'CONFIRMED'
+                ? `Acreditados ${delivery.points.toLocaleString('es-AR')} puntos globales.`
+                : status === 'CANCELLED'
+                  ? 'Esta entrega fue cancelada por el usuario.'
+                  : 'El código venció antes de ser recibido.'
+            }
+          />
 
-          <ActionButton title="Escanear otro código" onPress={onReset} />
+          <View style={styles.actionCol}>
+            <ActionButton
+              title="Consultar de nuevo"
+              secondary
+              disabled={busy}
+              onPress={onRefresh}
+            />
+            <ActionButton title="Escanear otro código" onPress={onReset} />
+          </View>
         </>
       )}
+
+      {/* Notificaciones y errores globales siempre visibles */}
+      {error ? (
+        <Text accessibilityRole="alert" style={styles.errorText}>
+          {error}
+        </Text>
+      ) : null}
+
+      {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  cardTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 22,
-    color: colors.text,
-  },
-  cardSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  codePill: {
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  codePillText: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: colors.text,
-    letterSpacing: 0.5,
-  },
   fieldSection: {
     gap: 10,
   },
@@ -320,33 +264,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'right',
   },
-  pointsAccreditedCard: {
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-  },
-  pointsIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pointsAccreditedValue: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.primaryDark,
-  },
-  pointsAccreditedHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
   warningAlertCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -363,6 +280,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     color: colors.text,
+  },
+  zeroUnitsAlertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: 14,
+    padding: 14,
+  },
+  zeroUnitsAlertText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.danger,
+  },
+  notesCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    padding: 16,
   },
   notesLabel: {
     fontFamily: fonts.semiBold,
@@ -384,6 +325,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.danger,
+    textAlign: 'center',
+  },
+  noticeText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.primaryDark,
     textAlign: 'center',
   },
 });

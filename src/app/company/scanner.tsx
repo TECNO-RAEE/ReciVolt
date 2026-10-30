@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   DeliveryConfirmationView,
@@ -100,7 +100,7 @@ function Scanner({
       throw new Error(
         parsed.type === 'PICKUP'
           ? 'Este código es de retiro. Ese flujo todavía no está habilitado.'
-          : 'Este código no corresponde a una entrega ni a una recompensa.'
+          : 'Este código es de recompensa. Ese flujo todavía no está habilitado.'
       );
     }
     const found = await deliveryCommand('lookup', { companyId, code: parsed.code });
@@ -168,15 +168,6 @@ function Scanner({
     setCode('');
     setCamera(false);
   };
-
-  // Live calculation of points to accredit based on physical adjustment
-  const totalAccreditedPoints = useMemo(() => {
-    if (!delivery) return 0;
-    return delivery.items.reduce((sum, item) => {
-      const qty = quantities[item.categoryId] ?? (item.confirmedQuantity ?? item.declaredQuantity);
-      return sum + qty * item.pointsSnapshot;
-    }, 0);
-  }, [delivery, quantities]);
 
   // Screen header help action button
   const headerAction = (
@@ -248,10 +239,11 @@ function Scanner({
             onQuantityChange={(categoryId, quantity) =>
               setQuantities((prev) => ({ ...prev, [categoryId]: quantity }))
             }
-            totalAccreditedPoints={totalAccreditedPoints}
             busy={action.busy}
             error={action.error}
+            notice={action.notice}
             onConfirmDelivery={handleConfirmDelivery}
+            onRefresh={() => void action.run(() => lookup(delivery.code), '')}
             onReset={handleReset}
           />
         )}
@@ -262,7 +254,9 @@ function Scanner({
             companyName={companyName}
             busy={action.busy}
             error={action.error}
+            notice={action.notice}
             onConfirmRedemption={handleConfirmRedemption}
+            onRefresh={() => void action.run(() => lookup(redemption.code), '')}
             onReset={handleReset}
           />
         )}
