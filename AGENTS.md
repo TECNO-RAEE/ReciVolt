@@ -2,6 +2,16 @@
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
 
+# Pruebas contra Supabase: nunca contra producción
+
+Sin variables `EXPO_PUBLIC_SUPABASE_*`, la app usa el proyecto de **producción**. Para probar cualquier cambio de datos, RPC, RLS o migración:
+
+1. `npm run supabase:start` (requiere Docker) y luego `npm run dev:local -- --web`.
+2. Los cambios de esquema van como migración nueva en `supabase/migrations/` (`npx supabase migration new <nombre>`), probados con `npm run supabase:reset` y `npm run supabase:test`.
+3. No ejecutar `db push`, `apply_migration`, `execute_sql` con escritura ni otras escrituras sobre el proyecto remoto sin confirmación explícita del usuario.
+
+Detalle en [README.md](README.md#supabase-local).
+
 # Lenguaje de diseño obligatorio
 
 Antes de crear o modificar pantallas, componentes, estilos, iconos, navegación o textos de interfaz, leer [DESIGN.md](DESIGN.md). Es la guía compartida para todos los agentes y colaboradores del proyecto, basada en la vista del ciudadano.
