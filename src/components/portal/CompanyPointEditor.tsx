@@ -235,7 +235,6 @@ export function CompanyPointEditor({
               >
                 <PortalSelect
                   label={c.name}
-                  compact
                   value={intakePolicies[c.id] ?? ''}
                   options={intakeOptions}
                   onChange={(mode) => setIntakeMode(c.id, mode)}

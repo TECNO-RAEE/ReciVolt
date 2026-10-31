@@ -263,10 +263,10 @@ export function PortalSelect<T extends string>({
         alignItems: compact ? 'flex-start' : undefined,
       }}
     >
-      <Text style={[portalStyles.label, compact && { minHeight: 48, paddingTop: 14 }]}>
+      <Text style={[portalStyles.label, compact && { flex: 1, minHeight: 48, paddingTop: 14 }]}>
         {label}
       </Text>
-      <View style={{ gap: 4, flex: compact ? 1 : undefined }}>
+      <View style={{ gap: 4, width: compact ? 208 : undefined }}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${label}: ${current?.label ?? ''}`}

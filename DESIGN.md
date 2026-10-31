@@ -313,13 +313,13 @@ La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en
 
 **Decisión aprobada el 26/10/2026, pendiente de implementación:** agregar Marketplace junto a Premios: **Inicio · Puntos verdes · Premios · Marketplace · Perfil**. La sección se llama Marketplace y sus productos, “Dispositivos reacondicionados”. Empresa administra su catálogo; el detalle del punto verde muestra hasta cuatro productos y “Ver catálogo completo”; Marketplace reúne los productos de todas las empresas. Las tareas MK-01 a MK-08 están en Trello. Esta decisión no significa que las pantallas ya estén implementadas; al implementarlas, actualizar también la muestra de navegación de `.impeccable/design.json`.
 
-Empresa navega desde el panel "Mi empresa": acción principal del escáner arriba y un menú de filas con chevron que abre cada sección en su propia pantalla con `ScreenHeader`. Las pestañas operativas de admin permanecen debajo del mismo header. No reemplazarlo por un sidebar, una barra oscura o un título distinto por cada pestaña.
+Empresa navega desde el panel "Mi empresa": `OrganizationCard` con nombre y rol, acción principal del escáner arriba y un menú de filas `PortalMenuItem` (icono, título y chevron; radio 12, separación 12) que abre cada sección en su propia pantalla con `ScreenHeader` mediante `CompanyPage`. Los trabajadores sólo ven el escáner y el historial de entregas. Las pestañas operativas de admin permanecen debajo del mismo header. No reemplazarlo por un sidebar, una barra oscura o un título distinto por cada pestaña.
 
 ### Botones y campos
 
 `ActionButton` usa altura mínima (50), variante sólida o secundaria con borde. Elegir una acción principal por bloque de tarea. Durante el envío, mostrar carga y deshabilitar el control; la opacidad actual de pulsación, carga o deshabilitado es (0.7). No comunicar una acción destructiva sólo cambiando el color.
 
-Los campos tienen etiqueta persistente, borde suave y fondo blanco. El placeholder muestra un ejemplo o una pista y no reemplaza la etiqueta. Reutilizar la variante de autenticación o gestión según el contexto. Los campos compactos numéricos de gestión usan el ancho existente (96); no aplicar ese ancho a direcciones o nombres. Mostrar validación junto al campo y conservar el contenido cuando falla el envío.
+Los campos tienen etiqueta persistente, borde suave y fondo blanco. El placeholder muestra un ejemplo o una pista y no reemplaza la etiqueta. Reutilizar la variante de autenticación o gestión según el contexto. Los campos compactos numéricos de gestión usan el ancho existente (96); no aplicar ese ancho a direcciones o nombres. Mostrar validación junto al campo y conservar el contenido cuando falla el envío. Para elegir entre pocas opciones fijas (estado de un punto, rol, modo de recepción) usar `PortalSelect`: etiqueta persistente y opciones desplegadas en línea; la variante compacta pone la etiqueta a la izquierda y fija el selector en (208). Un `PortalField` con `suffix` muestra la unidad dentro del mismo borde, por ejemplo "puntos por unidad".
 
 ### Tarjetas, puntos y premios
 
