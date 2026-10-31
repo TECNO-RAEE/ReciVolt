@@ -153,8 +153,16 @@ begin
     values(point_id,category,v_mode);
   end loop;
 
-  -- The existing QR delivery flow remains for categories physically received at this point.
-  delete from public.green_point_device_categories where green_point_id=point_id;
+  -- Keep QR categories in sync without deleting onsite rows that the trigger
+  -- would also remove from the policy table.
+  delete from public.green_point_device_categories as category
+  where category.green_point_id=point_id
+    and not exists (
+      select 1 from public.green_point_device_policies as policy
+      where policy.green_point_id=point_id
+        and policy.device_category_id=category.device_category_id
+        and policy.mode='onsite'
+    );
   insert into public.green_point_device_categories(green_point_id,device_category_id)
   select point_id, policy.device_category_id from public.green_point_device_policies as policy
   where policy.green_point_id=point_id and policy.mode='onsite'
