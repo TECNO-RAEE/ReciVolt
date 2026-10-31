@@ -213,3 +213,72 @@ export function SuccessArtwork() {
     </Svg>
   );
 }
+
+// Shared scene for the account screens: soft cloud, side leaves and a central motif.
+export function AuthArtwork({ kind }: Readonly<{ kind: 'lock' | 'account' | 'recovery' }>) {
+  return (
+    <Svg width={240} height={150} viewBox="0 0 240 150" {...decorativeAccessibility}>
+      <Path
+        d="M44 128c-22 0-32-20-20-36 6-8 16-10 24-8 2-24 26-40 50-32 10-22 44-26 60-8 16-8 38 0 42 18 18 0 30 16 26 32-3 10-12 16-24 16z"
+        fill="#E7F3EB"
+      />
+      <G fill="none" stroke="#5A9B56" strokeWidth="2.5" strokeLinecap="round">
+        <Path d="M58 140C52 112 46 92 34 76M186 140c6-30 14-52 28-66" />
+      </G>
+      <G fill="#80B96C">
+        <Path d="M40 96C22 92 16 78 22 64c14 6 20 18 18 32ZM52 120c-16 2-26-6-28-20 14-2 24 6 28 20Z" />
+        <Path d="M198 96c4-18 18-26 32-22-2 16-14 24-32 22ZM190 122c10-14 24-16 34-8-8 12-22 14-34 8Z" />
+      </G>
+      <G fill="#A5CF89">
+        <Path d="M50 82c-6-12-2-24 8-30 6 12 2 24-8 30ZM204 76c-2-12 4-22 16-24 2 12-4 22-16 24Z" />
+      </G>
+      {kind === 'lock' && (
+        <G>
+          <Circle cx="120" cy="80" r="50" fill="#246440" />
+          <Path
+            d="M104 74v-10a16 16 0 0 1 32 0v10"
+            fill="none"
+            stroke="#FFF"
+            strokeWidth="7"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M98 74h44a4 4 0 0 1 4 4v26a4 4 0 0 1-4 4H98a4 4 0 0 1-4-4V78a4 4 0 0 1 4-4Z"
+            fill="#FFF"
+          />
+          <Path d="M120 84a5 5 0 0 1 3 9v6h-6v-6a5 5 0 0 1 3-9Z" fill="#246440" />
+        </G>
+      )}
+      {kind === 'account' && (
+        <G>
+          <Path
+            d="M92 30h56a8 8 0 0 1 8 8v96a8 8 0 0 1-8 8H92a8 8 0 0 1-8-8V38a8 8 0 0 1 8-8Z"
+            fill="#FFF"
+            stroke="#BFDDC8"
+            strokeWidth="3"
+          />
+          <Circle cx="120" cy="64" r="13" fill="#174F32" />
+          <Path d="M98 98c2-14 12-20 22-20s20 6 22 20Z" fill="#174F32" />
+          <G stroke="#BFD3C7" strokeWidth="5" strokeLinecap="round">
+            <Path d="M100 114h40M100 126h28" />
+          </G>
+        </G>
+      )}
+      {kind === 'recovery' && (
+        <G>
+          <Path d="M92 34h56v40H92z" fill="#FFF" stroke="#BFDDC8" strokeWidth="2" />
+          <G stroke="#BFD3C7" strokeWidth="4" strokeLinecap="round">
+            <Path d="M102 46h36M102 56h26" />
+          </G>
+          <Path d="M72 62h96v62H72z" fill="#246440" />
+          <Path d="M72 62l48 36 48-36" fill="none" stroke="#174F32" strokeWidth="4" />
+          <Circle cx="168" cy="118" r="22" fill="#174F32" stroke="#FFF" strokeWidth="4" />
+          <G fill="none" stroke="#FFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M158 114a10 10 0 0 1 17-5l3 3M178 122a10 10 0 0 1-17 5l-3-3" />
+            <Path d="M178 105v7h-7M158 131v-7h7" />
+          </G>
+        </G>
+      )}
+    </Svg>
+  );
+}

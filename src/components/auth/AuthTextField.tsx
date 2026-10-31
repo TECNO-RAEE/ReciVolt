@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps, ReactNode, Ref } from 'react';
+import { useState, type ComponentProps, type ReactNode, type Ref } from 'react';
 import {
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -18,6 +19,7 @@ type AuthTextFieldProps = TextInputProps & {
   iconName: IconName;
   inputRef?: Ref<TextInputInstance>;
   trailing?: ReactNode;
+  passwordToggle?: boolean;
 };
 
 export function AuthTextField({
@@ -25,9 +27,11 @@ export function AuthTextField({
   iconName,
   inputRef,
   trailing,
+  passwordToggle = false,
   style,
   ...inputProps
 }: AuthTextFieldProps) {
+  const [visible, setVisible] = useState(false);
   return (
     <>
       {label ? <Text style={styles.label}>{label}</Text> : null}
@@ -39,10 +43,26 @@ export function AuthTextField({
           ref={inputRef}
           accessibilityLabel={label}
           style={[styles.input, style]}
-          placeholderTextColor={colors.text}
+          placeholderTextColor={colors.textSecondary}
           {...inputProps}
+          secureTextEntry={passwordToggle ? !visible : inputProps.secureTextEntry}
         />
 
+        {passwordToggle && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            disabled={inputProps.editable === false}
+            onPress={() => setVisible(!visible)}
+            style={styles.toggle}
+          >
+            <Ionicons
+              name={visible ? 'eye-off-outline' : 'eye-outline'}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+        )}
         {trailing}
       </View>
     </>
@@ -68,6 +88,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 10,
   },
+
+  toggle: { width: 48, height: '100%', alignItems: 'center', justifyContent: 'center' },
 
   inputIcon: {
     marginLeft: 11,

@@ -12,7 +12,7 @@
 
 | ID | Tarjeta Trello | Tipo de esfuerzo | Estado actual |
 | :--- | :--- | :--- | :--- |
-| **CARD-01** | [Recorrido 01: Inicio y cuenta](#card-01-recorrido-01--inicio-y-cuenta-4-vistas) | Ajuste visual y formulario | Funcional con desvíos visuales |
+| **CARD-01** | [Recorrido 01: Inicio y cuenta](#card-01-recorrido-01--inicio-y-cuenta-4-vistas) | Ajuste visual y formulario | Implementado y verificado |
 | **CARD-02** | [Recorrido 02: Encontrar dónde entregar](#card-02-recorrido-02--encontrar-dónde-entregar-3-vistas) | Feature UI + Refactor layout | 2 vistas funcionales + 1 modal nuevo |
 | **CARD-03** | [Recorrido 03: Recepción y educación ambiental](#card-03-recorrido-03--recepción-y-educación-ambiental-3-vistas) | Feature UI + Contenido | 2 vistas con desvíos + 1 pantalla nueva |
 | **CARD-04** | [Recorrido 04: De la entrega a los puntos](#card-04-recorrido-04--de-la-entrega-a-los-puntos-3-vistas) | Rediseño de componentes | Implementado y verificado |
@@ -49,23 +49,23 @@ Alinear las pantallas del recorrido de acceso y bienvenida con el diseño visual
 - `src/components/ui/EcoArtwork.tsx`
 
 #### Checklist de tareas
-- [ ] **Home:** Verificar la correcta lectura de marca desde `src/config/brand.json` y el avatar accesible en la esquina superior derecha.
-- [ ] **Login:**
-  - [ ] Incorporar el componente de ilustración del candado ecológico.
-  - [ ] Actualizar títulos a *"Te damos la bienvenida"* y subtítulo *"Iniciá sesión para continuar y ser parte de una comunidad que recicla tecnología."*.
-  - [ ] Cambiar botón primario a *"Ingresar"* y agregar divisor *"o"*.
-  - [ ] Agregar botón secundario de contorno *"Crear cuenta"*.
-  - [ ] Agregar enlace inferior *"Seguir como visitante"* (redirige a `/` en modo invitado).
-- [ ] **Registro:**
-  - [ ] Incorporar ilustración circular de usuario verde.
-  - [ ] Unificar los campos de nombre a un solo campo *"Nombre y apellido"*.
-  - [ ] Eliminar el segundo campo redundante de confirmación de contraseña en la UI manteniendo validación limpia.
-  - [ ] Remover la tarjeta promocional externa *"¿Querés sumarte como punto verde?"* (pertenece a contacto).
-  - [ ] Agregar checkbox accesible de *Términos y Condiciones y Política de Privacidad* con enlaces funcionales a sus pantallas.
-- [ ] **Recuperación:**
-  - [ ] Incorporar ilustración de sobre con reciclaje.
-  - [ ] Ajustar textos a *"Recuperá tu contraseña"* y *"Te enviaremos un enlace a tu correo..."*.
-  - [ ] Proveer acción secundaria *"Volver a ingresar"*.
+- [x] **Home:** Verificar la correcta lectura de marca desde `src/config/brand.json` y el avatar accesible en la esquina superior derecha.
+- [x] **Login:**
+  - [x] Incorporar el componente de ilustración del candado ecológico.
+  - [x] Actualizar títulos a *"Te damos la bienvenida"* y subtítulo *"Iniciá sesión para continuar y ser parte de una comunidad que recicla tecnología."*.
+  - [x] Cambiar botón primario a *"Ingresar"* y agregar divisor *"o"*.
+  - [x] Agregar botón secundario de contorno *"Crear cuenta"*.
+  - [x] Agregar enlace inferior *"Seguir como visitante"* (redirige a `/` en modo invitado).
+- [x] **Registro:**
+  - [x] Incorporar ilustración circular de usuario verde.
+  - [x] Unificar los campos de nombre a un solo campo *"Nombre y apellido"*.
+  - [x] Eliminar el segundo campo redundante de confirmación de contraseña en la UI manteniendo validación limpia.
+  - [x] Remover la tarjeta promocional externa *"¿Querés sumarte como punto verde?"* (pertenece a contacto).
+  - [x] Agregar checkbox accesible de *Términos y Condiciones y Política de Privacidad* con enlaces funcionales a sus pantallas.
+- [x] **Recuperación:**
+  - [x] Incorporar ilustración de sobre con reciclaje.
+  - [x] Ajustar textos a *"Recuperá tu contraseña"* y *"Te enviaremos un enlace a tu correo..."*.
+  - [x] Proveer acción secundaria *"Volver a ingresar"*.
 
 #### Criterios de Aceptación
 - La navegación entre Login, Registro y Recuperación es fluida y respeta `ScreenHeader` y áreas seguras.

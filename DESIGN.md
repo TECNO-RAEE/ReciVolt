@@ -298,9 +298,9 @@ Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del
 | Selector numérico accesible (+ / -)                 | [NumericStepper](src/components/ui/NumericStepper.tsx)                                             |
 | Página, tarjetas, saldo, premio y aviso ciudadano   | [RewardsUI](src/components/rewards/RewardsUI.tsx)                                                 |
 | Página, campos, selector, menú, pestañas y estados de gestión | [PortalUI](src/components/portal/PortalUI.tsx), [CompanyPage](src/components/portal/CompanyPage.tsx) y [AdminPage](src/components/portal/AdminPage.tsx) |
-| Campo de autenticación                              | [AuthTextField](src/components/auth/AuthTextField.tsx)                                            |
+| Campo de autenticación (con `passwordToggle` para mostrar/ocultar la contraseña) | [AuthTextField](src/components/auth/AuthTextField.tsx)                                            |
 | Buscar puntos verdes                                | [SearchBar](src/components/discovery/SearchBar.tsx)                                               |
-| Hoja, moneda, planta y planeta                      | [EcoArtwork](src/components/ui/EcoArtwork.tsx)                                                    |
+| Hoja, moneda, planta, planeta y escenas de cuenta (`AuthArtwork`: candado, cuenta, recuperación) | [EcoArtwork](src/components/ui/EcoArtwork.tsx)                                                    |
 | Scroll al regresar                                  | [useScrollReset](src/hooks/useScrollReset.ts)                                                     |
 
 **The Reutilizar antes de crear Rule.** Revisar estos componentes antes de escribir una nueva versión local. Si falta una variante repetible, ampliar el componente compartido en lugar de copiarlo en cada pantalla.
