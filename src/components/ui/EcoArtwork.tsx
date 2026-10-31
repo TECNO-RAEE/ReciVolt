@@ -124,6 +124,65 @@ export function ImpactPlant() {
   );
 }
 
+export function DevicePreparationArtwork() {
+  return (
+    <Svg
+      width="100%"
+      height={160}
+      viewBox="0 0 300 160"
+      preserveAspectRatio="xMidYMid meet"
+      {...decorativeAccessibility}
+    >
+      <Ellipse cx="150" cy="124" rx="126" ry="22" fill="#E7F3EB" />
+      <Path d="M68 45h112a7 7 0 0 1 7 7v58H61V52a7 7 0 0 1 7-7Z" fill="#174F32" />
+      <Path d="M69 53h110v49H69z" fill="#DCEFE3" />
+      <Path d="M48 111h152l-8 12H57z" fill="#246440" />
+      <Path
+        d="M211 65c0-4 3-7 7-7h28c4 0 7 3 7 7v48c0 4-3 7-7 7h-28c-4 0-7-3-7-7z"
+        fill="#246440"
+      />
+      <Path d="M217 70h30v37h-30z" fill="#F8FBF9" />
+      <Path
+        d="M185 112c2 16 18 20 32 15 8-3 11-8 11-14m0 0v-5"
+        fill="none"
+        stroke="#174F32"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M225 105v7m7-7v7m-10-9h13"
+        fill="none"
+        stroke="#174F32"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M199 82h-15m0 0 7-7m-7 7 7 7"
+        fill="none"
+        stroke="#246440"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M252 126c13-11 21-23 23-40m-22 32c-11-13-14-27-9-39m3 29c8-12 17-17 27-17"
+        fill="none"
+        stroke="#286744"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M254 104c-11-2-17-9-18-20 11 2 17 9 18 20Zm6-11c1-10 7-16 17-18 0 10-6 16-17 18Zm-1 23c9-6 17-6 25 0-8 6-16 6-25 0Z"
+        fill="#80B96C"
+      />
+      <Path
+        d="M37 100c-7-6-9-14-5-23 8 6 10 14 5 23Zm-4 15c-9-3-14-9-14-18 9 3 14 9 14 18Z"
+        fill="#A5CF89"
+      />
+    </Svg>
+  );
+}
+
 export function SuccessArtwork() {
   const id = useId().replace(/:/g, '');
   return (

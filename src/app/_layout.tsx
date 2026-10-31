@@ -62,6 +62,7 @@ function Navigation() {
         <Stack.Screen name="(app)" />
         <Stack.Screen name="my-raee" />
         <Stack.Screen name="device-categories" />
+        <Stack.Screen name="device-unaccepted" />
         <Stack.Screen name="point/[id]" />
         <Stack.Screen name="new-delivery" />
         <Stack.Screen name="delivery/[id]" />

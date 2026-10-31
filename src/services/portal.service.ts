@@ -1,5 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from '@/config/supabase';
+import { getDeviceCategoryGroupKey } from '@/models/DeviceCategory';
+import { requiresPolicyMigration } from '@/services/green-point.service';
 import type {
   AdminPortalData,
   AuditEntry,
@@ -66,10 +68,13 @@ function limit(r: Row): CompanyLimitRequest {
   };
 }
 function category(r: Row) {
+  const name = str(r, 'name');
+  const slug = str(r, 'slug');
   return {
     id: str(r, 'id'),
-    name: str(r, 'name'),
-    slug: str(r, 'slug'),
+    name,
+    slug,
+    groupKey: str(r, 'group_key') || getDeviceCategoryGroupKey({ name, slug }),
   };
 }
 export async function portalCommand(
@@ -84,6 +89,18 @@ export async function portalCommand(
         : error.message
     );
   return data;
+}
+export async function saveGreenPointDevicePolicy(
+  pointId: string,
+  confirmed: boolean,
+  entries: { deviceCategoryId: string; mode: 'onsite' | 'pickup' | 'not_accepted' }[]
+): Promise<void> {
+  const { error } = await supabase.rpc('save_green_point_device_policy', {
+    point_id: pointId,
+    confirmed,
+    entries,
+  });
+  if (error) throw error;
 }
 export async function getApplications(): Promise<CompanyApplication[]> {
   const {
@@ -121,7 +138,9 @@ export async function getCompanyPortal(companyId: string): Promise<CompanyPortal
     supabase.from('company_details').select('*').eq('company_id', companyId).maybeSingle(),
     supabase
       .from('green_points')
-      .select('*, green_point_schedules(*), green_point_device_categories(device_category_id)')
+      .select(
+        '*, green_point_schedules(*), green_point_device_categories(device_category_id), green_point_device_policies(device_category_id, mode)'
+      )
       .eq('company_id', companyId)
       .order('name'),
     supabase.from('device_categories').select('*').eq('active', true).order('sort_order'),
@@ -142,7 +161,23 @@ export async function getCompanyPortal(companyId: string): Promise<CompanyPortal
       .eq('company_id', companyId)
       .order('created_at', { ascending: false }),
   ]);
-  for (const result of results) if (result.error) throw result.error;
+  let pointRows = results[2].data;
+  let policyAvailable = true;
+  if (results[2].error && requiresPolicyMigration(results[2].error)) {
+    const legacyPoints = await supabase
+      .from('green_points')
+      .select('*, green_point_schedules(*), green_point_device_categories(device_category_id)')
+      .eq('company_id', companyId)
+      .order('name');
+    if (legacyPoints.error) throw legacyPoints.error;
+    pointRows = legacyPoints.data;
+    policyAvailable = false;
+  } else if (results[2].error) {
+    throw results[2].error;
+  }
+  for (const [index, result] of results.entries()) {
+    if (index !== 2 && result.error) throw result.error;
+  }
   const d = results[1].data;
   return {
     company: company(results[0].data!),
@@ -159,28 +194,46 @@ export async function getCompanyPortal(companyId: string): Promise<CompanyPortal
           description: d.description ?? '',
         }
       : null,
-    points: (results[2].data ?? []).map((p): ManagedPoint => ({
-      id: p.id,
-      name: p.name,
-      address: p.address,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      phone: p.phone ?? '',
-      description: p.description ?? '',
-      timeZone: p.time_zone,
-      active: p.active,
-      pickupEnabled: p.pickup_enabled,
-      categories: p.green_point_device_categories.map(
-        (c: { device_category_id: string }) => c.device_category_id
-      ),
-      schedules: p.green_point_schedules.map(
-        (s: { weekday: number; opens_minute: number; closes_minute: number }) => ({
-          weekday: s.weekday,
-          opensMinute: s.opens_minute,
-          closesMinute: s.closes_minute,
-        })
-      ),
-    })),
+    points: (pointRows ?? []).map((p): ManagedPoint => {
+      const intakePolicies = policyAvailable
+        ? (Object.fromEntries(
+            (p.green_point_device_policies ?? []).map(
+              (policy: {
+                device_category_id: string;
+                mode: 'onsite' | 'pickup' | 'not_accepted';
+              }) => [policy.device_category_id, policy.mode]
+            )
+          ) as ManagedPoint['intakePolicies'])
+        : (Object.fromEntries(
+            (p.green_point_device_categories ?? []).map(
+              (category: { device_category_id: string }) => [category.device_category_id, 'onsite']
+            )
+          ) as ManagedPoint['intakePolicies']);
+      return {
+        id: p.id,
+        name: p.name,
+        address: p.address,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        phone: p.phone ?? '',
+        description: p.description ?? '',
+        timeZone: p.time_zone,
+        active: p.active,
+        pickupEnabled: p.pickup_enabled || Object.values(intakePolicies).includes('pickup'),
+        intakeConfirmed: policyAvailable ? p.intake_confirmed : false,
+        categories: p.green_point_device_categories.map(
+          (c: { device_category_id: string }) => c.device_category_id
+        ),
+        intakePolicies,
+        schedules: p.green_point_schedules.map(
+          (s: { weekday: number; opens_minute: number; closes_minute: number }) => ({
+            weekday: s.weekday,
+            opensMinute: s.opens_minute,
+            closesMinute: s.closes_minute,
+          })
+        ),
+      };
+    }),
     categories: (results[3].data ?? []).map(category),
     categoryPoints: (results[4].data ?? []).map((p) => ({
       id: p.device_category_id,

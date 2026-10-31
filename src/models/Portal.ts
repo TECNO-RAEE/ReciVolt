@@ -1,5 +1,5 @@
 import type { CompanyMembership } from './Access';
-import type { DeviceCategory } from './DeviceCategory';
+import type { DeviceCategory, DeviceIntakeMode } from './DeviceCategory';
 
 export const applicationStatuses = {
   SUBMITTED: 'Enviada',
@@ -77,6 +77,8 @@ export interface ManagedPoint {
   active: boolean;
   pickupEnabled: boolean;
   categories: string[];
+  intakeConfirmed: boolean;
+  intakePolicies: Record<string, DeviceIntakeMode>;
   schedules: { weekday: number; opensMinute: number; closesMinute: number }[];
 }
 export interface CompanyPortalData {
@@ -94,7 +96,10 @@ export interface CompanyPortalData {
   invitations: CompanyInvitation[];
   limitRequests: CompanyLimitRequest[];
 }
-export interface PointInput extends Omit<ManagedPoint, 'id'> {
+export interface PointInput extends Omit<
+  ManagedPoint,
+  'id' | 'intakeConfirmed' | 'intakePolicies'
+> {
   id?: string;
   companyId: string;
 }

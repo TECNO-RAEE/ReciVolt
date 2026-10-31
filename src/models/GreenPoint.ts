@@ -1,4 +1,4 @@
-import type { DeviceCategory } from './DeviceCategory';
+import type { DeviceCategory, DeviceIntakePolicy } from './DeviceCategory';
 
 export interface Coordinates {
   latitude: number;
@@ -21,6 +21,8 @@ export interface GreenPoint extends Coordinates {
   timeZone: string;
   pickupEnabled: boolean;
   categories: DeviceCategory[];
+  intakeConfirmed: boolean;
+  intakePolicies: DeviceIntakePolicy[];
   schedules: PointSchedule[];
 }
 export type OpeningStatus = 'open' | 'closed' | 'unknown';
@@ -115,9 +117,16 @@ export function filterGreenPoints(
       (p) =>
         (!query ||
           normalize(
-            `${p.name} ${p.address} ${p.companyName} ${p.categories.map((c) => c.name).join(' ')}`
+            `${p.name} ${p.address} ${p.companyName} ${p.categories.map((c) => c.name).join(' ')} ${p.intakePolicies
+              .filter((policy) => policy.mode !== 'not_accepted')
+              .map((policy) => policy.category?.name ?? '')
+              .join(' ')}`
           ).includes(query)) &&
-        (!filters.categoryId || p.categories.some((c) => c.id === filters.categoryId)) &&
+        (!filters.categoryId ||
+          p.categories.some((c) => c.id === filters.categoryId) ||
+          p.intakePolicies.some(
+            (policy) => policy.categoryId === filters.categoryId && policy.mode !== 'not_accepted'
+          )) &&
         (!filters.companyId || p.companyId === filters.companyId) &&
         (!filters.openOnly || openingStatus(p, now) === 'open') &&
         (!filters.pickupOnly || p.pickupEnabled) &&

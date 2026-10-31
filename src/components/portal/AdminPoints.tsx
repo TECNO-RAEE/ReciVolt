@@ -176,7 +176,7 @@ function PointWorkspace({
               savePoint={async (input) => {
                 if (!company && !companyName.trim())
                   throw new Error('Ingresá el nombre de la institución responsable.');
-                await portalCommand('admin_save_point', { ...input, companyName });
+                return portalCommand('admin_save_point', { ...input, companyName });
               }}
             />
           </>

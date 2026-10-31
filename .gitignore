@@ -12,6 +12,7 @@ node_modules/
 /supabase/tests/
 /supabase/migrations/
 !/supabase/migrations/
+
 !/supabase/tests/
 /supabase/tests/*
 !/supabase/tests/global-rewards.test.sql
