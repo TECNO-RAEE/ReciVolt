@@ -11,6 +11,10 @@ const SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
   'sb_publishable_8Liu7A_T4TIhskJfUfUDCQ_O2tnFSPx';
 
+if (__DEV__ && !process.env.EXPO_PUBLIC_SUPABASE_URL) {
+  console.warn('Supabase: using the PRODUCTION project. Use `npm run dev:local` to test safely.');
+}
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),

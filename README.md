@@ -33,14 +33,18 @@ El mapa web usa Leaflet/OpenStreetMap, con atribución y carga diferida compatib
 
 ## Supabase local
 
-Con Docker disponible, iniciar el stack mínimo usado en las pruebas:
+**Probar cambios sin tocar producción.** Con Docker disponible, el repositorio reproduce el esquema completo en local, sin pasos manuales:
 
 ```powershell
-npx supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
-npx supabase status
+npm run supabase:start   # levanta el stack y aplica supabase/migrations
+npm run dev:local -- --web   # Expo apuntando al Supabase local (no usa producción)
+npm run supabase:test    # pruebas SQL (pgTAP)
+npm run supabase:reset   # recrea la base local desde cero
 ```
 
-Puertos de ReciVolt: API 55321 y PostgreSQL 55322. Las migraciones se conservan localmente y no se incluyen en esta branch. Para reproducir el esquema en otro entorno se necesitan esos archivos por separado.
+`dev:local` lee la URL y la publishable key del stack local con `supabase status` y las pasa a Expo como `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. En un dispositivo físico definir `LOCAL_SUPABASE_HOST` con la IP de la PC en la red local. **`npm start`, `npm run web`, etc. sin variables usan el proyecto de producción**: para probar cambios de datos usar siempre `dev:local`.
+
+Puertos de ReciVolt: API 55321 y PostgreSQL 55322. `supabase/migrations/20261019020455_baseline_schema.sql` es un baseline que condensa todo el historial hasta `retire_xp_and_levels` e incluye el catálogo de categorías; las migraciones nuevas se agregan a continuación con `npx supabase migration new <nombre>`. Producción ya tiene esos cambios aplicados: **no ejecutar `db push` del baseline contra producción**.
 
 Se preserva `profiles` y su trigger. Las tablas nuevas tienen RLS y grants explícitos. La función del trigger no se puede invocar directamente desde la API pública. Los comandos de empresa/admin verifican los permisos en DB y ejecutan cambios relacionados en una transacción. Las invitaciones usan la Edge Function `company-invitation`, desplegada en el remoto y autenticada dentro de la función.
 
@@ -68,7 +72,7 @@ npx expo-doctor
 npx expo export --platform web
 ```
 
-No existen scripts npm `test` o `typecheck`: se invocan las herramientas directamente. Las pruebas SQL necesitan el esquema local completo; algunas migraciones base y suites históricas se conservan sólo en este entorno. Las pruebas de integración nuevas están en `tests/integration/`: concurrencia requiere Docker y el stack local; recuperación requiere además Mailpit. La regresión de navegación necesita Playwright/Chrome y la app local; `PLAYWRIGHT_MODULE_DIR` permite usar el paquete de herramientas instalado sin agregarlo a las dependencias del producto.
+No existen scripts npm `test` o `typecheck`: se invocan las herramientas directamente. Las pruebas SQL corren contra el esquema local reproducido por las migraciones del repositorio. Las pruebas de integración nuevas están en `tests/integration/`: concurrencia requiere Docker y el stack local; recuperación requiere además Mailpit. La regresión de navegación necesita Playwright/Chrome y la app local; `PLAYWRIGHT_MODULE_DIR` permite usar el paquete de herramientas instalado sin agregarlo a las dependencias del producto.
 
 ```powershell
 node --test tests/integration/reward-concurrency.test.mjs
