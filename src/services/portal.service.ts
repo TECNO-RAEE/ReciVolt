@@ -1,6 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from '@/config/supabase';
 import { getDeviceCategoryGroupKey } from '@/models/DeviceCategory';
+import { requiresPolicyMigration } from '@/services/green-point.service';
 import type {
   AdminPortalData,
   AuditEntry,
@@ -160,7 +161,23 @@ export async function getCompanyPortal(companyId: string): Promise<CompanyPortal
       .eq('company_id', companyId)
       .order('created_at', { ascending: false }),
   ]);
-  for (const result of results) if (result.error) throw result.error;
+  let pointRows = results[2].data;
+  let policyAvailable = true;
+  if (results[2].error && requiresPolicyMigration(results[2].error)) {
+    const legacyPoints = await supabase
+      .from('green_points')
+      .select('*, green_point_schedules(*), green_point_device_categories(device_category_id)')
+      .eq('company_id', companyId)
+      .order('name');
+    if (legacyPoints.error) throw legacyPoints.error;
+    pointRows = legacyPoints.data;
+    policyAvailable = false;
+  } else if (results[2].error) {
+    throw results[2].error;
+  }
+  for (const [index, result] of results.entries()) {
+    if (index !== 2 && result.error) throw result.error;
+  }
   const d = results[1].data;
   return {
     company: company(results[0].data!),
@@ -177,15 +194,21 @@ export async function getCompanyPortal(companyId: string): Promise<CompanyPortal
           description: d.description ?? '',
         }
       : null,
-    points: (results[2].data ?? []).map((p): ManagedPoint => {
-      const intakePolicies = Object.fromEntries(
-        p.green_point_device_policies.map(
-          (policy: { device_category_id: string; mode: 'onsite' | 'pickup' | 'not_accepted' }) => [
-            policy.device_category_id,
-            policy.mode,
-          ]
-        )
-      ) as ManagedPoint['intakePolicies'];
+    points: (pointRows ?? []).map((p): ManagedPoint => {
+      const intakePolicies = policyAvailable
+        ? (Object.fromEntries(
+            (p.green_point_device_policies ?? []).map(
+              (policy: {
+                device_category_id: string;
+                mode: 'onsite' | 'pickup' | 'not_accepted';
+              }) => [policy.device_category_id, policy.mode]
+            )
+          ) as ManagedPoint['intakePolicies'])
+        : (Object.fromEntries(
+            (p.green_point_device_categories ?? []).map(
+              (category: { device_category_id: string }) => [category.device_category_id, 'onsite']
+            )
+          ) as ManagedPoint['intakePolicies']);
       return {
         id: p.id,
         name: p.name,
@@ -197,7 +220,7 @@ export async function getCompanyPortal(companyId: string): Promise<CompanyPortal
         timeZone: p.time_zone,
         active: p.active,
         pickupEnabled: p.pickup_enabled || Object.values(intakePolicies).includes('pickup'),
-        intakeConfirmed: p.intake_confirmed,
+        intakeConfirmed: policyAvailable ? p.intake_confirmed : false,
         categories: p.green_point_device_categories.map(
           (c: { device_category_id: string }) => c.device_category_id
         ),

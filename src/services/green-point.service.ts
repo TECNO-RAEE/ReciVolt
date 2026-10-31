@@ -111,11 +111,8 @@ function mapLegacyGreenPoint(row: LegacyGreenPointRow): GreenPoint {
   };
 }
 
-function requiresPolicyMigration(error: { code?: string; message?: string }): boolean {
-  return (
-    ['42703', '42P01', 'PGRST200', 'PGRST204', 'PGRST205'].includes(error.code ?? '') ||
-    /intake_confirmed|green_point_device_policies|group_key|schema cache/i.test(error.message ?? '')
-  );
+export function requiresPolicyMigration(error: { code?: string }): boolean {
+  return ['42703', '42P01', 'PGRST200', 'PGRST204', 'PGRST205'].includes(error.code ?? '');
 }
 
 async function getGreenPointsWithSelection<T>(

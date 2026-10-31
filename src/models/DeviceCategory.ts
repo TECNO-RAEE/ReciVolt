@@ -28,7 +28,11 @@ export function getDeviceCategoryGroupKey(category: {
     .toLocaleLowerCase('es');
   if (/(pila|bateria|mercurio|termometro|fluorescente|medic|dialisis|cardiologia)/.test(value))
     return 'especiales';
-  if (/(comput|notebook|tablet|celular|telefono|impres|fax|parlante|audio|comunic)/.test(value))
+  if (
+    /(comput|notebook|tablet|celular|telefono|impres|fax|parlante|audio|comunic|monitor|auricular)/.test(
+      value
+    )
+  )
     return 'informatica';
   if (
     /(electro|heladera|freezer|lavar|cocina|microonda|radio|televisor|aspiradora|ventilador)/.test(
