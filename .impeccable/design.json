@@ -454,6 +454,30 @@
       "description": "NumericStepper con botones circulares accesibles (+ / -) de 44x44 px (radio 22). Muestra de documentación.",
       "html": "<div class=\"ds-stepper\"><button class=\"ds-stepper-btn\" type=\"button\" aria-label=\"Disminuir cantidad\"><svg aria-hidden=\"true\" width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14\"/></svg></button><span class=\"ds-stepper-val\">1</span><button class=\"ds-stepper-btn\" type=\"button\" aria-label=\"Aumentar cantidad\"><svg aria-hidden=\"true\" width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5v14\"/></svg></button></div>",
       "css": ".ds-stepper{display:flex;align-items:center;justify-content:center;gap:16px}.ds-stepper-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid #E2EBE6;border-radius:22px;background:#fff;color:#246440;cursor:pointer}.ds-stepper-btn:hover{opacity:.85}.ds-stepper-btn:active{opacity:.7}.ds-stepper-val{min-width:52px;text-align:center;font:700 24px/28px Roboto,sans-serif;color:#102530}"
+    },
+    {
+      "name": "Tarjeta de organización",
+      "kind": "card",
+      "refersTo": "organization-card",
+      "description": "OrganizationCard: InfoCard sobre surfaceSoft con icono institucional en círculo de 64 px, nombre de la empresa y rol. Encabeza Mi empresa y Equipo. Muestra de documentación.",
+      "html": "<article class=\"ds-org-card\"><div class=\"ds-org-icon\"><svg aria-hidden=\"true\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M4 21V5l8-3 8 3v16h-6v-5h-4v5z\"/></svg></div><div class=\"ds-org-text\"><strong class=\"ds-org-name\">Empresa de ejemplo</strong><span class=\"ds-org-role\">Responsable</span></div></article>",
+      "css": ".ds-org-card{display:flex;align-items:center;gap:12px;padding:20px;border-radius:16px;background:#F1F7F3;border:1px solid #E2EBE6;color:#102530}.ds-org-icon{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:#E7F3EB;color:#246440}.ds-org-text{display:flex;flex-direction:column;gap:2px}.ds-org-name{font:500 20px/28px Roboto,sans-serif}.ds-org-role{font:400 13px/18px Roboto,sans-serif;color:#53676D}"
+    },
+    {
+      "name": "Menú de gestión",
+      "kind": "nav",
+      "refersTo": "portal-menu-item",
+      "description": "PortalMenuItem: fila blanca con icono, título y chevron que abre una sección de empresa en su propia pantalla. Altura mínima 56 px, radio 12, separación 12 px.",
+      "html": "<nav class=\"ds-menu\" aria-label=\"Secciones de la empresa\"><a class=\"ds-menu-row\" href=\"#team\"><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"9\" cy=\"8\" r=\"4\"/><path d=\"M2 21a7 7 0 0 1 14 0\"/></svg><span class=\"ds-menu-title\">Equipo</span><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m9 6 6 6-6 6\"/></svg></a></nav>",
+      "css": ".ds-menu{display:flex;flex-direction:column;gap:12px}.ds-menu-row{display:flex;align-items:center;gap:16px;min-height:56px;padding:12px 16px;border:1px solid #E2EBE6;border-radius:12px;background:#fff;color:#102530;text-decoration:none}.ds-menu-row:hover{background:#E7F3EB}.ds-menu-title{flex:1;font:400 15px/23px Roboto,sans-serif}.ds-menu-row:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+    },
+    {
+      "name": "Selector de gestión",
+      "kind": "input",
+      "refersTo": "portal-select",
+      "description": "PortalSelect: etiqueta persistente y campo con chevron que despliega opciones en línea (radio, seleccionada en primarySoft con check). Variante compacta con la etiqueta a la izquierda y un ancho fijo de 208 px.",
+      "html": "<label class=\"ds-select-label\">Estado<button class=\"ds-select\" type=\"button\" aria-expanded=\"false\">Publicado<svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m6 9 6 6 6-6\"/></svg></button></label>",
+      "css": ".ds-select-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:500 14px/20px Roboto,sans-serif}.ds-select{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #E2EBE6;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-select:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     }
   ],
   "narrative": {
@@ -501,6 +525,11 @@
         "name": "Reutilizar antes de crear",
         "body": "Revisar estos componentes antes de escribir una nueva versión local. Si falta una variante repetible, ampliar el componente compartido en lugar de copiarlo en cada pantalla.",
         "section": "components"
+      },
+      {
+        "name": "Panel de empresa",
+        "body": "Empresa navega desde el panel \"Mi empresa\": tarjeta de la organización, acción principal del escáner arriba y un menú de filas con chevron que abre cada sección en su propia pantalla con `ScreenHeader` (`CompanyPage`). Los trabajadores sólo ven el escáner y el historial de entregas. Admin conserva sus pestañas debajo del mismo header.",
+        "section": "layout"
       }
     ],
     "dos": [

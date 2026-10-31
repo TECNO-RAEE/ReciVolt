@@ -238,7 +238,8 @@ La composición parte del móvil y se amplía con contenedores centrados. No est
 | Inicio                   | Contenido centrado, ancho máximo (720), margen interior `spacing.page` y separación `spacing.block`.                               |
 | Vista ciudadana interior | `CitizenPage`: ancho máximo (960), margen interior `spacing.page`, separación `spacing.block` y espacio inferior `spacing.bottom`. |
 | Formulario de portal     | `PortalPage`: ancho máximo (960), margen y separación `spacing.section`.                                                           |
-| Empresa y admin          | `AdminPage`: ancho máximo (960), margen exterior `spacing.block`, panel blanco con margen y separación `spacing.page`.             |
+| Empresa                  | `CompanyPage` sobre `PortalPage`: panel "Mi empresa" con menú de filas y una pantalla por sección, ancho máximo (960).           |
+| Admin                    | `AdminPage`: ancho máximo (960), margen exterior `spacing.block`, panel blanco con margen y separación `spacing.page`.             |
 | Catálogo de premios      | Dos columnas en móvil, tres desde (650) y cuatro desde (900); mantener el límite del contenedor.                                   |
 
 La escala documentada es una selección de espacios repetidos, no una orden de redondear todos los valores existentes a múltiplos de ocho. Reutilizar las medidas del componente correspondiente.
@@ -296,7 +297,7 @@ Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del
 | Tarjeta informativa, fila de datos y código         | [InfoCard](src/components/ui/InfoCard.tsx)                                                        |
 | Selector numérico accesible (+ / -)                 | [NumericStepper](src/components/ui/NumericStepper.tsx)                                             |
 | Página, tarjetas, saldo, premio y aviso ciudadano   | [RewardsUI](src/components/rewards/RewardsUI.tsx)                                                 |
-| Página, campos, menú, pestañas y estados de gestión | [PortalUI](src/components/portal/PortalUI.tsx) y [AdminPage](src/components/portal/AdminPage.tsx) |
+| Página, campos, selector, menú, pestañas y estados de gestión | [PortalUI](src/components/portal/PortalUI.tsx), [CompanyPage](src/components/portal/CompanyPage.tsx) y [AdminPage](src/components/portal/AdminPage.tsx) |
 | Campo de autenticación                              | [AuthTextField](src/components/auth/AuthTextField.tsx)                                            |
 | Buscar puntos verdes                                | [SearchBar](src/components/discovery/SearchBar.tsx)                                               |
 | Hoja, moneda, planta y planeta                      | [EcoArtwork](src/components/ui/EcoArtwork.tsx)                                                    |
@@ -312,13 +313,13 @@ La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en
 
 **Decisión aprobada el 26/10/2026, pendiente de implementación:** agregar Marketplace junto a Premios: **Inicio · Puntos verdes · Premios · Marketplace · Perfil**. La sección se llama Marketplace y sus productos, “Dispositivos reacondicionados”. Empresa administra su catálogo; el detalle del punto verde muestra hasta cuatro productos y “Ver catálogo completo”; Marketplace reúne los productos de todas las empresas. Las tareas MK-01 a MK-08 están en Trello. Esta decisión no significa que las pantallas ya estén implementadas; al implementarlas, actualizar también la muestra de navegación de `.impeccable/design.json`.
 
-Las pestañas operativas de empresa y admin permanecen debajo del mismo header. No reemplazarlo por un sidebar, una barra oscura o un título distinto por cada pestaña.
+Empresa navega desde el panel "Mi empresa": `OrganizationCard` con nombre y rol, acción principal del escáner arriba y un menú de filas `PortalMenuItem` (icono, título y chevron; radio 12, separación 12) que abre cada sección en su propia pantalla con `ScreenHeader` mediante `CompanyPage`. Los trabajadores sólo ven el escáner y el historial de entregas. Las pestañas operativas de admin permanecen debajo del mismo header. No reemplazarlo por un sidebar, una barra oscura o un título distinto por cada pestaña.
 
 ### Botones y campos
 
 `ActionButton` usa altura mínima (50), variante sólida o secundaria con borde. Elegir una acción principal por bloque de tarea. Durante el envío, mostrar carga y deshabilitar el control; la opacidad actual de pulsación, carga o deshabilitado es (0.7). No comunicar una acción destructiva sólo cambiando el color.
 
-Los campos tienen etiqueta persistente, borde suave y fondo blanco. El placeholder muestra un ejemplo o una pista y no reemplaza la etiqueta. Reutilizar la variante de autenticación o gestión según el contexto. Los campos compactos numéricos de gestión usan el ancho existente (96); no aplicar ese ancho a direcciones o nombres. Mostrar validación junto al campo y conservar el contenido cuando falla el envío.
+Los campos tienen etiqueta persistente, borde suave y fondo blanco. El placeholder muestra un ejemplo o una pista y no reemplaza la etiqueta. Reutilizar la variante de autenticación o gestión según el contexto. Los campos compactos numéricos de gestión usan el ancho existente (96); no aplicar ese ancho a direcciones o nombres. Mostrar validación junto al campo y conservar el contenido cuando falla el envío. Para elegir entre pocas opciones fijas (estado de un punto, rol, modo de recepción) usar `PortalSelect`: etiqueta persistente y opciones desplegadas en línea; la variante compacta pone la etiqueta a la izquierda y fija el selector en (208). Un `PortalField` con `suffix` muestra la unidad dentro del mismo borde, por ejemplo "puntos por unidad".
 
 ### Tarjetas, puntos y premios
 

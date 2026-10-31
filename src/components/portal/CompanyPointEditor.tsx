@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import {
   PortalChoice,
@@ -7,16 +8,28 @@ import {
   PortalToggle,
   PortalFeedback,
   PortalLink,
+  PortalSelect,
+  portalFieldStyle,
   portalStyles as s,
 } from './PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData, ManagedPoint, PointInput } from '@/models/Portal';
+import {
+  formatTimeInput,
+  groupScheduleText,
+  groupedDays,
+  parseSchedules,
+  scheduleGroups,
+  scheduleText,
+  weekdays,
+  type ScheduleRange,
+} from '@/models/PointSchedule';
 import { getDeviceCategoryGroupKey, type DeviceIntakeMode } from '@/models/DeviceCategory';
-import { weekdays, parseSchedules, scheduleText } from '@/models/PointSchedule';
 import { portalCommand, saveGreenPointDevicePolicy } from '@/services/portal.service';
 import { AddressField } from './AddressField';
 import { LocationPicker } from './LocationPicker';
 import { joinPointAddress, splitPointAddress } from '@/models/PointAddress';
+import { colors } from '@/theme';
 
 export function CompanyPointEditor({
   data,
@@ -28,7 +41,7 @@ export function CompanyPointEditor({
   data: CompanyPortalData;
   point: ManagedPoint | null;
   onSaved: () => Promise<void>;
-  onCancel: () => void;
+  onCancel?: () => void;
   savePoint?: (input: PointInput) => Promise<unknown>;
 }>) {
   const initialAddress = splitPointAddress(point?.address ?? '');
@@ -37,6 +50,8 @@ export function CompanyPointEditor({
   const [crossStreets, setCrossStreets] = useState(initialAddress.crossStreets);
   const [manualCoordinates, setManualCoordinates] = useState(false);
   const [advanced, setAdvanced] = useState(false);
+  const [more, setMore] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(!point?.address);
   const [latitude, setLatitude] = useState(point ? String(point.latitude) : ''),
     [longitude, setLongitude] = useState(point ? String(point.longitude) : '');
   const [phone, setPhone] = useState(point?.phone ?? data.details?.phone ?? ''),
@@ -67,12 +82,16 @@ export function CompanyPointEditor({
       ),
     }))
     .filter((group) => group.categories.length > 0);
-  const [days, setDays] = useState(scheduleText(point?.schedules ?? []));
-  const action = usePortalAction();
-  const setIntakeMode = (categoryId: string, mode: DeviceIntakeMode) => {
-    setIntakePolicies((current) => ({ ...current, [categoryId]: mode }));
+  const setIntakeMode = (categoryId: string, mode: DeviceIntakeMode | '') => {
+    setIntakePolicies((current) => {
+      const { [categoryId]: _previous, ...rest } = current;
+      return mode ? { ...rest, [categoryId]: mode } : rest;
+    });
     if (mode === 'pickup') setPickupEnabled(true);
   };
+  const [days, setDays] = useState(scheduleText(point?.schedules ?? []));
+  const [ranges, setRanges] = useState(groupScheduleText(days));
+  const action = usePortalAction();
   const lat = Number(latitude.replace(',', '.')),
     lng = Number(longitude.replace(',', '.'));
   const coordinate = useMemo(
@@ -88,40 +107,15 @@ export function CompanyPointEditor({
     [latitude, longitude, lat, lng]
   );
   return (
-    <View style={s.section}>
-      <Text style={s.subtitle}>{point ? 'Editar punto verde' : 'Nuevo punto verde'}</Text>
+    <View style={s.stack}>
       <PortalField
-        label="Nombre del punto"
+        label="Nombre del punto verde"
+        labelStyle={s.label}
         value={name}
         onChangeText={setName}
         editable={!action.busy}
       />
-      <Text style={s.subtitle}>Ubicación</Text>
-      <AddressField
-        value={address}
-        onChange={(value) => {
-          setAddress(value);
-          setLatitude('');
-          setLongitude('');
-        }}
-        onSelect={(value) => {
-          setAddress(value.address);
-          setLatitude(String(value.latitude));
-          setLongitude(String(value.longitude));
-        }}
-        disabled={action.busy}
-      />
-      <PortalField
-        label="Entre calles (opcional)"
-        value={crossStreets}
-        onChangeText={setCrossStreets}
-        maxLength={200}
-        editable={!action.busy}
-      />
-      <Text style={s.hint}>
-        Tocá el mapa para ubicar el punto. También podés arrastrar el marcador para ajustar la
-        entrada. La dirección y las entrecalles serán visibles para los usuarios.
-      </Text>
+      <Text style={s.label}>Ubicación</Text>
       <LocationPicker
         value={coordinate}
         onChange={(value) => {
@@ -132,128 +126,212 @@ export function CompanyPointEditor({
       />
       <Text style={s.hint}>
         {coordinate
-          ? 'Ubicación marcada. Revisá que coincida con la dirección.'
-          : 'Marcá la ubicación antes de guardar.'}
+          ? 'Ubicación marcada. Arrastrá el marcador o tocá el mapa para ajustar la entrada.'
+          : 'Tocá el mapa para marcar la ubicación antes de guardar.'}
       </Text>
-      <PortalLink
-        title={manualCoordinates ? 'Ocultar coordenadas' : 'Ingresar coordenadas manualmente'}
-        onPress={() => setManualCoordinates(!manualCoordinates)}
+      {editingAddress ? (
+        <>
+          <AddressField
+            value={address}
+            onChange={(value) => {
+              setAddress(value);
+              setLatitude('');
+              setLongitude('');
+            }}
+            onSelect={(value) => {
+              setAddress(value.address);
+              setLatitude(String(value.latitude));
+              setLongitude(String(value.longitude));
+            }}
+            disabled={action.busy}
+          />
+          <PortalField
+            label="Entre calles (opcional)"
+            value={crossStreets}
+            onChangeText={setCrossStreets}
+            maxLength={200}
+            editable={!action.busy}
+          />
+          <Text style={s.hint}>
+            La dirección y las entrecalles serán visibles para los usuarios.
+          </Text>
+        </>
+      ) : (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+            padding: 16,
+            borderRadius: 12,
+            backgroundColor: colors.surfaceSoft,
+          }}
+        >
+          <Ionicons name="location" size={24} color={colors.text} />
+          <Text style={[s.body, { flex: 1 }]}>{joinPointAddress(address, crossStreets)}</Text>
+        </View>
+      )}
+      {!editingAddress && (
+        <PortalLink
+          title="Cambiar dirección"
+          disabled={action.busy}
+          onPress={() => setEditingAddress(true)}
+        />
+      )}
+      <Text style={s.label}>Horarios de atención</Text>
+      {ranges ? (
+        <>
+          <ScheduleGrid ranges={ranges} onChange={setRanges} disabled={action.busy} />
+          <Text style={s.hint}>
+            Dejá vacío el horario de los días en que el punto está cerrado.
+          </Text>
+          <PortalLink
+            title="Configurar cada día por separado"
+            disabled={action.busy}
+            onPress={() => {
+              setDays(groupedDays(ranges, false));
+              setRanges(null);
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <Text style={s.hint}>
+            Usá 09:00-18:00. Para horario cortado: 09:00-13:00, 15:00-19:00. Dejá vacío si está
+            cerrado. Un cierre anterior a la apertura corresponde al día siguiente.
+          </Text>
+          {weekdays.map((day, i) => (
+            <PortalField
+              key={day}
+              label={day}
+              value={days[i]}
+              placeholder="Cerrado"
+              editable={!action.busy}
+              onChangeText={(value) => setDays(days.map((d, j) => (i === j ? value : d)))}
+            />
+          ))}
+          {groupScheduleText(days) && (
+            <PortalLink
+              title="Usar horario de lunes a viernes"
+              disabled={action.busy}
+              onPress={() => setRanges(groupScheduleText(days))}
+            />
+          )}
+        </>
+      )}
+      <Text style={s.label}>Categorías aceptadas</Text>
+      <Text style={s.hint}>
+        Indicá si cada dispositivo se recibe en el lugar, si requiere coordinar un retiro o si no se
+        recibe. Dejá “Sin definir” lo que todavía no esté confirmado.
+      </Text>
+      {intakeGroups.map((group) => (
+        <View key={group.key} style={{ gap: 8 }}>
+          <Text style={s.hint}>{group.title}</Text>
+          <View style={intakeCard}>
+            {group.categories.map((c, i) => (
+              <View
+                key={c.id}
+                style={{ padding: 12, borderTopWidth: i ? 1 : 0, borderTopColor: colors.border }}
+              >
+                <PortalSelect
+                  label={c.name}
+                  value={intakePolicies[c.id] ?? ''}
+                  options={intakeOptions}
+                  onChange={(mode) => setIntakeMode(c.id, mode)}
+                  disabled={action.busy}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+      ))}
+      <PortalChoice
+        label="Confirmo que la información está actualizada para este punto"
+        selected={intakeConfirmed}
+        onPress={() => setIntakeConfirmed(!intakeConfirmed)}
         disabled={action.busy}
       />
-      {manualCoordinates && (
+      <PortalLink
+        title={more ? 'Ocultar más opciones' : 'Más opciones'}
+        disabled={action.busy}
+        onPress={() => setMore(!more)}
+      />
+      {more && (
         <>
+          <PortalLink
+            title={manualCoordinates ? 'Ocultar coordenadas' : 'Ingresar coordenadas manualmente'}
+            onPress={() => setManualCoordinates(!manualCoordinates)}
+            disabled={action.busy}
+          />
+          {manualCoordinates && (
+            <>
+              <PortalField
+                label="Latitud"
+                value={latitude}
+                onChangeText={setLatitude}
+                keyboardType="numbers-and-punctuation"
+                editable={!action.busy}
+              />
+              <PortalField
+                label="Longitud"
+                value={longitude}
+                onChangeText={setLongitude}
+                keyboardType="numbers-and-punctuation"
+                editable={!action.busy}
+              />
+            </>
+          )}
           <PortalField
-            label="Latitud"
-            value={latitude}
-            onChangeText={setLatitude}
-            keyboardType="numbers-and-punctuation"
+            label="Teléfono de contacto"
+            value={phone}
+            onChangeText={setPhone}
             editable={!action.busy}
           />
           <PortalField
-            label="Longitud"
-            value={longitude}
-            onChangeText={setLongitude}
-            keyboardType="numbers-and-punctuation"
+            label="Descripción"
+            value={description}
+            onChangeText={setDescription}
+            multiline
             editable={!action.busy}
+          />
+          <PortalLink
+            title={advanced ? 'Ocultar zona horaria' : 'Cambiar zona horaria'}
+            onPress={() => setAdvanced(!advanced)}
+            disabled={action.busy}
+          />
+          {advanced && (
+            <PortalField
+              label="Zona horaria"
+              value={timeZone}
+              onChangeText={setTimeZone}
+              editable={!action.busy}
+            />
+          )}
+          <PortalToggle
+            label="Ofrece retiros"
+            value={pickupEnabled}
+            onChange={setPickupEnabled}
+            disabled={action.busy}
           />
         </>
       )}
-      <Text style={s.subtitle}>Información del punto</Text>
-      <PortalField
-        label="Teléfono de contacto"
-        value={phone}
-        onChangeText={setPhone}
-        editable={!action.busy}
-      />
-      <PortalField
-        label="Descripción"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        editable={!action.busy}
-      />
-      <PortalLink
-        title={advanced ? 'Ocultar zona horaria' : 'Cambiar zona horaria'}
-        onPress={() => setAdvanced(!advanced)}
+      <PortalSelect
+        label="Estado"
+        compact
+        value={active ? 'published' : 'draft'}
+        options={[
+          { value: 'published', label: 'Publicado' },
+          { value: 'draft', label: 'Borrador' },
+        ]}
+        onChange={(value) => setActive(value === 'published')}
         disabled={action.busy}
       />
-      {advanced && (
-        <PortalField
-          label="Zona horaria"
-          value={timeZone}
-          onChangeText={setTimeZone}
-          editable={!action.busy}
-        />
-      )}
-      <Text style={s.subtitle}>Qué dispositivos recibe este punto</Text>
       <Text style={s.hint}>
-        Indicá si se reciben en el lugar, si requieren coordinar un retiro o si no se reciben. Dejá
-        sin seleccionar lo que todavía no esté confirmado.
+        Los puntos publicados aparecen en Puntos verdes; los borradores sólo los ve tu equipo.
       </Text>
-      {intakeGroups.map((group) => (
-        <View key={group.key} style={s.section}>
-          <Text style={s.subtitle}>{group.title}</Text>
-          {group.categories.map((c) => (
-            <View key={c.id} style={s.section}>
-              <Text style={s.body}>{c.name}</Text>
-              <PortalChoice
-                label="Se recibe en el lugar"
-                selected={intakePolicies[c.id] === 'onsite'}
-                disabled={action.busy}
-                onPress={() => setIntakeMode(c.id, 'onsite')}
-              />
-              <PortalChoice
-                label="Requiere coordinar retiro"
-                selected={intakePolicies[c.id] === 'pickup'}
-                disabled={action.busy}
-                onPress={() => setIntakeMode(c.id, 'pickup')}
-              />
-              <PortalChoice
-                label="No se recibe"
-                selected={intakePolicies[c.id] === 'not_accepted'}
-                disabled={action.busy}
-                onPress={() => setIntakeMode(c.id, 'not_accepted')}
-              />
-            </View>
-          ))}
-        </View>
-      ))}
-      <PortalToggle
-        label="Confirmo que la información está actualizada para este punto"
-        value={intakeConfirmed}
-        onChange={setIntakeConfirmed}
-        disabled={action.busy}
-      />
-      <Text style={s.subtitle}>Horarios</Text>
-      <Text style={s.hint}>
-        Usá 09:00-18:00. Para horario cortado: 09:00-13:00, 15:00-19:00. Dejá vacío si está cerrado.
-        Un cierre anterior a la apertura corresponde al día siguiente.
-      </Text>
-      {weekdays.map((day, i) => (
-        <PortalField
-          key={day}
-          label={day}
-          value={days[i]}
-          placeholder="Cerrado"
-          editable={!action.busy}
-          onChangeText={(value) => setDays(days.map((d, j) => (i === j ? value : d)))}
-        />
-      ))}
-      <PortalToggle
-        label="Ofrece retiros"
-        value={pickupEnabled}
-        onChange={setPickupEnabled}
-        disabled={action.busy}
-      />
-      <PortalToggle
-        label="Visible en Puntos verdes"
-        value={active}
-        onChange={setActive}
-        disabled={action.busy}
-      />
       <PortalFeedback error={action.error} />
       <ActionButton
-        title="Guardar punto"
+        title="Guardar cambios"
         loading={action.busy}
         onPress={() =>
           void action.run(async () => {
@@ -289,7 +367,7 @@ export function CompanyPointEditor({
               categories: data.categories
                 .filter((category) => intakePolicies[category.id] === 'onsite')
                 .map((category) => category.id),
-              schedules: parseSchedules(days),
+              schedules: parseSchedules(ranges ? groupedDays(ranges) : days),
             });
             const savedId =
               point?.id ??
@@ -307,7 +385,58 @@ export function CompanyPointEditor({
           })
         }
       />
-      <PortalLink title="Cancelar edición" disabled={action.busy} onPress={onCancel} />
+      {onCancel && (
+        <PortalLink title="Cancelar edición" disabled={action.busy} onPress={onCancel} />
+      )}
     </View>
   );
 }
+function ScheduleGrid({
+  ranges,
+  onChange,
+  disabled,
+}: Readonly<{
+  ranges: ScheduleRange[];
+  onChange: (ranges: ScheduleRange[]) => void;
+  disabled: boolean;
+}>) {
+  const set = (i: number, key: keyof ScheduleRange, value: string) =>
+    onChange(ranges.map((r, j) => (i === j ? { ...r, [key]: formatTimeInput(value) } : r)));
+  const input = (i: number, key: keyof ScheduleRange, label: string) => (
+    <TextInput
+      accessibilityLabel={`${scheduleGroups[i].label}, ${label}`}
+      value={ranges[i][key]}
+      onChangeText={(value) => set(i, key, value)}
+      placeholder="--:--"
+      placeholderTextColor={s.hint.color}
+      keyboardType="number-pad"
+      maxLength={5}
+      editable={!disabled}
+      style={[portalFieldStyle, { width: 84, textAlign: 'center' }]}
+    />
+  );
+  return (
+    <View style={{ gap: 8 }}>
+      {scheduleGroups.map(({ label }, i) => (
+        <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={[s.body, { flex: 1 }]}>{label}</Text>
+          {input(i, 'opens', 'apertura')}
+          <Text style={s.hint}>a</Text>
+          {input(i, 'closes', 'cierre')}
+        </View>
+      ))}
+    </View>
+  );
+}
+const intakeOptions: { value: DeviceIntakeMode | ''; label: string }[] = [
+  { value: '', label: 'Sin definir' },
+  { value: 'onsite', label: 'Se recibe en el lugar' },
+  { value: 'pickup', label: 'Requiere coordinar retiro' },
+  { value: 'not_accepted', label: 'No se recibe' },
+];
+const intakeCard = {
+  borderWidth: 1,
+  borderColor: colors.border,
+  borderRadius: 12,
+  backgroundColor: colors.surface,
+} as const;
