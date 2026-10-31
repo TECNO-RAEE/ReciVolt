@@ -1,22 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   CitizenPage,
   InfoNote,
-  RewardCard,
-  RewardsSkeleton,
+  RewardsBalance,
   rewardStyles as s,
 } from '@/components/rewards/RewardsUI';
+import { RewardCard, RewardsSkeleton } from '@/components/rewards/RewardCard';
 import { PortalLink, PortalLoading } from '@/components/portal/PortalUI';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { usePortalData } from '@/hooks/usePortalData';
@@ -29,11 +21,16 @@ import { getRewards, getRedemptions } from '@/services/reward.service';
 import { colors, fonts } from '@/theme';
 
 export default function RewardsScreen() {
-  const [tab, setTab] = useState('Disponibles');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState(params.tab === 'canjes' ? 'Mis canjes' : 'Disponibles');
+  const [requestedTab, setRequestedTab] = useState(params.tab);
+  if (params.tab !== requestedTab) {
+    setRequestedTab(params.tab);
+    if (params.tab === 'canjes') setTab('Mis canjes');
+  }
   const [category, setCategory] = useState<RewardCategory | 'all'>('all');
   const [search, setSearch] = useState('');
   const [searching, setSearching] = useState(false);
-  const { width } = useWindowDimensions();
   const { session } = useAuth();
   const { now } = useDiscovery();
   const wallet = useWallet();
@@ -65,7 +62,6 @@ export default function RewardsScreen() {
         .toLocaleLowerCase('es-AR')
         .includes(search.trim().toLocaleLowerCase('es-AR'))
   );
-  const columns = width >= 900 ? 4 : width >= 650 ? 3 : 2;
   return (
     <CitizenPage
       title="Premios"
@@ -84,21 +80,12 @@ export default function RewardsScreen() {
       }
     >
       {session && (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/my-points')}
-          style={styles.wallet}
-        >
-          <Ionicons name="leaf" size={18} color={colors.primaryDark} />
-          <Text style={s.link}>
-            {wallet.loading
-              ? 'Cargando saldo…'
-              : wallet.data
-                ? `${wallet.data.points.toLocaleString('es-AR')} puntos disponibles`
-                : 'Ver mis puntos'}
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.primaryDark} />
-        </Pressable>
+        <RewardsBalance
+          points={wallet.data?.points ?? null}
+          loading={wallet.loading}
+          error={wallet.error}
+          onPress={() => (wallet.error ? void refreshWallet() : router.push('/my-points'))}
+        />
       )}
       <View style={styles.tabs}>
         {['Disponibles', 'Mis canjes'].map((label) => (
@@ -176,16 +163,15 @@ export default function RewardsScreen() {
                   <Text style={s.body}>Probá otra categoría o búsqueda.</Text>
                 </View>
               )}
-              <View style={styles.grid}>
+              <View style={styles.list}>
                 {filtered.map((reward) => (
-                  <View key={reward.id} style={{ width: `${100 / columns}%`, padding: 6 }}>
-                    <RewardCard
-                      reward={reward}
-                      onPress={() =>
-                        router.push({ pathname: '/reward/[id]', params: { id: reward.id } })
-                      }
-                    />
-                  </View>
+                  <RewardCard
+                    key={reward.id}
+                    reward={reward}
+                    onPress={() =>
+                      router.push({ pathname: '/reward/[id]', params: { id: reward.id } })
+                    }
+                  />
                 ))}
               </View>
             </>
@@ -214,20 +200,12 @@ function MyRedemptions() {
         </View>
       )}
       {data?.map((r) => (
-        <Pressable
+        <RewardCard
           key={r.id}
-          accessibilityRole="button"
+          reward={r.reward}
+          status={r.status === 'RESERVED' ? 'Reservado · Ver código' : 'Entregado · Ver detalle'}
           onPress={() => router.push({ pathname: '/redemption/[id]', params: { id: r.id } })}
-          style={s.card}
-        >
-          <Text style={s.subtitle}>{r.reward.title}</Text>
-          <Text style={s.body}>{r.reward.businessName}</Text>
-          <Text style={s.link}>
-            {r.status === 'RESERVED'
-              ? 'Pendiente de uso · Ver código'
-              : 'Canjeado · Ver comprobante'}
-          </Text>
-        </Pressable>
+        />
       ))}
       <View style={s.row}>
         {page > 0 && <PortalLink title="Anterior" onPress={() => setPage(page - 1)} />}
@@ -238,15 +216,6 @@ function MyRedemptions() {
 }
 const styles = StyleSheet.create({
   searchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  wallet: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-    backgroundColor: colors.primarySoft,
-    borderRadius: 12,
-  },
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: colors.border },
   tab: {
     flex: 1,
@@ -279,5 +248,5 @@ const styles = StyleSheet.create({
   },
   selectedChip: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
   chipText: { fontFamily: fonts.regular, fontSize: 12, color: colors.text },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
+  list: { gap: 12 },
 });

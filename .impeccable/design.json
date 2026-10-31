@@ -362,16 +362,7 @@
       }
     ],
     "motion": [],
-    "breakpoints": [
-      {
-        "name": "rewards-three-columns",
-        "value": "650px"
-      },
-      {
-        "name": "rewards-four-columns",
-        "value": "900px"
-      }
-    ],
+    "breakpoints": [],
     "previewNotes": "Muestras HTML estáticas del lenguaje documentado, no componentes de producción. Las rampas tonales se sintetizan sólo para visualizar los colores; no amplían la paleta aprobada. El foco web se ilustra como criterio recomendado, no como certificación de la implementación actual. Roboto usa la fuente del entorno si está disponible; los iconos de navegación ilustran su significado, mientras la app reutiliza Ionicons."
   },
   "components": [
@@ -478,6 +469,22 @@
       "description": "PortalSelect: etiqueta persistente y campo con chevron que despliega opciones en línea (radio, seleccionada en primarySoft con check). Variante compacta con la etiqueta a la izquierda y un ancho fijo de 208 px.",
       "html": "<label class=\"ds-select-label\">Estado<button class=\"ds-select\" type=\"button\" aria-expanded=\"false\">Publicado<svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m6 9 6 6 6-6\"/></svg></button></label>",
       "css": ".ds-select-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:500 14px/20px Roboto,sans-serif}.ds-select{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #E2EBE6;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-select:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+    },
+    {
+      "name": "Fila de premio",
+      "kind": "card",
+      "refersTo": "reward-card",
+      "description": "RewardCard del catálogo: foto de 112 px a la izquierda, título (hasta dos líneas), entidad, PointsBadge con singular/plural y chevron. Lista vertical en todos los anchos. Muestra de documentación.",
+      "html": "<a class=\"ds-reward-row\" href=\"#reward\"><span class=\"ds-reward-photo\" role=\"img\" aria-label=\"Foto del premio\"></span><span class=\"ds-reward-text\"><strong class=\"ds-reward-title\">Premio de ejemplo</strong><span class=\"ds-reward-business\">Comercio de ejemplo</span><span class=\"ds-points-badge\">1 punto</span></span><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m9 6 6 6-6 6\"/></svg></a>",
+      "css": ".ds-reward-row{display:flex;align-items:center;gap:16px;padding:8px 12px 8px 8px;border-radius:15px;background:#fff;color:#102530;text-decoration:none;box-shadow:0 3px 12px rgba(22,65,39,.06)}.ds-reward-photo{width:112px;height:104px;border-radius:12px;background:#E7F3EB}.ds-reward-text{display:flex;flex:1;flex-direction:column;gap:6px}.ds-reward-title{font:700 16px/20px Roboto,sans-serif}.ds-reward-business{font:400 13px Roboto,sans-serif;color:#53676D}.ds-points-badge{align-self:flex-start;padding:4px 12px;border-radius:10px;background:#E7F3EB;color:#174F32;font:500 13px Roboto,sans-serif}.ds-reward-row:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+    },
+    {
+      "name": "Banner de estado",
+      "kind": "custom",
+      "refersTo": "status-banner",
+      "description": "StatusBanner del canje: pendiente (surfaceSoft con borde y reloj sobre primarySoft) y éxito (primarySoft con check blanco sobre primary). Siempre con título y texto además del color.",
+      "html": "<div class=\"ds-status\"><span class=\"ds-status-icon\"><svg aria-hidden=\"true\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg></span><span class=\"ds-status-text\"><strong class=\"ds-status-title\">Reservado</strong><span class=\"ds-status-body\">Mostrá este código en el local para validar tu canje.</span></span></div>",
+      "css": ".ds-status{display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#F1F7F3;border:1px solid #E2EBE6;color:#102530}.ds-status-icon{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#E7F3EB;color:#174F32}.ds-status-text{display:flex;flex-direction:column;gap:2px}.ds-status-title{font:700 20px/26px Roboto,sans-serif}.ds-status-body{font:400 14px/21px Roboto,sans-serif;color:#53676D}"
     }
   ],
   "narrative": {

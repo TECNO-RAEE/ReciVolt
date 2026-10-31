@@ -240,7 +240,7 @@ La composición parte del móvil y se amplía con contenedores centrados. No est
 | Formulario de portal     | `PortalPage`: ancho máximo (960), margen y separación `spacing.section`.                                                           |
 | Empresa                  | `CompanyPage` sobre `PortalPage`: panel "Mi empresa" con menú de filas y una pantalla por sección, ancho máximo (960).           |
 | Admin                    | `AdminPage`: ancho máximo (960), margen exterior `spacing.block`, panel blanco con margen y separación `spacing.page`.             |
-| Catálogo de premios      | Dos columnas en móvil, tres desde (650) y cuatro desde (900); mantener el límite del contenedor.                                   |
+| Catálogo de premios      | Lista vertical de tarjetas horizontales (foto a la izquierda, chevron a la derecha) en todos los anchos; mantener el límite del contenedor. |
 
 La escala documentada es una selección de espacios repetidos, no una orden de redondear todos los valores existentes a múltiplos de ocho. Reutilizar las medidas del componente correspondiente.
 
@@ -327,7 +327,7 @@ Los campos tienen etiqueta persistente, borde suave y fondo blanco. El placehold
 
 `PointsCard` muestra “Tus puntos”, moneda ecológica y saldo global con protagonismo. El resumen general no se presenta como una cuenta distinta por empresa. Los puntos canjeables son el único saldo del ciudadano. No hay XP, niveles ni barras de progreso. El impacto se explica con orientación para entregar RAEE, sin métricas inventadas.
 
-Un premio muestra foto, título, entidad, costo en puntos y “Ver detalle”. El costo debe ser fácil de encontrar. Usar fotos pertinentes, con recorte consistente; si falta la imagen, usar el placeholder existente. Los chips cambian de fondo claro a verde profundo al seleccionarse; conservar el texto legible y comunicar la selección a tecnologías de asistencia.
+En el catálogo, un premio es una fila con foto, título, entidad, badge de costo (`PointsBadge`: “1 punto”, “100 puntos”) y chevron hacia el detalle. El detalle muestra foto grande, badge de costo con regalo, “Condiciones del beneficio”, “Ubicación” y la acción “Canjear por X puntos” fija abajo (`CitizenPage` con `footer`). El canje reservado usa `StatusBanner` pendiente, QR, `CopyableCode` y `DetailList`; el entregado, `StatusBanner` de éxito y “Ver mis canjes”. Los estados usan la paleta verde: no agregar azul para “Reservado”. El costo debe ser fácil de encontrar. Usar fotos pertinentes, con recorte consistente; si falta la imagen, usar el placeholder existente. Los chips cambian de fondo claro a verde profundo al seleccionarse; conservar el texto legible y comunicar la selección a tecnologías de asistencia.
 
 No mostrar datos ficticios como saldo, stock, canje o impacto real. Los ejemplos del catálogo deben conservar su aviso de muestra y no habilitar un canje real. Un dato que no cargó no se representa como cero.
 
