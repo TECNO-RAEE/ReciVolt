@@ -61,6 +61,10 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "supabase:start": "npx --yes supabase start --exclude realtime,imgproxy,studio,logflare,vector,supavisor",
+    "supabase:reset": "npx --yes supabase db reset --local",
+    "supabase:test": "npx --yes supabase test db supabase/tests --local",
+    "dev:local": "node ./scripts/dev-local.mjs",
     "lint": "expo lint",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
