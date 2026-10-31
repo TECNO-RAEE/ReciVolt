@@ -59,7 +59,7 @@ declare
   actor uuid := auth.uid();
   entry jsonb;
   category uuid;
-  mode text;
+  v_mode text;
   point_company uuid;
   entry_count integer;
 begin
@@ -88,22 +88,22 @@ begin
   delete from public.green_point_device_policies where green_point_id=point_id;
   for entry in select value from jsonb_array_elements(entries) loop
     category := (entry->>'deviceCategoryId')::uuid;
-    mode := entry->>'mode';
-    if mode is null or mode not in ('onsite','pickup','not_accepted') or not exists (
+    v_mode := entry->>'mode';
+    if v_mode is null or v_mode not in ('onsite','pickup','not_accepted') or not exists (
       select 1 from public.device_categories where id=category and active
     ) then
       raise exception 'Revisá los estados seleccionados para cada dispositivo.' using errcode='22023';
     end if;
     insert into public.green_point_device_policies(green_point_id,device_category_id,mode)
-    values(point_id,category,mode);
+    values(point_id,category,v_mode);
   end loop;
 
   update public.green_points set intake_confirmed=confirmed where id=point_id;
   -- The existing QR delivery flow remains for categories physically received at this point.
   delete from public.green_point_device_categories where green_point_id=point_id;
   insert into public.green_point_device_categories(green_point_id,device_category_id)
-  select point_id, device_category_id from public.green_point_device_policies
-  where green_point_id=point_id and mode='onsite'
+  select point_id, policy.device_category_id from public.green_point_device_policies as policy
+  where policy.green_point_id=point_id and policy.mode='onsite'
   on conflict do nothing;
 
   insert into public.audit_log(actor_id,action,target_id,company_id,details)
