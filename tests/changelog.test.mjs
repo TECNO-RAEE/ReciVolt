@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { changelogChanges } from '../src/models/Changelog.ts';
+import {
+  auditGroupOf,
+  auditGroups,
+  auditNames,
+  changelogChanges,
+} from '../src/models/Changelog.ts';
 
 test('el historial muestra el estado anterior y nuevo de una empresa', () => {
   assert.deepEqual(
@@ -34,4 +39,15 @@ test('un nuevo nivel conserva nombre y umbral en el historial', () => {
 });
 test('registros antiguos sin snapshots no inventan modificaciones', () => {
   assert.deepEqual(changelogChanges(null, undefined), []);
+});
+test('cada tipo de acción del filtro tiene nombre y pertenece a un solo grupo', () => {
+  const seen = new Set();
+  for (const group of auditGroups)
+    for (const action of group.actions) {
+      assert.ok(auditNames[action], `falta el nombre de ${action}`);
+      assert.ok(!seen.has(action), `${action} está en dos grupos`);
+      seen.add(action);
+      assert.equal(auditGroupOf(action), group.key);
+    }
+  assert.equal(auditGroupOf('delivery_created'), null);
 });

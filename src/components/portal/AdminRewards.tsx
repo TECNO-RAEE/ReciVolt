@@ -1,22 +1,25 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { RewardPhoto } from '@/components/rewards/RewardsUI';
+import { InfoNote, RewardPhoto } from '@/components/rewards/RewardsUI';
 import {
   PortalChoice,
   PortalField,
   PortalFeedback,
-  PortalLink,
   PortalLoading,
+  PortalBadge,
+  PortalListItem,
   PortalNav,
   PortalToggle,
   portalStyles as s,
 } from './PortalUI';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import type { PortalCompany } from '@/models/Portal';
-import { rewardCategories, type Reward, type RewardCategory } from '@/models/Reward';
+import { pointsLabel, rewardCategories, type Reward, type RewardCategory } from '@/models/Reward';
 import { getRewards, saveReward } from '@/services/reward.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
+import { colors } from '@/theme';
 
 export function AdminRewards({ companies }: Readonly<{ companies: PortalCompany[] }>) {
   const loader = useCallback(() => getRewards(undefined, true), []);
@@ -38,46 +41,55 @@ export function AdminRewards({ companies }: Readonly<{ companies: PortalCompany[
     );
   return (
     <View style={s.stack}>
-      <Text style={s.body}>
-        Los administradores publican los premios de toda la red. Cada comercio valida sus canjes; el
-        ciudadano usa un único saldo global.
-      </Text>
-      <ActionButton title="Agregar premio" onPress={() => setSelected('new')} />
-      <PortalField label="Buscar premios por nombre o ID" value={search} onChangeText={setSearch} />
+      {(data?.length ?? 0) > 5 && (
+        <PortalField
+          label="Buscar premios por nombre o ID"
+          value={search}
+          onChangeText={setSearch}
+        />
+      )}
       <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
       {!loading && !error && data?.length === 0 && (
         <Text style={s.body}>
-          Todavía no hay premios. Agregá el primero para que aparezca en el catálogo.
+          Todavía no hay premios. Creá el primero para que aparezca en el catálogo.
         </Text>
       )}
       {!loading && !error && !!data?.length && rows?.length === 0 && (
         <Text style={s.body}>No encontramos premios para esta búsqueda.</Text>
       )}
       {rows?.map((reward) => (
-        <View key={reward.id} style={s.row}>
-          <View style={{ flexDirection: 'row', gap: 16 }}>
-            <View style={{ width: 100, borderRadius: 8, overflow: 'hidden' }}>
-              <RewardPhoto reward={reward} height={80} />
+        <PortalListItem
+          key={reward.id}
+          leading={
+            <View style={{ width: 64, height: 64, borderRadius: 32, overflow: 'hidden' }}>
+              <RewardPhoto reward={reward} height={64} />
             </View>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text style={s.subtitle}>{reward.title}</Text>
-              <Text style={s.body}>
-                {reward.businessName} · {reward.pointsCost} puntos
-              </Text>
-              <Text style={s.hint}>
-                {reward.active ? 'Publicado' : 'Borrador'} ·{' '}
-                {reward.stock == null
-                  ? 'Sin límite de unidades'
-                  : `${reward.stock} unidades disponibles`}
-              </Text>
-              <Text selectable style={s.hint}>
-                ID: {reward.id}
-              </Text>
-            </View>
-          </View>
-          <PortalLink title="Editar premio" onPress={() => setSelected(reward)} />
-        </View>
+          }
+          title={reward.title}
+          lines={[
+            reward.businessName,
+            pointsLabel(reward.pointsCost),
+            reward.stock === 0 && 'Sin unidades disponibles',
+          ]}
+          badge={
+            <PortalBadge
+              label={reward.active ? 'Activo' : 'Borrador'}
+              tone={reward.active ? 'success' : 'neutral'}
+            />
+          }
+          badgeBelow
+          accessibilityHint="Editar premio"
+          onPress={() => setSelected(reward)}
+        />
       ))}
+      <ActionButton
+        title="Crear premio"
+        icon={<Ionicons name="add" size={24} color={colors.textOnPrimary} />}
+        onPress={() => setSelected('new')}
+      />
+      <InfoNote>
+        El comercio valida los códigos de sus premios. El ciudadano usa un único saldo global.
+      </InfoNote>
     </View>
   );
 }

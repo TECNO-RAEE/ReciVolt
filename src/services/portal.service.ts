@@ -347,12 +347,15 @@ export async function companyDocumentUrl(path: string, auditAccess = false): Pro
 export async function getChangelog(
   offset: number,
   search: string,
-  adminsOnly: boolean
+  adminsOnly: boolean,
+  filters: { companyId?: string | null; actions?: readonly string[] | null } = {}
 ): Promise<{ entries: AuditEntry[]; hasMore: boolean }> {
   const { data, error } = await supabase.rpc('admin_changelog', {
     page_offset: offset,
     search_text: search,
     admins_only: adminsOnly,
+    company_filter: filters.companyId ?? null,
+    action_filter: filters.actions?.length ? [...filters.actions] : null,
   });
   if (error) throw error;
   const rows = (data ?? []) as Row[];

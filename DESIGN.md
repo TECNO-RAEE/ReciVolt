@@ -239,7 +239,7 @@ La composición parte del móvil y se amplía con contenedores centrados. No est
 | Vista ciudadana interior | `CitizenPage`: ancho máximo (960), margen interior `spacing.page`, separación `spacing.block` y espacio inferior `spacing.bottom`. |
 | Formulario de portal     | `PortalPage`: ancho máximo (960), margen y separación `spacing.section`.                                                           |
 | Empresa                  | `CompanyPage` sobre `PortalPage`: panel "Mi empresa" con menú de filas y una pantalla por sección, ancho máximo (960).           |
-| Admin                    | `AdminPage`: ancho máximo (960), margen exterior `spacing.block`, panel blanco con margen y separación `spacing.page`.             |
+| Admin                    | `AdminPage`: pestañas bajo el header, contenido sin panel envolvente con margen `spacing.block`, ancho máximo (960) y acción fija inferior opcional. |
 | Catálogo de premios      | Lista vertical de tarjetas horizontales (foto a la izquierda, chevron a la derecha) en todos los anchos; mantener el límite del contenedor. |
 
 La escala documentada es una selección de espacios repetidos, no una orden de redondear todos los valores existentes a múltiplos de ocho. Reutilizar las medidas del componente correspondiente.
@@ -313,7 +313,7 @@ La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en
 
 **Decisión aprobada el 26/10/2026, pendiente de implementación:** agregar Marketplace junto a Premios: **Inicio · Puntos verdes · Premios · Marketplace · Perfil**. La sección se llama Marketplace y sus productos, “Dispositivos reacondicionados”. Empresa administra su catálogo; el detalle del punto verde muestra hasta cuatro productos y “Ver catálogo completo”; Marketplace reúne los productos de todas las empresas. Las tareas MK-01 a MK-08 están en Trello. Esta decisión no significa que las pantallas ya estén implementadas; al implementarlas, actualizar también la muestra de navegación de `.impeccable/design.json`.
 
-Empresa navega desde el panel "Mi empresa": `OrganizationCard` con nombre y rol, acción principal del escáner arriba y un menú de filas `PortalMenuItem` (icono, título y chevron; radio 12, separación 12) que abre cada sección en su propia pantalla con `ScreenHeader` mediante `CompanyPage`. Los trabajadores sólo ven el escáner y el historial de entregas. Las pestañas operativas de admin permanecen debajo del mismo header. No reemplazarlo por un sidebar, una barra oscura o un título distinto por cada pestaña.
+Empresa navega desde el panel "Mi empresa": `OrganizationCard` con nombre y rol, acción principal del escáner arriba y un menú de filas `PortalMenuItem` (icono, título y chevron; radio 12, separación 12) que abre cada sección en su propia pantalla con `ScreenHeader` mediante `CompanyPage`. Los trabajadores sólo ven el escáner y el historial de entregas. Las pestañas operativas de admin permanecen debajo del mismo header ("Administración"), con la rueda de Configuraciones como acción y actualización al deslizar. Cada pestaña lista sus elementos con `PortalListItem` (icono o miniatura circular, título, `PortalBadge` de estado, detalle y chevron); "Agregar punto" queda fijo abajo en Puntos verdes. El historial sólo muestra acciones de administración y se filtra por institución y tipo de acción. No reemplazarlo por un sidebar, una barra oscura o un título distinto por cada pestaña.
 
 ### Botones y campos
 

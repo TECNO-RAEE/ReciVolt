@@ -54,6 +54,12 @@ insert into audit_log(actor_id,action,details) select '21000000-0000-0000-0000-0
 set local role authenticated;
 insert into changelog_results select is(jsonb_array_length(admin_changelog(0,'pagination-proof',true)),26,'pagination fetches one extra to detect next page');
 insert into changelog_results select is(jsonb_array_length(admin_changelog(25,'pagination-proof',true)),5,'next page retains remaining rows');
+insert into changelog_results select ok(jsonb_array_length(admin_changelog(0,'',true,'21000000-0000-0000-0000-000000000003'::uuid))>=2,'institution filter returns that company history');
+insert into changelog_results select is((select count(*) from jsonb_array_elements(admin_changelog(0,'',true,'21000000-0000-0000-0000-000000000003'::uuid)) e where (e->>'company_id') is distinct from '21000000-0000-0000-0000-000000000003'),0::bigint,'institution filter excludes other companies');
+insert into changelog_results select is((select count(*) from jsonb_array_elements(admin_changelog(0,'',true,null,array['review_limit'])) e where e->>'action'<>'review_limit'),0::bigint,'action filter keeps only the requested types');
+insert into changelog_results select ok(jsonb_array_length(admin_changelog(0,'',true,null,array['review_limit']))>=1,'action filter finds limit reviews');
+insert into changelog_results select is(jsonb_array_length(admin_changelog(0,'pagination-proof',true,null,array['review_limit'])),0,'filters combine with the search text');
+insert into changelog_results select throws_ok($$select admin_changelog(0,'',true,null,array_fill('x'::text,array[51]))$$,'22023',null,'oversized action filter rejected');
 reset role;
 do $$ begin
  if exists(select 1 from changelog_results where result like 'not ok%') then

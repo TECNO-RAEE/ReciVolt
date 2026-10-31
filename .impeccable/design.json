@@ -485,6 +485,14 @@
       "description": "StatusBanner del canje: pendiente (surfaceSoft con borde y reloj sobre primarySoft) y éxito (primarySoft con check blanco sobre primary). Siempre con título y texto además del color.",
       "html": "<div class=\"ds-status\"><span class=\"ds-status-icon\"><svg aria-hidden=\"true\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg></span><span class=\"ds-status-text\"><strong class=\"ds-status-title\">Reservado</strong><span class=\"ds-status-body\">Mostrá este código en el local para validar tu canje.</span></span></div>",
       "css": ".ds-status{display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:#F1F7F3;border:1px solid #E2EBE6;color:#102530}.ds-status-icon{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#E7F3EB;color:#174F32}.ds-status-text{display:flex;flex-direction:column;gap:2px}.ds-status-title{font:700 20px/26px Roboto,sans-serif}.ds-status-body{font:400 14px/21px Roboto,sans-serif;color:#53676D}"
+    },
+    {
+      "name": "Fila de gestión",
+      "kind": "card",
+      "refersTo": "portal-list-item",
+      "description": "PortalListItem de admin: icono en círculo de 56 px (o miniatura circular), título, PortalBadge de estado, líneas de detalle y chevron. Fondo blanco, borde suave y radio 16; puede desplegar detalle debajo. Muestra de documentación.",
+      "html": "<a class=\"ds-list-item\" href=\"#org\"><span class=\"ds-list-icon\"><svg aria-hidden=\"true\" width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M17 8C8 10 5.9 16.2 3.8 21.3l1.9.7.9-2.3c.5.2 1 .3 1.4.3C19 20 22 3 22 3c-1 2-8 2.3-13 3.3S2 11.5 2 13.5s1.8 3.8 1.8 3.8C7 8 17 8 17 8z\"/></svg></span><span class=\"ds-list-text\"><strong class=\"ds-list-title\">Organización de ejemplo</strong><span class=\"ds-points-badge\">Punto publicado</span><span class=\"ds-list-line\">Localidad de ejemplo</span></span><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m9 6 6 6-6 6\"/></svg></a>",
+      "css": ".ds-list-item{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid #E2EBE6;border-radius:16px;background:#fff;color:#102530;text-decoration:none}.ds-list-icon{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#E7F3EB;color:#174F32}.ds-list-text{display:flex;flex:1;flex-direction:column;gap:4px}.ds-list-title{font:500 16px/22px Roboto,sans-serif}.ds-list-line{font:400 13px/20px Roboto,sans-serif;color:#53676D}.ds-points-badge{align-self:flex-start;padding:3px 12px;border-radius:10px;background:#E7F3EB;color:#174F32;font:500 13px Roboto,sans-serif}.ds-list-item:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     }
   ],
   "narrative": {
@@ -535,7 +543,7 @@
       },
       {
         "name": "Panel de empresa",
-        "body": "Empresa navega desde el panel \"Mi empresa\": tarjeta de la organización, acción principal del escáner arriba y un menú de filas con chevron que abre cada sección en su propia pantalla con `ScreenHeader` (`CompanyPage`). Los trabajadores sólo ven el escáner y el historial de entregas. Admin conserva sus pestañas debajo del mismo header.",
+        "body": "Empresa navega desde el panel \"Mi empresa\": tarjeta de la organización, acción principal del escáner arriba y un menú de filas con chevron que abre cada sección en su propia pantalla con `ScreenHeader` (`CompanyPage`). Los trabajadores sólo ven el escáner y el historial de entregas. Admin conserva sus pestañas debajo del mismo header. Admin usa `AdminPage` con pestañas bajo el mismo header, filas `PortalListItem` y el historial filtrable por institución y tipo de acción.",
         "section": "layout"
       },
       {
