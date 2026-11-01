@@ -64,6 +64,12 @@ export default function CompanyScreen() {
           icon="document-text-outline"
           onPress={() => router.push('/company/deliveries')}
         />
+        <PortalMenuItem
+          title="Retiros a domicilio"
+          description="Coordiná y confirmá los retiros solicitados."
+          icon="car-outline"
+          onPress={() => router.push('/company/pickups')}
+        />
         {owner && (
           <>
             <PortalMenuItem
