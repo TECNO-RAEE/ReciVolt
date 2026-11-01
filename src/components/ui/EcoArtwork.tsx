@@ -217,7 +217,14 @@ export function SuccessArtwork() {
 // Shared scene for the account screens: soft cloud, side leaves and a central motif.
 export function AuthArtwork({ kind }: Readonly<{ kind: 'lock' | 'account' | 'recovery' }>) {
   return (
-    <Svg width={240} height={150} viewBox="0 0 240 150" {...decorativeAccessibility}>
+    <Svg
+      width="100%"
+      height={150}
+      viewBox="0 0 240 150"
+      preserveAspectRatio="xMidYMid meet"
+      style={{ maxWidth: 240 }}
+      {...decorativeAccessibility}
+    >
       <Path
         d="M44 128c-22 0-32-20-20-36 6-8 16-10 24-8 2-24 26-40 50-32 10-22 44-26 60-8 16-8 38 0 42 18 18 0 30 16 26 32-3 10-12 16-24 16z"
         fill="#E7F3EB"

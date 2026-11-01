@@ -52,6 +52,8 @@ const styles = StyleSheet.create({
   iconButton: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   title: {
     flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
     fontFamily: fonts.bold,
     fontSize: 20,
     lineHeight: 26,
