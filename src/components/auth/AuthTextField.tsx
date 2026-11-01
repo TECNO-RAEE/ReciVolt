@@ -53,13 +53,13 @@ export function AuthTextField({
             accessibilityRole="button"
             accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             disabled={inputProps.editable === false}
-            onPress={() => setVisible(!visible)}
+            onPress={() => setVisible((value) => !value)}
             style={styles.toggle}
           >
             <Ionicons
-              name={visible ? 'eye-off-outline' : 'eye-outline'}
-              size={24}
-              color={colors.textSecondary}
+              name={visible ? 'eye-outline' : 'eye-off-outline'}
+              size={25}
+              color={colors.text}
             />
           </Pressable>
         )}
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
-  toggle: { width: 48, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  toggle: { width: 45, height: '100%', alignItems: 'center', justifyContent: 'center' },
 
   inputIcon: {
     marginLeft: 11,

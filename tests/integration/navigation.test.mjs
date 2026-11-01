@@ -84,7 +84,7 @@ test('la recuperación conserva el formulario hasta guardar la nueva contraseña
       .getByPlaceholder('Repetí tu nueva contraseña', { exact: true })
       .fill(password + '-new');
     assert.equal(new URL(page.url()).pathname, '/new-password');
-    await page.getByRole('button', { name: 'Guardar Contraseña', exact: true }).click();
+    await page.getByRole('button', { name: 'Guardar contraseña', exact: true }).click();
     await page.waitForURL('**/home');
     assert.deepEqual(errors, []);
   } finally {
