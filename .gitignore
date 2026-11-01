@@ -21,6 +21,7 @@ node_modules/
 !/supabase/tests/portals.test.sql
 !/supabase/tests/retire-xp.test.sql
 !/supabase/tests/admin-changelog.test.sql
+!/supabase/tests/pickups.test.sql
 !/tests/integration/
 /tests/integration/*
 !/tests/integration/*.test.mjs
@@ -45,6 +46,7 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+.atl/
 
 # debug
 npm-debug.*
