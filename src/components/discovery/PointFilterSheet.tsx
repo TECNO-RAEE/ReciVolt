@@ -59,12 +59,7 @@ export function PointFilterSheet({
     }));
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        accessibilityLabel="Cerrar filtros"
-        accessibilityRole="button"
-        style={styles.overlay}
-        onPress={onClose}
-      >
+      <Pressable style={styles.overlay} onPress={onClose}>
         <View style={styles.sheet} onStartShouldSetResponder={() => true}>
           <View style={styles.handle} />
           <View style={styles.headerRow}>
