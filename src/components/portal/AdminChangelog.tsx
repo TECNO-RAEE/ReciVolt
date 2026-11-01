@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View, type TextStyle } from 'react-native';
 import type { ComponentProps } from 'react';
 import type { Ionicons } from '@expo/vector-icons';
@@ -51,8 +51,12 @@ export function AdminChangelog({
     [page, search, companyId, group]
   );
   const { data, loading, error, refresh } = usePortalData(loader);
+  // refresh changes with every filter, so only a new pull-to-refresh triggers it.
+  const handledReload = useRef(reload);
   useEffect(() => {
-    if (reload) void refresh();
+    if (reload === handledReload.current) return;
+    handledReload.current = reload;
+    void refresh();
   }, [reload, refresh]);
   // Same as the organization search: filter as the admin types.
   useEffect(() => {
