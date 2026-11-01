@@ -50,6 +50,7 @@ export const auditGroups = [
   { key: 'rewards', label: 'Premios', actions: ['reward_saved'] },
   { key: 'limits', label: 'Cupos del equipo', actions: ['review_limit'] },
   { key: 'users', label: 'Usuarios', actions: ['admin_edit_users'] },
+  { key: 'impact', label: 'XP y niveles', actions: ['save_global_xp', 'save_level'] },
   { key: 'documents', label: 'Documentación', actions: ['admin_document_opened'] },
 ] as const;
 export type AuditGroupKey = (typeof auditGroups)[number]['key'];

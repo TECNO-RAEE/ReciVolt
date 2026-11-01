@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
   auditGroupOf,
@@ -50,4 +51,13 @@ test('cada tipo de acción del filtro tiene nombre y pertenece a un solo grupo',
       assert.equal(auditGroupOf(action), group.key);
     }
   assert.equal(auditGroupOf('delivery_created'), null);
+});
+test('toda acción que el historial de admin incluye por lista blanca se puede filtrar', () => {
+  const sql = readFileSync(
+    new URL('../supabase/migrations/20261101120000_admin_changelog_filters.sql', import.meta.url),
+    'utf8'
+  );
+  const list = sql.match(/a\.action in \(([^)]*)\)/)[1];
+  for (const [, action] of list.matchAll(/'([a-z_]+)'/g))
+    assert.ok(auditGroupOf(action), `${action} no tiene grupo de filtro`);
 });

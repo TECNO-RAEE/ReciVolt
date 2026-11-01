@@ -34,8 +34,8 @@ export default function AdminScreen() {
         setPointsList(true);
       }}
       refresh={() => {
-        void refresh();
         setReload((value) => value + 1);
+        return refresh();
       }}
       footer={
         tab === 'Puntos verdes' &&

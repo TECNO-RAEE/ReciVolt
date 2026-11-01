@@ -29,6 +29,7 @@ const groupIcons: Record<AuditGroupKey, ComponentProps<typeof Ionicons>['name']>
   rewards: 'gift-outline',
   limits: 'people-outline',
   users: 'person-outline',
+  impact: 'trophy-outline',
   documents: 'document-text-outline',
 };
 

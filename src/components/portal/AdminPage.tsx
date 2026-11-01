@@ -1,7 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { ComponentProps, ReactNode } from 'react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import { router, type Href } from 'expo-router';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { PortalNav, portalStyles } from './PortalUI';
@@ -23,11 +32,17 @@ export function AdminPage({
   sections: readonly string[];
   selected: string;
   onSelect: (section: string) => void;
-  refresh: () => void;
+  refresh: () => Promise<void>;
   footer?: ReactNode;
   children: ReactNode;
 }>) {
   const scroll = useScrollReset();
+  const [refreshing, setRefreshing] = useState(false);
+  const reload = () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    void refresh().finally(() => setRefreshing(false));
+  };
   return (
     <View style={styles.page}>
       <ScreenHeader
@@ -44,15 +59,38 @@ export function AdminPage({
           </Pressable>
         }
       />
-      <View style={styles.frame}>
-        <PortalNav items={sections} selected={selected} onSelect={onSelect} />
+      <View style={[styles.frame, styles.navRow]}>
+        <View style={styles.nav}>
+          <PortalNav items={sections} selected={selected} onSelect={onSelect} />
+        </View>
+        {/* The pull-to-refresh gesture does not exist with a mouse on web. */}
+        {Platform.OS === 'web' && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Actualizar datos"
+            accessibilityState={{ busy: refreshing, disabled: refreshing }}
+            disabled={refreshing}
+            onPress={reload}
+            style={({ pressed }) => [
+              styles.iconButton,
+              styles.navAction,
+              pressed && { opacity: 0.6 },
+            ]}
+          >
+            {refreshing ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <Ionicons name="refresh-outline" size={22} color={colors.primary} />
+            )}
+          </Pressable>
+        )}
       </View>
       <ScrollView
         ref={scroll}
         key={selected}
         keyboardShouldPersistTaps="handled"
         refreshControl={
-          <RefreshControl refreshing={false} onRefresh={refresh} tintColor={colors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={colors.primary} />
         }
         contentContainerStyle={styles.content}
       >
@@ -87,6 +125,9 @@ export function AdminEmpty({
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.background },
   frame: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 16 },
+  navRow: { flexDirection: 'row', alignItems: 'stretch' },
+  nav: { flex: 1, minWidth: 0 },
+  navAction: { borderBottomWidth: 1, borderBottomColor: colors.border },
   iconButton: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center' },
   content: {
     width: '100%',

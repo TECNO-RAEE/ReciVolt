@@ -543,7 +543,7 @@
       },
       {
         "name": "Panel de empresa",
-        "body": "Empresa navega desde el panel \"Mi empresa\": tarjeta de la organización, acción principal del escáner arriba y un menú de filas con chevron que abre cada sección en su propia pantalla con `ScreenHeader` (`CompanyPage`). Los trabajadores sólo ven el escáner y el historial de entregas. Admin conserva sus pestañas debajo del mismo header. Admin usa `AdminPage` con pestañas bajo el mismo header, filas `PortalListItem` y el historial filtrable por institución y tipo de acción.",
+        "body": "Empresa navega desde el panel \"Mi empresa\": tarjeta de la organización, acción principal del escáner arriba y un menú de filas con chevron que abre cada sección en su propia pantalla con `ScreenHeader` (`CompanyPage`). Los trabajadores sólo ven el escáner y el historial de entregas. Admin conserva sus pestañas debajo del mismo header. Admin usa `AdminPage` con pestañas bajo el mismo header (en web, con botón Actualizar al costado porque no hay gesto de deslizar para recargar), filas `PortalListItem` y el historial filtrable por institución y tipo de acción.",
         "section": "layout"
       },
       {

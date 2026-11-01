@@ -239,7 +239,7 @@ La composición parte del móvil y se amplía con contenedores centrados. No est
 | Vista ciudadana interior | `CitizenPage`: ancho máximo (960), margen interior `spacing.page`, separación `spacing.block` y espacio inferior `spacing.bottom`. |
 | Formulario de portal     | `PortalPage`: ancho máximo (960), margen y separación `spacing.section`.                                                           |
 | Empresa                  | `CompanyPage` sobre `PortalPage`: panel "Mi empresa" con menú de filas y una pantalla por sección, ancho máximo (960).           |
-| Admin                    | `AdminPage`: pestañas bajo el header, contenido sin panel envolvente con margen `spacing.block`, ancho máximo (960) y acción fija inferior opcional. |
+| Admin                    | `AdminPage`: pestañas bajo el header, contenido sin panel envolvente con margen `spacing.block`, ancho máximo (960) y acción fija inferior opcional; en web, botón Actualizar junto a las pestañas. |
 | Catálogo de premios      | Lista vertical de tarjetas horizontales (foto a la izquierda, chevron a la derecha) en todos los anchos; mantener el límite del contenedor. |
 
 La escala documentada es una selección de espacios repetidos, no una orden de redondear todos los valores existentes a múltiplos de ocho. Reutilizar las medidas del componente correspondiente.
