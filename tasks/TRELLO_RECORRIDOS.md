@@ -16,7 +16,7 @@
 | **CARD-02** | [Recorrido 02: Encontrar dónde entregar](#card-02-recorrido-02--encontrar-dónde-entregar-3-vistas) | Feature UI + Refactor layout | 2 vistas funcionales + 1 modal nuevo |
 | **CARD-03** | [Recorrido 03: Recepción y educación ambiental](#card-03-recorrido-03--recepción-y-educación-ambiental-3-vistas) | Feature UI + Contenido | 2 vistas con desvíos + 1 pantalla nueva |
 | **CARD-04** | [Recorrido 04: De la entrega a los puntos](#card-04-recorrido-04--de-la-entrega-a-los-puntos-3-vistas) | Rediseño de componentes | Implementado y verificado |
-| **CARD-05** | [Recorrido 05: Solicitar y seguir un retiro](#card-05-recorrido-05--solicitar-y-seguir-un-retiro-3-vistas) | Nueva funcionalidad completa | Por implementar (Backlog P2) |
+| **CARD-05** | [Recorrido 05: Solicitar y seguir un retiro](#card-05-recorrido-05--solicitar-y-seguir-un-retiro-3-vistas) | Nueva funcionalidad completa | Implementado y verificado |
 | **CARD-06** | [Recorrido 06: Premios que acompañan al comercio](#card-06-recorrido-06--premios-que-acompañan-al-comercio-4-vistas) | Rediseño visual (Grilla a Lista) | Funcional con desvíos visuales |
 | **CARD-07** | [Recorrido 07: Cuenta, saldo e historial](#card-07-recorrido-07--cuenta-saldo-e-historial-3-vistas) | Refactor + Nueva pantalla unificada | 2 vistas funcionales + 1 feed nuevo |
 | **CARD-08** | [Recorrido 08: Gestión de la organización](#card-08-recorrido-08--gestión-de-la-organización-4-vistas) | Adaptación móvil de portal | Implementado y verificado |
@@ -223,19 +223,19 @@ Implementar desde cero el circuito ciudadano de solicitud y seguimiento de retir
 - `supabase/migrations/` *(tablas y políticas RLS para pickups)*
 
 #### Checklist de tareas
-- [ ] **Backend / Supabase:**
-  - [ ] Diseñar tabla `pickups` vinculada a `profiles` y `companies`, con estados: `REQUESTED`, `COORDINATED`, `IN_TRANSIT`, `COMPLETED`, `CANCELLED`.
-  - [ ] Configurar RLS: ciudadano puede crear y ver sus propios retiros; empresa asignada puede leer y actualizar estado.
-- [ ] **Frontend - Solicitar retiro:**
-  - [ ] Crear pantalla `src/app/pickup/new.tsx`.
-  - [ ] Implementar selectores de punto con retiro habilitado (`pickupEnabled: true`).
-  - [ ] Formulario de dirección con campos de calle, localidad y referencia de timbre/portón.
-  - [ ] Acción de envío con feedback accesible y redirección al detalle.
-- [ ] **Frontend - Detalle y Seguimiento:**
-  - [ ] Crear pantalla `src/app/pickup/[id].tsx`.
-  - [ ] Crear componente de línea de tiempo con los 4 hitos secuenciales y fechas dinámicas.
-  - [ ] Manejar estado *"Por coordinar"* con opción de cancelación.
-  - [ ] Manejar estado *"Coordinado"* y transiciones hacia completado.
+- [x] **Backend / Supabase:**
+  - [x] Diseñar tabla `pickups` vinculada a `profiles` y `companies`, con estados: `REQUESTED`, `COORDINATED`, `IN_TRANSIT`, `COMPLETED`, `CANCELLED`.
+  - [x] Configurar RLS: ciudadano puede crear y ver sus propios retiros; empresa asignada puede leer y actualizar estado.
+- [x] **Frontend - Solicitar retiro:**
+  - [x] Crear pantalla `src/app/pickup/new.tsx`.
+  - [x] Implementar selectores de punto con retiro habilitado (`pickupEnabled: true`).
+  - [x] Formulario de dirección con campos de calle, localidad y referencia de timbre/portón.
+  - [x] Acción de envío con feedback accesible y redirección al detalle.
+- [x] **Frontend - Detalle y Seguimiento:**
+  - [x] Crear pantalla `src/app/pickup/[id].tsx`.
+  - [x] Crear componente de línea de tiempo con los 4 hitos secuenciales y fechas dinámicas.
+  - [x] Manejar estado *"Por coordinar"* con opción de cancelación.
+  - [x] Manejar estado *"Coordinado"* y transiciones hacia completado.
 
 #### Criterios de Aceptación
 - Un ciudadano solo puede solicitar retiros en organizaciones que tengan habilitado el servicio.

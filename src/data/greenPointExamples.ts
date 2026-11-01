@@ -23,7 +23,7 @@ export function getDiscoveryPoints(
         'Punto verde de ejemplo. Podés explorar sus datos, pero no registrar entregas reales. La tarifa de puntos por dispositivo todavía no está definida.',
       timeZone: 'America/Argentina/Buenos_Aires',
       pickupEnabled: false,
-      categories: [],
+      categories: [...categories],
       intakeConfirmed: false,
       intakePolicies: [],
       schedules: [1, 2, 3, 4, 5, 6].map((weekday) => ({

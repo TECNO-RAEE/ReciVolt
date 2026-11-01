@@ -17,6 +17,7 @@ import {
   weekdayNames,
 } from '@/models/GreenPoint';
 import { getCategoryVisual } from '@/models/DeviceCategory';
+import { canRequestPickup } from '@/models/Pickup';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { colors, fonts } from '@/theme';
@@ -229,14 +230,34 @@ export default function PointDetailScreen() {
                 onPress={() => router.replace('/green-points')}
               />
             ) : guest ? (
-              <ActionButton title="Registrar una entrega" onPress={() => setNeedsAccount(true)} />
+              <>
+                <ActionButton title="Registrar una entrega" onPress={() => setNeedsAccount(true)} />
+                {canRequestPickup(point) && (
+                  <ActionButton
+                    title="Solicitar retiro a domicilio"
+                    secondary
+                    onPress={() => setNeedsAccount(true)}
+                  />
+                )}
+              </>
             ) : (
-              <ActionButton
-                title="Registrar una entrega"
-                onPress={() =>
-                  router.push({ pathname: '/new-delivery', params: { pointId: point.id } })
-                }
-              />
+              <>
+                <ActionButton
+                  title="Registrar una entrega"
+                  onPress={() =>
+                    router.push({ pathname: '/new-delivery', params: { pointId: point.id } })
+                  }
+                />
+                {canRequestPickup(point) && (
+                  <ActionButton
+                    title="Solicitar retiro a domicilio"
+                    secondary
+                    onPress={() =>
+                      router.push({ pathname: '/pickup/new', params: { pointId: point.id } })
+                    }
+                  />
+                )}
+              </>
             )}
           </>
         )}

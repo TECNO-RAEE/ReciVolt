@@ -117,14 +117,14 @@ export function filterGreenPoints(
       (p) =>
         (!query ||
           normalize(
-            `${p.name} ${p.address} ${p.companyName} ${p.categories.map((c) => c.name).join(' ')} ${p.intakePolicies
+            `${p.name} ${p.address} ${p.companyName} ${(p.categories ?? []).map((c) => c.name).join(' ')} ${(p.intakePolicies ?? [])
               .filter((policy) => policy.mode !== 'not_accepted')
               .map((policy) => policy.category?.name ?? '')
               .join(' ')}`
           ).includes(query)) &&
         (!filters.categoryId ||
-          p.categories.some((c) => c.id === filters.categoryId) ||
-          p.intakePolicies.some(
+          (p.categories ?? []).some((c) => c.id === filters.categoryId) ||
+          (p.intakePolicies ?? []).some(
             (policy) => policy.categoryId === filters.categoryId && policy.mode !== 'not_accepted'
           )) &&
         (!filters.companyId || p.companyId === filters.companyId) &&

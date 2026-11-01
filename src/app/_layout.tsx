@@ -66,6 +66,8 @@ function Navigation() {
         <Stack.Screen name="point/[id]" />
         <Stack.Screen name="new-delivery" />
         <Stack.Screen name="delivery/[id]" />
+        <Stack.Screen name="pickup/new" />
+        <Stack.Screen name="pickup/[id]" />
         <Stack.Screen name="my-points" />
         <Stack.Screen name="impact" />
         <Stack.Screen name="reward/[id]" />
