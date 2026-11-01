@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
+import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { login } from '@/services/auth.service';
 import { colors, fonts } from '@/theme';
@@ -66,7 +67,7 @@ function getLoginErrorMessage(error: unknown) {
 export default function LoginScreen() {
   const params = useLocalSearchParams<{ intent?: string; confirm?: string }>();
   const intent = parseAuthIntent(params.intent);
-  const { prepareAuth } = useAuth();
+  const { prepareAuth, continueAsGuest } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [authErrorVisible, setAuthErrorVisible] = useState(false);
   const passwordInputRef = useRef<TextInputInstance>(null);
@@ -127,16 +128,23 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.screen}>
-          <Text style={styles.subtitle}>Accedé a tu cuenta</Text>
+          <View style={styles.hero}>
+            <AuthArtwork kind="lock" />
+            <Text accessibilityRole="header" style={styles.title}>
+              Te damos la bienvenida
+            </Text>
+            <Text style={styles.subtitle}>
+              Iniciá sesión para continuar y ser parte de una comunidad que recicla tecnología.
+            </Text>
+          </View>
 
-          {/* Correo */}
-          <View style={styles.emailField}>
+          <View style={styles.field}>
             <AuthTextField
               label="Correo electrónico"
               iconName="mail-outline"
               value={email}
               onChangeText={setEmail}
-              placeholder="Ingresá tu correo"
+              placeholder="nombre@correo.com"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -145,8 +153,7 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Contraseña */}
-          <View style={styles.passwordField}>
+          <View style={styles.field}>
             <AuthTextField
               label="Contraseña"
               iconName="lock-closed-outline"
@@ -154,7 +161,7 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder="Ingresá tu contraseña"
-              secureTextEntry
+              passwordToggle
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="password"
@@ -162,23 +169,6 @@ export default function LoginScreen() {
               onSubmitEditing={handleLogin}
             />
           </View>
-
-          {/* Olvidaste contraseña */}
-          <Pressable
-            accessibilityRole="button"
-            style={styles.forgotPassword}
-            onPress={() => router.push('/forgot-password')}
-            disabled={loading}
-          >
-            <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-          </Pressable>
-
-          {/* Iniciar sesión */}
-          <ActionButton
-            title="Iniciar sesión"
-            onPress={() => void handleLogin()}
-            loading={loading}
-          />
 
           {formError && (
             <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>
@@ -192,17 +182,44 @@ export default function LoginScreen() {
             </Text>
           )}
 
-          {/* Crear cuenta */}
-          <View style={styles.createAccountSection}>
-            <Text style={styles.createAccountLabel}>¿Todavía no tenés una cuenta?</Text>
+          <ActionButton title="Ingresar" onPress={() => void handleLogin()} loading={loading} />
 
-            <ActionButton
-              title="Crear cuenta"
-              secondary
-              onPress={() => router.push(authRoute('/register', intent))}
-              disabled={loading}
-            />
+          <Pressable
+            accessibilityRole="link"
+            style={styles.textLink}
+            onPress={() => router.push('/forgot-password')}
+            disabled={loading}
+          >
+            <Text style={styles.textLinkLabel}>Olvidé mi contraseña</Text>
+          </Pressable>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>o</Text>
+            <View style={styles.dividerLine} />
           </View>
+
+          <ActionButton
+            title="Crear cuenta"
+            secondary
+            onPress={() => router.push(authRoute('/register', intent))}
+            disabled={loading}
+          />
+
+          <Pressable
+            accessibilityRole="link"
+            style={styles.textLink}
+            disabled={loading}
+            onPress={() =>
+              void continueAsGuest()
+                .then(() => router.replace('/home'))
+                .catch(() =>
+                  setFormError('No pudimos continuar como visitante. Intentá nuevamente.')
+                )
+            }
+          >
+            <Text style={styles.textLinkLabel}>Seguir como visitante</Text>
+          </Pressable>
         </View>
       </ScrollView>
 
@@ -222,11 +239,7 @@ export default function LoginScreen() {
         }}
       >
         <View style={styles.modalOverlay}>
-          <View
-            accessibilityViewIsModal
-            accessibilityRole="alert"
-            style={styles.modalCard}
-          >
+          <View accessibilityViewIsModal accessibilityRole="alert" style={styles.modalCard}>
             <View style={styles.modalIconCircle}>
               <Text style={styles.modalIcon}>!</Text>
             </View>
@@ -256,31 +269,40 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
-  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 18 },
+  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
   error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
 
+  hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 26,
+    lineHeight: 34,
+    textAlign: 'center',
+    color: colors.text,
+  },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 22,
+    textAlign: 'center',
     color: colors.textSecondary,
   },
-  emailField: { width: '100%' },
-  passwordField: { width: '100%' },
-  forgotPassword: { minHeight: 44, alignSelf: 'flex-end', justifyContent: 'center' },
-  forgotPasswordText: { fontFamily: fonts.regular, fontSize: 14, color: colors.primaryDark },
+  field: { width: '100%' },
+  textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
+  textLinkLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.primaryDark,
+    textDecorationLine: 'underline',
+  },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
   feedback: {
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 22,
     color: colors.textSecondary,
-  },
-  createAccountSection: { gap: 12, marginTop: 24 },
-  createAccountLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    textAlign: 'center',
-    color: colors.text,
   },
 
   modalOverlay: {

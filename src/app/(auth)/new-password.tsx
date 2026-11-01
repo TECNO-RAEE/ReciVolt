@@ -1,16 +1,7 @@
 import { useAuth } from '@/providers/AuthProvider';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { ActionButton } from '@/components/ui/ActionButton';
@@ -22,10 +13,6 @@ export default function NewPasswordScreen() {
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function handleSavePassword() {
     if (saving) return;
@@ -82,24 +69,11 @@ export default function NewPasswordScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder="Ingresá tu nueva contraseña"
-              secureTextEntry={!showPassword}
+              passwordToggle
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="new-password"
               editable={!saving}
-              trailing={
-                <Pressable
-                  disabled={saving}
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword((value) => !value)}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={25}
-                    color={colors.text}
-                  />
-                </Pressable>
-              }
             />
           </View>
 
@@ -111,25 +85,12 @@ export default function NewPasswordScreen() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               placeholder="Repetí tu nueva contraseña"
-              secureTextEntry={!showConfirmPassword}
+              passwordToggle
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="new-password"
               editable={!saving}
               onSubmitEditing={handleSavePassword}
-              trailing={
-                <Pressable
-                  disabled={saving}
-                  style={styles.eyeButton}
-                  onPress={() => setShowConfirmPassword((value) => !value)}
-                >
-                  <Ionicons
-                    name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={25}
-                    color={colors.text}
-                  />
-                </Pressable>
-              }
             />
           </View>
 
@@ -163,5 +124,4 @@ const styles = StyleSheet.create({
   },
   passwordField: { width: '100%' },
   confirmPasswordField: { width: '100%' },
-  eyeButton: { width: 45, height: '100%', alignItems: 'center', justifyContent: 'center' },
 });

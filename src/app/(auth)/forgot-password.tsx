@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
+import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { sendRecoveryCode, verifyRecoveryCode } from '@/services/auth.service';
 import { colors, fonts } from '@/theme';
@@ -58,16 +58,12 @@ function getSendCodeErrorMessage(error: unknown) {
   return 'No pudimos enviar el código. Intentá nuevamente.';
 }
 
-
 function getVerifyCodeErrorMessage(error: unknown) {
   const code = getAuthErrorCode(error);
   const status = getAuthErrorStatus(error);
 
   // Límite de intentos
-  if (
-    code === 'over_request_rate_limit' ||
-    status === 429
-  ) {
+  if (code === 'over_request_rate_limit' || status === 429) {
     return 'Hiciste demasiados intentos. Esperá unos minutos e intentá nuevamente.';
   }
 
@@ -93,7 +89,6 @@ function getVerifyCodeErrorMessage(error: unknown) {
 
   return 'No pudimos verificar el código. Revisá el código e intentá nuevamente.';
 }
-
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -127,8 +122,6 @@ export default function ForgotPasswordScreen() {
           ? 'Código reenviado. Revisá tu correo; también la carpeta de spam.'
           : 'Código enviado. Revisá tu correo; también la carpeta de spam.'
       );
-
-      codeInputRef.current?.focus();
     } catch (error) {
       setError(getSendCodeErrorMessage(error));
     } finally {
@@ -177,105 +170,130 @@ export default function ForgotPasswordScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.screen}>
-          <Text style={styles.description}>
-            Ingresá el correo asociado a tu cuenta.{'\n'}
-            Te enviaremos un código para recuperarla.
-          </Text>
-
-          {/* Correo */}
-          <View style={styles.emailContainer}>
-            <AuthTextField
-              iconName="mail-outline"
-              accessibilityLabel="Correo de recuperación"
-              value={email}
-              editable={!busy}
-              onChangeText={(value) => {
-                setEmail(value);
-                setCodeSent(false);
-                setCode('');
-                setNotice(null);
-                setError(null);
-              }}
-              placeholder="Ingresá tu correo"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="email"
-              trailing={
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Enviar código"
-                  disabled={Boolean(busy)}
-                  style={({ pressed }) => [styles.sendButton, pressed && styles.pressed]}
-                  onPress={() => void handleSendCode()}
-                >
-                  {busy === 'send' ? (
-                    <ActivityIndicator color={colors.textOnPrimary} />
-                  ) : (
-                    <Text style={styles.sendButtonText}>Enviar</Text>
-                  )}
-                </Pressable>
-              }
-            />
+          <View style={styles.hero}>
+            <AuthArtwork kind="recovery" />
+            <Text accessibilityRole="header" style={styles.title}>
+              {codeSent ? 'Revisá tu correo' : 'Recuperá tu contraseña'}
+            </Text>
+            <Text style={styles.description}>
+              {codeSent
+                ? `Ingresá el código de 6 dígitos que enviamos a ${email.trim().toLowerCase()}.`
+                : 'Te enviaremos un código a tu correo electrónico para que puedas crear una nueva contraseña.'}
+            </Text>
           </View>
 
-          {notice && (
-            <Text accessibilityLiveRegion="polite" style={styles.notice}>
-              {notice}
-            </Text>
+          {!codeSent ? (
+            <>
+              <View style={styles.emailContainer}>
+                <AuthTextField
+                  label="Correo electrónico"
+                  iconName="mail-outline"
+                  value={email}
+                  editable={!busy}
+                  onChangeText={(value) => {
+                    setEmail(value);
+                    setNotice(null);
+                    setError(null);
+                  }}
+                  placeholder="nombre@correo.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  onSubmitEditing={() => void handleSendCode()}
+                />
+              </View>
+              {error && (
+                <Text accessibilityRole="alert" style={styles.error}>
+                  {error}
+                </Text>
+              )}
+              <ActionButton
+                title="Enviar código"
+                onPress={() => void handleSendCode()}
+                loading={busy === 'send'}
+              />
+            </>
+          ) : (
+            <>
+              {notice && (
+                <Text accessibilityLiveRegion="polite" style={styles.notice}>
+                  {notice}
+                </Text>
+              )}
+              <Pressable style={styles.otpContainer} onPress={() => codeInputRef.current?.focus()}>
+                {OTP_SLOTS.map((slot, index) => {
+                  const digit = code[index] ?? '';
+                  const focused = index === code.length && code.length < OTP_LENGTH;
+
+                  return (
+                    <View key={slot} style={[styles.otpBox, focused && styles.otpBoxFocused]}>
+                      <Text style={styles.otpDigit}>{digit}</Text>
+                    </View>
+                  );
+                })}
+
+                <TextInput
+                  ref={codeInputRef}
+                  accessibilityLabel="Código de recuperación de 6 dígitos"
+                  editable={!busy}
+                  autoFocus
+                  autoComplete="one-time-code"
+                  textContentType="oneTimeCode"
+                  style={styles.hiddenOtpInput}
+                  value={code}
+                  onChangeText={handleCodeChange}
+                  onSubmitEditing={() => void handleVerifyCode()}
+                  keyboardType="number-pad"
+                  maxLength={OTP_LENGTH}
+                  caretHidden
+                />
+              </Pressable>
+              {error && (
+                <Text accessibilityRole="alert" style={styles.error}>
+                  {error}
+                </Text>
+              )}
+              <ActionButton
+                title="Verificar código"
+                onPress={() => void handleVerifyCode()}
+                loading={busy === 'verify'}
+                disabled={busy === 'send'}
+              />
+              <View style={styles.row}>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={Boolean(busy)}
+                  style={[styles.textLink, busy && styles.disabled]}
+                  onPress={() => void handleSendCode(true)}
+                >
+                  <Text style={styles.textLinkLabel}>Reenviar código</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={Boolean(busy)}
+                  style={[styles.textLink, busy && styles.disabled]}
+                  onPress={() => {
+                    setCodeSent(false);
+                    setCode('');
+                    setNotice(null);
+                    setError(null);
+                  }}
+                >
+                  <Text style={styles.textLinkLabel}>Cambiar correo</Text>
+                </Pressable>
+              </View>
+            </>
           )}
-          <Text style={styles.codeDescription}>Ingresá el código que enviamos a tu correo.</Text>
-
-          {/* OTP */}
-          <Pressable style={styles.otpContainer} onPress={() => codeInputRef.current?.focus()}>
-            {OTP_SLOTS.map((slot, index) => {
-              const digit = code[index] ?? '';
-              const focused = index === code.length && code.length < OTP_LENGTH;
-
-              return (
-                <View key={slot} style={[styles.otpBox, focused && styles.otpBoxFocused]}>
-                  <Text style={styles.otpDigit}>{digit}</Text>
-                </View>
-              );
-            })}
-
-            <TextInput
-              ref={codeInputRef}
-              accessibilityLabel="Código de recuperación de 6 dígitos"
-              editable={codeSent && !busy}
-              autoComplete="one-time-code"
-              textContentType="oneTimeCode"
-              style={styles.hiddenOtpInput}
-              value={code}
-              onChangeText={handleCodeChange}
-              keyboardType="number-pad"
-              maxLength={OTP_LENGTH}
-              caretHidden
-            />
-          </Pressable>
-
-          <Text style={styles.didNotReceive}>¿No recibiste el código?</Text>
 
           <Pressable
-            accessibilityRole="button"
-            disabled={!codeSent || Boolean(busy)}
-            style={[styles.resendButton, (!codeSent || busy) && styles.disabled]}
-            onPress={() => void handleSendCode(true)}
+            accessibilityRole="link"
+            style={styles.textLink}
+            disabled={Boolean(busy)}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))}
           >
-            <Text style={styles.resendText}>Reenviar código</Text>
+            <Text style={styles.textLinkLabel}>Volver a ingresar</Text>
           </Pressable>
-
-          <ActionButton
-            title="Verificar código"
-            onPress={() => void handleVerifyCode()}
-            loading={busy === 'verify'}
-            disabled={busy === 'send'}
-          />
-          {error && (
-            <Text accessibilityRole="alert" style={styles.error}>
-              {error}
-            </Text>
-          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -285,34 +303,35 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
-  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 18 },
+  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.6 },
   error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
 
+  hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 26,
+    lineHeight: 34,
+    textAlign: 'center',
+    color: colors.text,
+  },
   description: {
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 22,
+    textAlign: 'center',
     color: colors.textSecondary,
   },
-  emailContainer: { width: '100%' },
-  sendButton: {
-    width: 70,
-    minHeight: 40,
-    marginRight: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: colors.primary,
-  },
-  sendButtonText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.textOnPrimary },
-  codeDescription: {
+  row: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
+  textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
+  textLinkLabel: {
     fontFamily: fonts.regular,
     fontSize: 15,
-    lineHeight: 22,
-    color: colors.textSecondary,
+    color: colors.primaryDark,
+    textDecorationLine: 'underline',
   },
+  emailContainer: { width: '100%' },
   otpContainer: { width: '100%', height: 52, flexDirection: 'row', gap: 4 },
   otpBox: {
     flex: 1,
@@ -327,13 +346,5 @@ const styles = StyleSheet.create({
   otpBoxFocused: { borderColor: colors.primary },
   otpDigit: { fontFamily: fonts.regular, fontSize: 18, color: colors.text },
   hiddenOtpInput: { position: 'absolute', width: '100%', height: '100%', opacity: 0 },
-  didNotReceive: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textSecondary,
-  },
-  resendButton: { minHeight: 44, alignSelf: 'flex-end', justifyContent: 'center' },
-  resendText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.primaryDark },
   notice: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 21, color: colors.primary },
 });

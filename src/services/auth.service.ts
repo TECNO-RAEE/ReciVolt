@@ -56,7 +56,13 @@ function getErrorDetails(error: unknown) {
   return { message: formatErrorValue(error) };
 }
 
-export async function register({ name, email, password }: Readonly<RegisterInput>) {
+export async function register({
+  name,
+  email,
+  password,
+  termsAcceptedAt,
+  termsUrl,
+}: Readonly<RegisterInput>) {
   const normalizedEmail = email.trim().toLowerCase();
 
   log.info('Auth: starting registration', { email: normalizedEmail });
@@ -68,6 +74,8 @@ export async function register({ name, email, password }: Readonly<RegisterInput
       options: {
         data: {
           full_name: name.trim(),
+          terms_accepted_at: termsAcceptedAt,
+          terms_url: termsUrl,
         },
       },
     });

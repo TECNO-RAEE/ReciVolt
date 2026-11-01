@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
+import { AuthArtwork } from '@/components/ui/EcoArtwork';
+import { brand } from '@/config/brand';
+import { termsUrl } from '@/config/legal';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { colors, fonts } from '@/theme';
 import { register } from '@/services/auth.service';
@@ -68,10 +71,7 @@ export default function CreateAccountScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
@@ -79,7 +79,7 @@ export default function CreateAccountScreen() {
     if (loading) return;
     setError(null);
     if (!name.trim()) {
-      setError('Ingresá tu nombre.');
+      setError('Ingresá tu nombre y apellido.');
       return;
     }
 
@@ -98,8 +98,8 @@ export default function CreateAccountScreen() {
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden. Revisá e intentá nuevamente.');
+    if (!acceptedTerms) {
+      setError('Aceptá los Términos de uso para crear tu cuenta.');
       return;
     }
 
@@ -107,7 +107,13 @@ export default function CreateAccountScreen() {
       setLoading(true);
       prepareAuth(registrationIntent);
 
-      const { session } = await register({ name, email, password });
+      const { session } = await register({
+        name,
+        email,
+        password,
+        termsAcceptedAt: new Date().toISOString(),
+        termsUrl,
+      });
       if (session) {
         router.replace('/');
       } else {
@@ -135,48 +141,37 @@ export default function CreateAccountScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.screen}>
-          <View style={styles.heading}>
-            <Text style={styles.subtitle}>Reciclá tecnología, sumá puntos y disfrutá premios.</Text>
+          <View style={styles.hero}>
+            <AuthArtwork kind="account" />
+            <Text accessibilityRole="header" style={styles.title}>
+              Creá tu cuenta
+            </Text>
+            <Text style={styles.subtitle}>
+              Unite a {brand.name} y empezá a reciclar tus electrónicos de forma simple.
+            </Text>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={loading}
-            onPress={() => router.push({ pathname: '/contact', params: { topic: 'point' } })}
-            style={({ pressed }) => [styles.companyLink, pressed && styles.pressed]}
-          >
-            <Ionicons name="location-outline" size={23} color={colors.primary} />
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text style={styles.companyTitle}>¿Querés sumarte como punto verde?</Text>
-              <Text style={styles.companyHint}>
-                Sumate a cuidar el planeta. Cada punto verde hace la diferencia.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
-          </Pressable>
-
-          {/* Nombre */}
-          <View style={styles.nameField}>
+          <View style={styles.field}>
             <AuthTextField
-              label="Nombre"
+              label="Nombre y apellido"
               iconName="person-outline"
               value={name}
               onChangeText={setName}
-              placeholder="Ingresá tu nombre"
+              placeholder="Ej.: Ana Pérez"
               autoCapitalize="words"
               autoCorrect={false}
+              autoComplete="name"
               editable={!loading}
             />
           </View>
 
-          {/* Correo */}
-          <View style={styles.emailField}>
+          <View style={styles.field}>
             <AuthTextField
               label="Correo electrónico"
               iconName="mail-outline"
               value={email}
               onChangeText={setEmail}
-              placeholder="Ingresá tu correo"
+              placeholder="nombre@correo.com"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -185,63 +180,48 @@ export default function CreateAccountScreen() {
             />
           </View>
 
-          {/* Contraseña */}
-          <View style={styles.passwordField}>
+          <View style={styles.field}>
             <AuthTextField
               label="Contraseña"
               iconName="lock-closed-outline"
               value={password}
               onChangeText={setPassword}
-              placeholder="Ingresá tu contraseña"
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="new-password"
-              editable={!loading}
-              trailing={
-                <Pressable
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword((value) => !value)}
-                  disabled={loading}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={25}
-                    color={colors.text}
-                  />
-                </Pressable>
-              }
-            />
-          </View>
-
-          {/* Confirmar contraseña */}
-          <View style={styles.confirmPasswordField}>
-            <AuthTextField
-              label="Confirmar contraseña"
-              iconName="lock-closed-outline"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Repetí tu contraseña"
-              secureTextEntry={!showConfirmPassword}
+              placeholder="Mínimo 6 caracteres"
+              passwordToggle
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="new-password"
               editable={!loading}
               onSubmitEditing={handleRegister}
-              trailing={
-                <Pressable
-                  style={styles.eyeButton}
-                  onPress={() => setShowConfirmPassword((value) => !value)}
-                  disabled={loading}
-                >
-                  <Ionicons
-                    name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={25}
-                    color={colors.text}
-                  />
-                </Pressable>
-              }
             />
+          </View>
+
+          <View style={styles.terms}>
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityLabel="Acepto los Términos de uso"
+              accessibilityState={{ checked: acceptedTerms, disabled: loading }}
+              disabled={loading}
+              onPress={() => setAcceptedTerms(!acceptedTerms)}
+              style={styles.checkbox}
+            >
+              <Ionicons
+                name={acceptedTerms ? 'checkbox' : 'square-outline'}
+                size={26}
+                color={acceptedTerms ? colors.primary : colors.textSecondary}
+              />
+            </Pressable>
+            <Text style={styles.termsText}>
+              Acepto los{' '}
+              <Text
+                accessibilityRole="link"
+                style={styles.inlineLink}
+                onPress={() => router.push('/terms')}
+              >
+                Términos de uso
+              </Text>{' '}
+              de {brand.name}.
+            </Text>
           </View>
 
           {error && (
@@ -250,24 +230,29 @@ export default function CreateAccountScreen() {
             </Text>
           )}
 
-          {/* Crear cuenta */}
           <ActionButton
             title="Crear cuenta"
             onPress={() => void handleRegister()}
             loading={loading}
           />
 
-          {/* Login */}
-          <View style={styles.loginSection}>
-            <Text style={styles.loginLabel}>¿Ya tenés cuenta?</Text>
+          <Pressable
+            accessibilityRole="link"
+            style={styles.textLink}
+            disabled={loading}
+            onPress={() => router.replace(authRoute('/login', registrationIntent))}
+          >
+            <Text style={styles.textLinkLabel}>Ya tengo cuenta</Text>
+          </Pressable>
 
-            <ActionButton
-              title="Iniciar sesión"
-              secondary
-              onPress={() => router.replace(authRoute('/login', registrationIntent))}
-              disabled={loading}
-            />
-          </View>
+          <Pressable
+            accessibilityRole="link"
+            style={styles.textLink}
+            disabled={loading}
+            onPress={() => router.push({ pathname: '/contact', params: { topic: 'point' } })}
+          >
+            <Text style={styles.pointLink}>¿Querés sumarte como punto verde?</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -277,8 +262,15 @@ export default function CreateAccountScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
-  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 18 },
-  heading: { gap: 8, marginBottom: 6 },
+  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
+  hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 26,
+    lineHeight: 34,
+    textAlign: 'center',
+    color: colors.text,
+  },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 15,
@@ -286,34 +278,25 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
-  nameField: { width: '100%' },
-  emailField: { width: '100%' },
-  passwordField: { width: '100%' },
-  confirmPasswordField: { width: '100%' },
-  eyeButton: { width: 45, height: '100%', alignItems: 'center', justifyContent: 'center' },
-  loginSection: { gap: 8 },
-  loginLabel: {
+  field: { width: '100%' },
+  terms: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  checkbox: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  termsText: {
+    flex: 1,
     fontFamily: fonts.regular,
     fontSize: 14,
-    textAlign: 'center',
+    lineHeight: 21,
     color: colors.textSecondary,
   },
-  companyLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    minHeight: 80,
-    borderRadius: 16,
-    backgroundColor: colors.primarySoft,
-  },
-  companyTitle: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.primaryDark },
-  companyHint: {
+  inlineLink: { color: colors.primaryDark, textDecorationLine: 'underline' },
+  textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
+  textLinkLabel: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
+    fontSize: 15,
+    color: colors.primaryDark,
+    textDecorationLine: 'underline',
   },
+  pointLink: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.6 },
   error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },

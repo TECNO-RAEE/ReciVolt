@@ -54,7 +54,7 @@ test('la recuperación conserva el formulario hasta guardar la nueva contraseña
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(base + '/forgot-password', { waitUntil: 'networkidle' });
-    await page.getByPlaceholder('Ingresá tu correo', { exact: true }).fill(email);
+    await page.getByPlaceholder('nombre@correo.com', { exact: true }).fill(email);
     await page.getByRole('button', { name: 'Enviar código', exact: true }).click();
     await page
       .getByText('Código enviado. Revisá tu correo; también la carpeta de spam.', { exact: true })
@@ -76,7 +76,7 @@ test('la recuperación conserva el formulario hasta guardar la nueva contraseña
     await page
       .getByRole('textbox', { name: 'Código de recuperación de 6 dígitos', exact: true })
       .fill(code);
-    await page.getByRole('button', { name: 'Verificar Código', exact: true }).click();
+    await page.getByRole('button', { name: 'Verificar código', exact: true }).click();
     await page
       .getByPlaceholder('Ingresá tu nueva contraseña', { exact: true })
       .fill(password + '-new');
@@ -84,7 +84,7 @@ test('la recuperación conserva el formulario hasta guardar la nueva contraseña
       .getByPlaceholder('Repetí tu nueva contraseña', { exact: true })
       .fill(password + '-new');
     assert.equal(new URL(page.url()).pathname, '/new-password');
-    await page.getByRole('button', { name: 'Guardar Contraseña', exact: true }).click();
+    await page.getByRole('button', { name: 'Guardar contraseña', exact: true }).click();
     await page.waitForURL('**/home');
     assert.deepEqual(errors, []);
   } finally {

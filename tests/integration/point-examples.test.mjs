@@ -198,9 +198,9 @@ test('ciudadano no inicia entregas de ejemplo ni por URL ni desde el selector', 
       localLogin = true;
       await route.continue();
     });
-    await page.getByPlaceholder('Ingresá tu correo', { exact: true }).fill(email);
+    await page.getByPlaceholder('nombre@correo.com', { exact: true }).fill(email);
     await page.getByPlaceholder('Ingresá tu contraseña', { exact: true }).fill(password);
-    await page.getByRole('button', { name: 'Iniciar Sesión', exact: true }).click();
+    await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
     await page.waitForURL('**/home');
     assert.equal(localLogin, true);
     const forbiddenRequests = [];
