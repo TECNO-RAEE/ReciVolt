@@ -17,7 +17,7 @@
 | **CARD-03** | [Recorrido 03: Recepción y educación ambiental](#card-03-recorrido-03--recepción-y-educación-ambiental-3-vistas) | Feature UI + Contenido | 2 vistas con desvíos + 1 pantalla nueva |
 | **CARD-04** | [Recorrido 04: De la entrega a los puntos](#card-04-recorrido-04--de-la-entrega-a-los-puntos-3-vistas) | Rediseño de componentes | Implementado y verificado |
 | **CARD-05** | [Recorrido 05: Solicitar y seguir un retiro](#card-05-recorrido-05--solicitar-y-seguir-un-retiro-3-vistas) | Nueva funcionalidad completa | Implementado y verificado |
-| **CARD-06** | [Recorrido 06: Premios que acompañan al comercio](#card-06-recorrido-06--premios-que-acompañan-al-comercio-4-vistas) | Rediseño visual (Grilla a Lista) | Funcional con desvíos visuales |
+| **CARD-06** | [Recorrido 06: Premios que acompañan al comercio](#card-06-recorrido-06--premios-que-acompañan-al-comercio-4-vistas) | Rediseño visual (Grilla a Lista) | Implementado y verificado |
 | **CARD-07** | [Recorrido 07: Cuenta, saldo e historial](#card-07-recorrido-07--cuenta-saldo-e-historial-3-vistas) | Refactor + Nueva pantalla unificada | 2 vistas funcionales + 1 feed nuevo |
 | **CARD-08** | [Recorrido 08: Gestión de la organización](#card-08-recorrido-08--gestión-de-la-organización-4-vistas) | Adaptación móvil de portal | Implementado y verificado |
 | **CARD-09** | [Recorrido 09: Recibir y validar en el local](#card-09-recorrido-09--recibir-y-validar-en-el-local-3-vistas) | Rediseño de escáner y validación | Lógica funcional, UI desalineada |
@@ -266,18 +266,18 @@ Rediseñar el catálogo de premios de la vista en grilla de 2 columnas hacia el 
 - `src/components/rewards/RewardCard.tsx`
 
 #### Checklist de tareas
-- [ ] **Catálogo de premios:**
-  - [ ] Implementar la tarjeta verde superior con el saldo reactivo del usuario y bajada ambiental.
-  - [ ] Refactorizar `RewardCard` para que sea una fila horizontal: miniatura con bordes redondeados a la izquierda, información central, badge verde de puntos a la derecha y chevron.
-  - [ ] Conectar los chips de filtro de categoría horizontalmente.
-- [ ] **Detalle del premio:**
-  - [ ] Maquetar la cabecera hero con imagen en alta definición y efecto cover.
-  - [ ] Incorporar el bloque de *"Condiciones del beneficio"* destacando si requiere o no consumo previo.
-  - [ ] Mantener el botón de canje accesible en la parte inferior deshabilitándolo si el saldo es insuficiente.
-- [ ] **Canje reservado:**
-  - [ ] Reemplazar la vista mixta con código de barras por el layout de la maqueta: QR centrado, código manual con botón de copiar y tabla de detalles limpia.
-- [ ] **Canje entregado:**
-  - [ ] Crear la variante visual de canje completado con el banner de *"Premio entregado"*, registro temporal y botón de retorno a mis canjes.
+- [x] **Catálogo de premios:**
+  - [x] Implementar la tarjeta verde superior con el saldo reactivo del usuario y bajada ambiental.
+  - [x] Refactorizar `RewardCard` para que sea una fila horizontal: miniatura con bordes redondeados a la izquierda, información central, badge verde de puntos a la derecha y chevron.
+  - [x] Conectar los chips de filtro de categoría horizontalmente.
+- [x] **Detalle del premio:**
+  - [x] Maquetar la cabecera hero con imagen en alta definición y efecto cover.
+  - [x] Incorporar el bloque de *"Condiciones del beneficio"* destacando si requiere o no consumo previo.
+  - [x] Mantener el botón de canje accesible en la parte inferior deshabilitándolo si el saldo es insuficiente.
+- [x] **Canje reservado:**
+  - [x] Reemplazar la vista mixta con código de barras por el layout de la maqueta: QR centrado, código manual con botón de copiar y tabla de detalles limpia.
+- [x] **Canje entregado:**
+  - [x] Crear la variante visual de canje completado con el banner de *"Premio entregado"*, registro temporal y botón de retorno a mis canjes.
 
 #### Criterios de Aceptación
 - La reserva descuenta puntos una sola vez y genera un código único persistente.

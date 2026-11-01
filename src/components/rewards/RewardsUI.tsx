@@ -1,11 +1,13 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import type { Href } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors, fonts } from '@/theme';
-import type { Reward } from '@/models/Reward';
+import { pointsLabel, type Reward } from '@/models/Reward';
 import { PointsCoin } from '@/components/ui/EcoArtwork';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
@@ -38,11 +40,13 @@ export function CitizenPage({
   children,
   back = '/home',
   action,
+  footer,
 }: Readonly<{
   title: string;
   children: ReactNode;
   back?: Href;
   action?: ReactNode;
+  footer?: ReactNode;
 }>) {
   const scroll = useScrollReset();
   return (
@@ -56,6 +60,11 @@ export function CitizenPage({
       >
         {children}
       </ScrollView>
+      {footer && (
+        <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.footer}>
+          <View style={styles.footerContent}>{footer}</View>
+        </SafeAreaView>
+      )}
     </View>
   );
 }
@@ -107,11 +116,7 @@ export function RewardPhoto({
   height = 104,
 }: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'>; height?: number }>) {
   return (
-    <RewardPhotoSource
-      key={`photo:${reward.imageUrl ?? ''}`}
-      reward={reward}
-      height={height}
-    />
+    <RewardPhotoSource key={`photo:${reward.imageUrl ?? ''}`} reward={reward} height={height} />
   );
 }
 
@@ -163,69 +168,158 @@ function RewardPhotoSource({
     </View>
   );
 }
-export function RewardCard({ reward, onPress }: Readonly<{ reward: Reward; onPress: () => void }>) {
+export function RewardsBalance({
+  points,
+  loading,
+  error,
+  onPress,
+}: Readonly<{
+  points: number | null;
+  loading: boolean;
+  error: string | null;
+  onPress: () => void;
+}>) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${reward.title}, ${reward.businessName}, ${reward.pointsCost} puntos. Ver detalle`}
+      accessibilityLabel="Ver mis puntos"
       onPress={onPress}
-      style={({ pressed }) => [styles.rewardCard, pressed && { opacity: 0.75 }]}
+      style={({ pressed }) => [styles.balanceCard, pressed && { opacity: 0.75 }]}
     >
-      <View style={styles.photo}>
-        <RewardPhoto reward={reward} />
-        {reward.stock === 0 && (
-          <View style={styles.stockBadge}>
-            <Text style={styles.stockText}>Agotado</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.rewardBody}>
-        <Text style={styles.rewardTitle} numberOfLines={2}>
-          {reward.title}
-        </Text>
-        <View style={[rewardStyles.row, { gap: 5 }]}>
-          <MaterialCommunityIcons
-            name="storefront-outline"
-            size={14}
-            color={colors.textSecondary}
-          />
-          <Text style={styles.business} numberOfLines={1}>
-            {reward.businessName}
+      <PointsCoin size={64} />
+      <View style={styles.balanceText}>
+        <Text style={rewardStyles.label}>Tus puntos</Text>
+        {loading ? (
+          <View accessibilityLabel="Cargando saldo" style={styles.balanceSkeleton} />
+        ) : (
+          <Text style={styles.compactBalance}>
+            {error || points == null ? '—' : pointsLabel(points)}
           </Text>
-        </View>
-        <View style={[rewardStyles.row, { gap: 6 }]}>
-          <MaterialCommunityIcons name="database-outline" size={18} color={colors.primaryDark} />
-          <Text style={styles.cost}>{reward.pointsCost.toLocaleString('es-AR')} puntos</Text>
-        </View>
-        <View style={styles.detailButton}>
-          <Text style={styles.detailText}>Ver detalle</Text>
-        </View>
+        )}
+        <Text style={styles.pointsHint}>
+          {error
+            ? 'No pudimos cargar tu saldo. Tocá para reintentar.'
+            : 'Canjeá tus puntos por beneficios en comercios adheridos.'}
+        </Text>
       </View>
     </Pressable>
   );
 }
-export function RewardsSkeleton() {
+export function PointsBadge({
+  points,
+  large = false,
+}: Readonly<{ points: number; large?: boolean }>) {
+  return (
+    <View style={[styles.badge, large && styles.badgeLarge]}>
+      {large && <Ionicons name="gift-outline" size={28} color={colors.primaryDark} />}
+      <Text style={[styles.badgeText, large && styles.badgeTextLarge]}>{pointsLabel(points)}</Text>
+    </View>
+  );
+}
+export function StatusBanner({
+  tone,
+  title,
+  message,
+}: Readonly<{ tone: 'pending' | 'success'; title: string; message: string }>) {
+  const success = tone === 'success';
   return (
     <View
-      accessibilityLabel="Cargando premios"
-      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}
+      accessibilityRole="summary"
+      style={[styles.banner, success ? styles.bannerSuccess : styles.bannerPending]}
     >
-      {[0, 1, 2, 3].map((i) => (
-        <View
-          key={i}
-          style={{
-            width: '48%',
-            gap: 12,
-            padding: 10,
-            borderRadius: 16,
-            backgroundColor: colors.surface,
-          }}
-        >
-          <View style={{ height: 120, borderRadius: 10, backgroundColor: colors.primarySoft }} />
-          <View style={{ height: 16, width: '80%', backgroundColor: colors.border }} />
-          <View style={{ height: 14, width: '55%', backgroundColor: colors.border }} />
+      <View style={[styles.bannerIcon, success && { backgroundColor: colors.primary }]}>
+        <Ionicons
+          name={success ? 'checkmark' : 'time-outline'}
+          size={28}
+          color={success ? colors.textOnPrimary : colors.primaryDark}
+        />
+      </View>
+      <View style={styles.balanceText}>
+        <Text style={styles.bannerTitle}>{title}</Text>
+        <Text style={rewardStyles.body}>{message}</Text>
+      </View>
+    </View>
+  );
+}
+export function InfoSection({
+  icon,
+  title,
+  children,
+}: Readonly<{
+  icon: ComponentProps<typeof Ionicons>['name'];
+  title: string;
+  children: ReactNode;
+}>) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 16, paddingHorizontal: 4 }}>
+      <Ionicons name={icon} size={26} color={colors.text} />
+      <View style={{ flex: 1, gap: 4 }}>
+        <Text accessibilityRole="header" style={rewardStyles.label}>
+          {title}
+        </Text>
+        {children}
+      </View>
+    </View>
+  );
+}
+export function DetailList({
+  rows,
+}: Readonly<{
+  rows: { icon: ComponentProps<typeof Ionicons>['name']; label: string; value: string }[];
+}>) {
+  return (
+    <View style={styles.detailList}>
+      {rows.map((row, i) => (
+        <View key={row.label} style={[styles.detailRow, i > 0 && styles.detailDivider]}>
+          <Ionicons name={row.icon} size={22} color={colors.text} />
+          <Text style={[rewardStyles.label, styles.detailLabel]}>{row.label}</Text>
+          <Text style={[rewardStyles.body, styles.detailValue]}>{row.value}</Text>
         </View>
       ))}
+    </View>
+  );
+}
+export function CopyableCode({ code }: Readonly<{ code: string }>) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    []
+  );
+  return (
+    <View style={{ alignItems: 'center', gap: 4 }}>
+      <View style={styles.codePill}>
+        <Text selectable style={styles.codeText}>
+          {code}
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Copiar código de canje"
+          style={styles.copyButton}
+          onPress={() =>
+            void Clipboard.setStringAsync(code)
+              .then(() => {
+                setCopied(true);
+                if (timer.current) clearTimeout(timer.current);
+                timer.current = setTimeout(() => setCopied(false), 2500);
+              })
+              .catch(() => undefined)
+          }
+        >
+          <Ionicons
+            name={copied ? 'checkmark' : 'copy-outline'}
+            size={20}
+            color={copied ? colors.primaryDark : colors.textSecondary}
+          />
+        </Pressable>
+      </View>
+      {copied && (
+        <Text accessibilityLiveRegion="polite" style={styles.copied}>
+          Código copiado
+        </Text>
+      )}
     </View>
   );
 }
@@ -272,14 +366,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: colors.textSecondary,
   },
-  rewardCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 15,
-    overflow: 'hidden',
-    boxShadow: '0 3px 12px rgba(22,65,39,0.06)',
-  },
-  photo: { margin: 6, borderRadius: 12, overflow: 'hidden' },
   photoLoading: {
     position: 'absolute',
     top: 0,
@@ -299,33 +385,106 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   photoFallbackText: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
-  stockBadge: {
-    position: 'absolute',
-    right: 8,
-    top: 8,
-    padding: 6,
+  footer: {
     backgroundColor: colors.surface,
-    borderRadius: 6,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  stockText: { color: colors.textSecondary, fontFamily: fonts.semiBold, fontSize: 12 },
-  rewardBody: { flex: 1, padding: 10, paddingTop: 3, gap: 7 },
-  rewardTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    lineHeight: 20,
-    color: colors.text,
+  footerContent: {
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 8,
   },
-  business: { flex: 1, fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
-  cost: { fontFamily: fonts.regular, fontSize: 14, color: colors.text },
-  detailButton: {
-    marginTop: 'auto',
-    minHeight: 44,
-    borderRadius: 12,
+  balanceCard: {
     backgroundColor: colors.primarySoft,
+    borderRadius: 18,
+    padding: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 14,
+  },
+  balanceText: { flexGrow: 1, flexShrink: 1, flexBasis: 180, minWidth: 0, gap: 2 },
+  compactBalance: {
+    fontFamily: fonts.bold,
+    fontSize: 24,
+    lineHeight: 30,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: colors.primarySoft,
+  },
+  badgeLarge: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    padding: 16,
+    borderRadius: 16,
+  },
+  badgeText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.primaryDark },
+  badgeTextLarge: { fontFamily: fonts.bold, fontSize: 22, color: colors.text },
+  banner: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: 18,
+  },
+  bannerPending: {
+    backgroundColor: colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  bannerSuccess: { backgroundColor: colors.primarySoft },
+  bannerIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.primarySoft,
   },
-  detailText: { color: colors.primaryDark, fontFamily: fonts.semiBold, fontSize: 12 },
+  bannerTitle: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 26, color: colors.text },
+  detailList: { paddingHorizontal: 4 },
+  detailRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 14,
+  },
+  detailDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+  detailLabel: { width: 124, fontSize: 13 },
+  detailValue: { flexGrow: 1, flexShrink: 1, flexBasis: 140, minWidth: 0, color: colors.text },
+  codePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 20,
+    paddingRight: 4,
+    borderRadius: 12,
+    backgroundColor: colors.surfaceSoft,
+  },
+  codeText: {
+    flexShrink: 1,
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    letterSpacing: 0.3,
+    textAlign: 'center',
+    color: colors.text,
+  },
+  copyButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  copied: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.primaryDark },
   info: {
     padding: 14,
     borderRadius: 14,

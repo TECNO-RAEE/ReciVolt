@@ -55,3 +55,6 @@ export function rewardAvailable(reward: Reward, now = Date.now()) {
 export function rewardQr(code: string) {
   return `TECNO-RAEE:REWARD:${code}`;
 }
+export function pointsLabel(points: number) {
+  return `${points.toLocaleString('es-AR')} ${points === 1 ? 'punto' : 'puntos'}`;
+}
