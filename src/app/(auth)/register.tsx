@@ -106,7 +106,12 @@ export default function CreateAccountScreen() {
       setLoading(true);
       prepareAuth(registrationIntent);
 
-      const { session } = await register({ name, email, password });
+      const { session } = await register({
+        name,
+        email,
+        password,
+        termsAcceptedAt: new Date().toISOString(),
+      });
       if (session) {
         router.replace('/');
       } else {

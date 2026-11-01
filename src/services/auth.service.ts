@@ -1,6 +1,7 @@
 import { supabase } from '@/config/supabase';
 import { log } from '@/lib/logger';
 import type { RegisterInput } from '@/models/RegisterInput';
+import { termsUrl } from '@/config/legal';
 
 function formatErrorValue(value: unknown) {
   if (typeof value === 'string') {
@@ -56,7 +57,12 @@ function getErrorDetails(error: unknown) {
   return { message: formatErrorValue(error) };
 }
 
-export async function register({ name, email, password }: Readonly<RegisterInput>) {
+export async function register({
+  name,
+  email,
+  password,
+  termsAcceptedAt,
+}: Readonly<RegisterInput>) {
   const normalizedEmail = email.trim().toLowerCase();
 
   log.info('Auth: starting registration', { email: normalizedEmail });
@@ -68,6 +74,8 @@ export async function register({ name, email, password }: Readonly<RegisterInput
       options: {
         data: {
           full_name: name.trim(),
+          terms_accepted_at: termsAcceptedAt,
+          terms_url: termsUrl,
         },
       },
     });
