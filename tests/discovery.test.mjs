@@ -90,3 +90,20 @@ test('búsqueda ignora acentos y combina categoría, organización, servicio y h
     0
   );
 });
+test('categoryIds (checkboxes del filtro) combina varias categorías con OR y no rompe categoryId', () => {
+  const phones = {
+    ...point,
+    id: 'p2',
+    categories: [{ id: 'phones', name: 'Celulares', slug: 'celulares' }],
+  };
+  assert.deepEqual(
+    filterGreenPoints([point, phones], { categoryIds: ['notebooks', 'phones'] }, null)
+      .map((p) => p.id)
+      .sort(),
+    ['p1', 'p2']
+  );
+  assert.equal(filterGreenPoints([point, phones], { categoryIds: ['notebooks'] }, null).length, 1);
+  assert.equal(filterGreenPoints([point], { categoryIds: [] }, null).length, 1);
+  // categoryIds tiene prioridad, pero categoryId sigue funcionando si no se envía el array.
+  assert.equal(filterGreenPoints([point], { categoryId: 'notebooks' }, null).length, 1);
+});
