@@ -100,6 +100,7 @@ const normalize = (value: string) =>
 export interface DiscoveryFilters {
   search?: string;
   categoryId?: string;
+  categoryIds?: string[];
   companyId?: string;
   openOnly?: boolean;
   pickupOnly?: boolean;
@@ -112,20 +113,30 @@ export function filterGreenPoints(
   now = new Date()
 ): GreenPoint[] {
   const query = normalize(filters.search ?? '');
+  const categoryIds = filters.categoryIds?.length
+    ? filters.categoryIds
+    : filters.categoryId
+      ? [filters.categoryId]
+      : [];
   return points
     .filter(
       (p) =>
         (!query ||
           normalize(
-            `${p.name} ${p.address} ${p.companyName} ${(p.categories ?? []).map((c) => c.name).join(' ')} ${(p.intakePolicies ?? [])
+            `${p.name} ${p.address} ${p.companyName} ${(p.categories ?? []).map((c) => c.name).join(' ')} ${(
+              p.intakePolicies ?? []
+            )
               .filter((policy) => policy.mode !== 'not_accepted')
               .map((policy) => policy.category?.name ?? '')
               .join(' ')}`
           ).includes(query)) &&
-        (!filters.categoryId ||
-          (p.categories ?? []).some((c) => c.id === filters.categoryId) ||
-          (p.intakePolicies ?? []).some(
-            (policy) => policy.categoryId === filters.categoryId && policy.mode !== 'not_accepted'
+        (!categoryIds.length ||
+          categoryIds.some(
+            (categoryId) =>
+              (p.categories ?? []).some((c) => c.id === categoryId) ||
+              (p.intakePolicies ?? []).some(
+                (policy) => policy.categoryId === categoryId && policy.mode !== 'not_accepted'
+              )
           )) &&
         (!filters.companyId || p.companyId === filters.companyId) &&
         (!filters.openOnly || openingStatus(p, now) === 'open') &&
