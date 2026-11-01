@@ -1,7 +1,6 @@
 import { supabase } from '@/config/supabase';
 import { log } from '@/lib/logger';
 import type { RegisterInput } from '@/models/RegisterInput';
-import { termsUrl } from '@/config/legal';
 
 function formatErrorValue(value: unknown) {
   if (typeof value === 'string') {
@@ -62,6 +61,7 @@ export async function register({
   email,
   password,
   termsAcceptedAt,
+  termsUrl,
 }: Readonly<RegisterInput>) {
   const normalizedEmail = email.trim().toLowerCase();
 

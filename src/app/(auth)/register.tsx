@@ -14,6 +14,7 @@ import {
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { brand } from '@/config/brand';
+import { termsUrl } from '@/config/legal';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { colors, fonts } from '@/theme';
 import { register } from '@/services/auth.service';
@@ -111,6 +112,7 @@ export default function CreateAccountScreen() {
         email,
         password,
         termsAcceptedAt: new Date().toISOString(),
+        termsUrl,
       });
       if (session) {
         router.replace('/');

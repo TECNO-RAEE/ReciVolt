@@ -41,11 +41,19 @@ test('registro con confirmación de email mantiene resultado y usa trigger, sin 
     },
   });
   assert.equal(
-    await service.register({ name: ' Ana ', email: ' ANA@Example.Test ', password: 'password' }),
+    await service.register({
+      name: ' Ana ',
+      email: ' ANA@Example.Test ',
+      password: 'password',
+      termsAcceptedAt: '2026-11-01T12:00:00.000Z',
+      termsUrl: null,
+    }),
     data
   );
   assert.equal(input.email, 'ana@example.test');
   assert.equal(input.options.data.full_name, 'Ana');
+  assert.equal(input.options.data.terms_accepted_at, '2026-11-01T12:00:00.000Z');
+  assert.equal(input.options.data.terms_url, null);
 });
 test('login no depende de poder insertar perfiles ni cierra sesión exitosamente creada', async () => {
   let input;
