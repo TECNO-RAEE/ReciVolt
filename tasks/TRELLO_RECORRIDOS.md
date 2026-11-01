@@ -21,7 +21,7 @@
 | **CARD-07** | [Recorrido 07: Cuenta, saldo e historial](#card-07-recorrido-07--cuenta-saldo-e-historial-3-vistas) | Refactor + Nueva pantalla unificada | 2 vistas funcionales + 1 feed nuevo |
 | **CARD-08** | [Recorrido 08: Gestión de la organización](#card-08-recorrido-08--gestión-de-la-organización-4-vistas) | Adaptación móvil de portal | Implementado y verificado |
 | **CARD-09** | [Recorrido 09: Recibir y validar en el local](#card-09-recorrido-09--recibir-y-validar-en-el-local-3-vistas) | Rediseño de escáner y validación | Lógica funcional, UI desalineada |
-| **CARD-10** | [Recorrido 10: Coordinar y operar los retiros](#card-10-recorrido-10--coordinar-y-operar-los-retiros-3-vistas) | Nueva funcionalidad completa | Por implementar (Backlog P2) |
+| **CARD-10** | [Recorrido 10: Coordinar y operar los retiros](#card-10-recorrido-10--coordinar-y-operar-los-retiros-3-vistas) | Nueva funcionalidad completa | Implementado y verificado (E2E local) |
 | **CARD-11** | [Recorrido 11: Administración y trazabilidad](#card-11-recorrido-11--administración-y-trazabilidad-4-vistas) | Adaptación móvil y filtros | Funcional en portal, UI desalineada |
 
 ---
@@ -425,21 +425,22 @@ Construir desde cero el módulo operativo para que el equipo de una organizació
 - `src/services/pickup.service.ts` *(nuevo)*
 
 #### Checklist de tareas
-- [ ] **Bandeja de retiros:**
-  - [ ] Crear la pantalla con pestañas de estado y contador de solicitudes activas.
-  - [ ] Conectar la consulta a la tabla `pickups` filtrando por la organización activa.
-- [ ] **Coordinación:**
-  - [ ] Implementar selectores de fecha y rango horario.
-  - [ ] Listar a los miembros de la empresa en el selector de chofer / responsable asignado.
-  - [ ] Mostrar mapa interactivo centrado en la dirección del ciudadano.
-  - [ ] Manejar rechazo justificado con el botón *"No podemos realizar este retiro"*.
-- [ ] **Recepción y cierre:**
-  - [ ] Implementar la pantalla de verificación final al momento de recibir el material.
-  - [ ] Conectar la acreditación de puntos al ciudadano según la tarifa configurada de la empresa.
+- [x] **Bandeja de retiros:**
+  - [x] Crear la pantalla con pestañas de estado y contador de solicitudes activas.
+  - [x] Conectar la consulta a la tabla `pickups` filtrando por la organización activa.
+- [x] **Coordinación:**
+  - [x] Implementar selectores de fecha y rango horario.
+  - [ ] Listar a los miembros de la empresa en el selector de chofer / responsable asignado. *(Desviación: el RLS de `profiles` no expone nombres del equipo; se usa campo de texto libre en `driver_name`. Requiere función security definer si se quiere selector real.)*
+  - [ ] Mostrar mapa interactivo centrado en la dirección del ciudadano. *(Desviación: los retiros no guardan coordenadas; se muestra tarjeta de dirección. Requiere geocodificación o columna de coordenadas.)*
+  - [x] Manejar rechazo justificado con el botón *"No podemos realizar este retiro"* (cancela la solicitud con confirmación en dos pasos y registra auditoría).
+- [x] **Recepción y cierre:**
+  - [x] Implementar la pantalla de verificación final al momento de recibir el material (steppers de cantidad recibida vs. declarada y estimación de puntos en vivo).
+  - [x] Conectar la acreditación de puntos al ciudadano según la tarifa configurada de la empresa (RPC `pickup_command('complete')`, atómico e idempotente de CARD-05).
+  - [x] Transición *"En camino"* desde la recepción cuando el retiro está coordinado.
 
 #### Criterios de Aceptación
-- Cambiar el estado a "Coordinado" notifica/actualiza la vista del ciudadano en el Recorrido 05.
-- La confirmación de la recepción acredita los puntos globales al ciudadano de forma atómica e idempotente.
+- Cambiar el estado a "Coordinado" notifica/actualiza la vista del ciudadano en el Recorrido 05. *(Verificado en E2E local: `tests/integration/card10-pickup-ops.test.mjs`.)*
+- La confirmación de la recepción acredita los puntos globales al ciudadano de forma atómica e idempotente. *(Verificado: ledger `points_transactions` con monto exacto y una sola fila por retiro.)*
 
 ---
 
