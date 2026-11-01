@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
+import { SearchBar } from '@/components/discovery/SearchBar';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CompanyPointEditor } from './CompanyPointEditor';
 import {
@@ -7,10 +8,13 @@ import {
   PortalLink,
   PortalLoading,
   PortalChoice,
+  PortalBadge,
+  PortalListItem,
   portalStyles as s,
 } from './PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import type { ManagedPoint, PortalCompany } from '@/models/Portal';
+import { getActiveRewardCompanyIds } from '@/services/reward.service';
 import {
   getAdminPoints,
   getCompanyPortal,
@@ -19,19 +23,44 @@ import {
 } from '@/services/portal.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 
+const loadOrganizations = () =>
+  Promise.all([getAdminPoints(), getActiveRewardCompanyIds()]).then(
+    ([points, rewardCompanies]) => ({ points, rewardCompanies })
+  );
+// "Calle 123, Villa Rosa, Buenos Aires" -> "Villa Rosa, Buenos Aires"
+const locality = (address?: string) => address?.split(',').slice(-2).join(',').trim() || null;
+
 export function AdminPoints({
   companies,
   refresh,
+  addRequest = 0,
+  onListChange,
+  reload = 0,
 }: Readonly<{
   companies: PortalCompany[];
   refresh: () => Promise<void>;
+  addRequest?: number;
+  onListChange?: (list: boolean) => void;
+  reload?: number;
 }>) {
   const [selected, setSelected] = useState<PortalCompany | null | undefined>();
   const [search, setSearch] = useState('');
   const [pointId, setPointId] = useState<string>();
   const [creating, setCreating] = useState(false);
   const [companySearch, setCompanySearch] = useState('');
-  const result = usePortalData(getAdminPoints);
+  const [handledAdd, setHandledAdd] = useState(addRequest);
+  if (addRequest !== handledAdd) {
+    setHandledAdd(addRequest);
+    setCreating(true);
+  }
+  const listing = selected === undefined && !creating;
+  useEffect(() => onListChange?.(listing), [listing, onListChange]);
+  const result = usePortalData(loadOrganizations);
+  const { refresh: reloadOrganizations } = result;
+  // Pull-to-refresh reloads the list without resetting an open editor.
+  useEffect(() => {
+    if (reload) void reloadOrganizations();
+  }, [reload, reloadOrganizations]);
   if (selected !== undefined)
     return (
       <PointWorkspace
@@ -78,50 +107,62 @@ export function AdminPoints({
           ))}
       </View>
     );
-  const rows = result.data?.filter((p) => matchesAdminSearch(search, p.name, p.id));
+  const organizations = companies
+    .filter((c) => matchesAdminSearch(search, c.name, c.id))
+    .map((company) => {
+      const points = result.data?.points.filter((p) => p.companyId === company.id) ?? [];
+      return {
+        company,
+        points,
+        published: points.some((p) => p.active),
+        commerce: result.data?.rewardCompanies.has(company.id) ?? false,
+      };
+    });
   return (
     <View style={s.stack}>
-      <Text style={s.body}>
-        Publicá los lugares de recepción con su ubicación, horarios y dispositivos aceptados.
-      </Text>
-      <ActionButton title="Dar de alta un punto verde" onPress={() => setCreating(true)} />
-      <PortalField
-        label="Buscar puntos verdes por nombre o ID"
+      <SearchBar
         value={search}
         onChangeText={setSearch}
+        label="Buscar organización"
+        placeholder="Buscar organización"
       />
       <PortalLoading
         loading={result.loading}
         error={result.error}
         retry={() => void result.refresh()}
       />
-      {!result.loading && !result.error && rows?.length === 0 && (
+      {!result.loading && !result.error && organizations.length === 0 && (
         <Text style={s.body}>
-          {result.data?.length
-            ? 'No encontramos puntos para esta búsqueda.'
-            : 'Todavía no hay puntos verdes. Agregá el primero para publicarlo en el mapa.'}
+          {companies.length
+            ? 'No encontramos organizaciones para esta búsqueda.'
+            : 'Todavía no hay organizaciones. Agregá el primer punto verde para incorporar una.'}
         </Text>
       )}
-      {rows?.map((point) => (
-        <View key={point.id} style={s.row}>
-          <Text style={s.subtitle}>{point.name}</Text>
-          <Text style={s.body}>{point.address}</Text>
-          <Text style={s.hint}>
-            {companies.find((c) => c.id === point.companyId)?.name} ·{' '}
-            {point.active ? 'Publicado' : 'Borrador'}
-          </Text>
-          <Text selectable style={s.hint}>
-            ID: {point.id}
-          </Text>
-          <PortalLink
-            title="Editar punto verde"
-            onPress={() => {
-              setPointId(point.id);
-              setSelected(companies.find((c) => c.id === point.companyId));
-            }}
+      {result.data &&
+        organizations.map(({ company, points, published, commerce }) => (
+          <PortalListItem
+            key={company.id}
+            icon={points.length ? 'leaf' : 'storefront-outline'}
+            title={company.name}
+            accessibilityHint="Ver y editar sus puntos verdes"
+            badge={
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {company.status === 'SUSPENDED' && <PortalBadge label="Suspendida" tone="danger" />}
+                {published ? (
+                  <PortalBadge label="Punto publicado" />
+                ) : points.length ? (
+                  <PortalBadge label="Punto en borrador" tone="neutral" />
+                ) : null}
+                {commerce && <PortalBadge label="Comercio de canje" />}
+              </View>
+            }
+            lines={[
+              locality(points[0]?.address),
+              points.length > 1 && `${points.length} puntos verdes`,
+            ]}
+            onPress={() => setSelected(company)}
           />
-        </View>
-      ))}
+        ))}
     </View>
   );
 }

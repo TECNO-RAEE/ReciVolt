@@ -147,6 +147,114 @@ export function PortalMenuItem({
     </Pressable>
   );
 }
+export function PortalBadge({
+  label,
+  tone = 'success',
+}: Readonly<{ label: string; tone?: 'success' | 'neutral' | 'danger' }>) {
+  return (
+    <View
+      style={{
+        alignSelf: 'flex-start',
+        paddingHorizontal: 12,
+        paddingVertical: 3,
+        borderRadius: 10,
+        backgroundColor:
+          tone === 'success'
+            ? colors.primarySoft
+            : tone === 'danger'
+              ? colors.dangerBackground
+              : colors.surfaceSoft,
+      }}
+    >
+      <Text
+        style={[
+          portalStyles.hint,
+          {
+            fontFamily: fonts.semiBold,
+            color:
+              tone === 'success'
+                ? colors.primaryDark
+                : tone === 'danger'
+                  ? colors.danger
+                  : colors.textSecondary,
+          },
+        ]}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+export function PortalListItem({
+  icon,
+  leading,
+  title,
+  lines = [],
+  badge,
+  badgeBelow = false,
+  onPress,
+  accessibilityHint,
+  children,
+}: Readonly<{
+  icon?: ComponentProps<typeof Ionicons>['name'];
+  leading?: ReactNode;
+  title: string;
+  lines?: (string | null | undefined | false)[];
+  badge?: ReactNode;
+  badgeBelow?: boolean;
+  onPress?: () => void;
+  accessibilityHint?: string;
+  children?: ReactNode;
+}>) {
+  return (
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityHint={accessibilityHint}
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        gap: 12,
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: pressed ? colors.surfaceSoft : colors.surface,
+      })}
+    >
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16 }}>
+        {leading ??
+          (icon && (
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors.primarySoft,
+              }}
+            >
+              <Ionicons name={icon} size={26} color={colors.primaryDark} />
+            </View>
+          ))}
+        <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 120, minWidth: 0, gap: 4 }}>
+          <Text style={portalStyles.heading}>{title}</Text>
+          {!badgeBelow && badge}
+          {lines
+            .filter((line): line is string => !!line)
+            .map((line, i) => (
+              <Text key={i} style={portalStyles.hint}>
+                {line}
+              </Text>
+            ))}
+          {badgeBelow && badge}
+        </View>
+        {onPress && <Ionicons name="chevron-forward" size={20} color={colors.text} />}
+      </View>
+      {children}
+    </Pressable>
+  );
+}
 export function OrganizationCard({ name, role }: Readonly<{ name: string; role: string }>) {
   return (
     <InfoCard
@@ -245,6 +353,7 @@ export function PortalSelect<T extends string>({
   onChange,
   compact = false,
   disabled = false,
+  hideLabel = false,
 }: Readonly<{
   label: string;
   value: T;
@@ -252,6 +361,7 @@ export function PortalSelect<T extends string>({
   onChange: (value: T) => void;
   compact?: boolean;
   disabled?: boolean;
+  hideLabel?: boolean;
 }>) {
   const [open, setOpen] = useState(false);
   const current = options.find((option) => option.value === value);
@@ -263,9 +373,11 @@ export function PortalSelect<T extends string>({
         alignItems: compact ? 'flex-start' : undefined,
       }}
     >
-      <Text style={[portalStyles.label, compact && { flex: 1, minHeight: 48, paddingTop: 14 }]}>
-        {label}
-      </Text>
+      {!hideLabel && (
+        <Text style={[portalStyles.label, compact && { flex: 1, minHeight: 48, paddingTop: 14 }]}>
+          {label}
+        </Text>
+      )}
       <View style={{ gap: 4, width: compact ? 208 : undefined }}>
         <Pressable
           accessibilityRole="button"

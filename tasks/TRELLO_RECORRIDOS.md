@@ -22,7 +22,7 @@
 | **CARD-08** | [Recorrido 08: Gestión de la organización](#card-08-recorrido-08--gestión-de-la-organización-4-vistas) | Adaptación móvil de portal | Implementado y verificado |
 | **CARD-09** | [Recorrido 09: Recibir y validar en el local](#card-09-recorrido-09--recibir-y-validar-en-el-local-3-vistas) | Rediseño de escáner y validación | Lógica funcional, UI desalineada |
 | **CARD-10** | [Recorrido 10: Coordinar y operar los retiros](#card-10-recorrido-10--coordinar-y-operar-los-retiros-3-vistas) | Nueva funcionalidad completa | Por implementar (Backlog P2) |
-| **CARD-11** | [Recorrido 11: Administración y trazabilidad](#card-11-recorrido-11--administración-y-trazabilidad-4-vistas) | Adaptación móvil y filtros | Funcional en portal, UI desalineada |
+| **CARD-11** | [Recorrido 11: Administración y trazabilidad](#card-11-recorrido-11--administración-y-trazabilidad-4-vistas) | Adaptación móvil y filtros | Implementado y verificado |
 
 ---
 
@@ -465,20 +465,20 @@ Modernizar el portal de superadministración adaptándolo al diseño visual móv
 - `src/components/portal/LimitsManager.tsx` *(refactor)*
 
 #### Checklist de tareas
-- [ ] **Administración de organizaciones:**
-  - [ ] Implementar el control segmentado superior `[Puntos verdes] [Buscador]`.
-  - [ ] Maquetar las tarjetas de entidades con badges de color (*Punto publicado* en verde, *Comercio de canje* en gris/azul).
-  - [ ] Agregar el botón flotante inferior con icono de suma `+ Agregar punto`.
-- [ ] **Gestión de premios:**
-  - [ ] Agregar miniaturas de foto con fallback para cada premio en la lista administrativa.
-  - [ ] Incorporar badge *"Activo"* / *"Inactivo"* y botón directo `+ Crear premio`.
-- [ ] **Límites de equipo:**
-  - [ ] Diseñar el panel de resolución rápida con campos de observación y botones Aprobar / Rechazar.
-  - [ ] Agregar ilustración de estado vacío para cuando no haya peticiones pendientes.
-  - [ ] Incorporar la caja pedagógica con la descripción de roles (*Administrador, Responsable, Trabajador*).
-- [ ] **Historial y auditoría:**
-  - [ ] Crear los filtros dropdown para filtrar por empresa y por tipo de acción.
-  - [ ] Asociar iconos semánticos a cada tipo de evento de la tabla `audit_log`.
+- [x] **Administración de organizaciones:**
+  - [x] Implementar el control segmentado superior `[Puntos verdes] [Buscador]`.
+  - [x] Maquetar las tarjetas de entidades con badges de color (*Punto publicado* en verde, *Comercio de canje* en gris/azul).
+  - [x] Agregar el botón flotante inferior con icono de suma `+ Agregar punto`.
+- [x] **Gestión de premios:**
+  - [x] Agregar miniaturas de foto con fallback para cada premio en la lista administrativa.
+  - [x] Incorporar badge *"Activo"* / *"Inactivo"* y botón directo `+ Crear premio`.
+- [x] **Límites de equipo:**
+  - [x] Diseñar el panel de resolución rápida con campos de observación y botones Aprobar / Rechazar.
+  - [x] Agregar ilustración de estado vacío para cuando no haya peticiones pendientes.
+  - [x] Incorporar la caja pedagógica con la descripción de roles (*Administrador, Responsable, Trabajador*).
+- [x] **Historial y auditoría:**
+  - [x] Crear los filtros dropdown para filtrar por empresa y por tipo de acción.
+  - [x] Asociar iconos semánticos a cada tipo de evento de la tabla `audit_log`.
 
 #### Criterios de Aceptación
 - El acceso está restringido exclusivamente a usuarios con rol `admin`.

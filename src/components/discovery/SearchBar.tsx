@@ -5,15 +5,23 @@ export function SearchBar({
   value,
   onChangeText,
   onSubmit,
-}: Readonly<{ value: string; onChangeText: (text: string) => void; onSubmit?: () => void }>) {
+  label = 'Buscar puntos verdes',
+  placeholder = 'Nombre, dirección o dispositivo',
+}: Readonly<{
+  value: string;
+  onChangeText: (text: string) => void;
+  onSubmit?: () => void;
+  label?: string;
+  placeholder?: string;
+}>) {
   return (
     <View style={styles.bar}>
       <Ionicons name="search-outline" size={20} color={colors.brandDark} />
       <TextInput
-        accessibilityLabel="Buscar puntos verdes"
+        accessibilityLabel={label}
         value={value}
         onChangeText={onChangeText}
-        placeholder="Nombre, dirección o dispositivo"
+        placeholder={placeholder}
         placeholderTextColor={colors.brandDark}
         style={styles.input}
         returnKeyType="search"

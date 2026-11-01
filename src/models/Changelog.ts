@@ -27,7 +27,36 @@ export const auditNames: Record<string, string> = {
   invitation_email_sent: 'Invitación enviada por email',
   invitation_email_failed: 'Falló el envío de invitación',
   admin_document_opened: 'Documentación privada consultada',
+  admin_save_point: 'Punto verde guardado por administrador',
+  point_device_policy_saved: 'Política de recepción guardada',
 };
+// Action types an administrator can filter by in the history.
+export const auditGroups = [
+  {
+    key: 'organizations',
+    label: 'Organizaciones',
+    actions: [
+      'create_point_organization',
+      'review_application',
+      'set_company_status',
+      'admin_edit_companies',
+    ],
+  },
+  {
+    key: 'points',
+    label: 'Puntos verdes',
+    actions: ['admin_save_point', 'save_point', 'point_device_policy_saved'],
+  },
+  { key: 'rewards', label: 'Premios', actions: ['reward_saved'] },
+  { key: 'limits', label: 'Cupos del equipo', actions: ['review_limit'] },
+  { key: 'users', label: 'Usuarios', actions: ['admin_edit_users'] },
+  { key: 'impact', label: 'XP y niveles', actions: ['save_global_xp', 'save_level'] },
+  { key: 'documents', label: 'Documentación', actions: ['admin_document_opened'] },
+] as const;
+export type AuditGroupKey = (typeof auditGroups)[number]['key'];
+export function auditGroupOf(action: string): AuditGroupKey | null {
+  return auditGroups.find((g) => (g.actions as readonly string[]).includes(action))?.key ?? null;
+}
 const labels: Record<string, string> = {
   name: 'Nombre',
   status: 'Estado',
