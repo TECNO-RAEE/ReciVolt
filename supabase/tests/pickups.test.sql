@@ -154,6 +154,140 @@ insert into pickup_test_results select is(
   'pickup status is now CANCELLED'
 );
 
+-- 8. Citizen creating pickup with phone over 50 chars fails
+insert into pickup_test_results select throws_ok(
+  $$select pickup_command('create', jsonb_build_object(
+    'requestId', '34000000-0000-0000-0000-000000000033',
+    'pointId', '34000000-0000-0000-0000-000000000021',
+    'addressStreet', 'Av. Tratado del Pilar 100',
+    'addressLocality', 'Pilar',
+    'citizenPhone', repeat('1', 51),
+    'items', jsonb_build_array(jsonb_build_object(
+      'categoryId', (select id from device_categories where slug = 'computadoras' limit 1),
+      'quantity', 1
+    ))
+  ))$$,
+  '22023', 'El teléfono de contacto no puede superar los 50 caracteres.',
+  'phone over 50 characters is rejected'
+);
+
+-- 9. Full lifecycle: create -> coordinate -> in_transit -> complete with points ledger verification
+select pickup_command('create', jsonb_build_object(
+  'requestId', '34000000-0000-0000-0000-000000000032',
+  'pointId', '34000000-0000-0000-0000-000000000021',
+  'addressStreet', 'Calle Falsa 123',
+  'addressLocality', 'Pilar',
+  'items', jsonb_build_array(jsonb_build_object(
+    'categoryId', (select id from device_categories where slug = 'computadoras' limit 1),
+    'quantity', 2
+  ))
+)) \gset
+
+reset role;
+create temporary table pickup2_fixture as select id from pickups where client_request_id = '34000000-0000-0000-0000-000000000032';
+grant select on pickup2_fixture to authenticated;
+
+-- Worker context
+select set_config('request.jwt.claim.sub', '34000000-0000-0000-0000-000000000004', true);
+set local role authenticated;
+
+-- Cannot coordinate with past date
+insert into pickup_test_results select throws_ok(
+  format($$select pickup_command('coordinate', jsonb_build_object('id', '%s', 'scheduledDate', (current_date - 1)::text, 'scheduledTimeSlot', '10:00'))$$, (select id from pickup2_fixture)),
+  '22023', 'La fecha coordinada no puede ser anterior a hoy.',
+  'coordinate rejects past date'
+);
+
+-- Cannot transition to in_transit when REQUESTED
+insert into pickup_test_results select throws_ok(
+  format($$select pickup_command('in_transit', jsonb_build_object('id', '%s'))$$, (select id from pickup2_fixture)),
+  '22023', 'El retiro debe estar coordinado para pasar a en camino.',
+  'in_transit requires COORDINATED status'
+);
+
+-- Cannot complete when REQUESTED
+insert into pickup_test_results select throws_ok(
+  format($$select pickup_command('complete', jsonb_build_object('id', '%s'))$$, (select id from pickup2_fixture)),
+  '22023', 'El retiro debe estar coordinado o en camino para completarse.',
+  'complete requires COORDINATED or IN_TRANSIT status'
+);
+
+-- Coordinate with future date
+insert into pickup_test_results select lives_ok(
+  format($$select pickup_command('coordinate', jsonb_build_object('id', '%s', 'scheduledDate', (current_date + 3)::text, 'scheduledTimeSlot', '14:00 - 18:00', 'driverName', 'Roberto Chofer'))$$, (select id from pickup2_fixture)),
+  'coordinate succeeds with future date'
+);
+
+-- Transition to in_transit
+insert into pickup_test_results select lives_ok(
+  format($$select pickup_command('in_transit', jsonb_build_object('id', '%s'))$$, (select id from pickup2_fixture)),
+  'transition to in_transit succeeds'
+);
+
+-- Complete with invalid item quantity throws
+insert into pickup_test_results select throws_ok(
+  format($$select pickup_command('complete', jsonb_build_object('id', '%s', 'items', jsonb_build_array(jsonb_build_object('categoryId', (select id from device_categories where slug = 'computadoras' limit 1), 'quantity', -5)))) $$, (select id from pickup2_fixture)),
+  '22023', 'Las cantidades recibidas deben ser enteras entre 0 y 999.',
+  'complete rejects invalid quantity'
+);
+
+-- Complete with foreign category throws
+insert into pickup_test_results select throws_ok(
+  format($$select pickup_command('complete', jsonb_build_object('id', '%s', 'items', jsonb_build_array(jsonb_build_object('categoryId', '00000000-0000-0000-0000-000000000099', 'quantity', 2)))) $$, (select id from pickup2_fixture)),
+  '22023', 'Categoría ajena a este retiro.',
+  'complete rejects foreign category'
+);
+
+-- Complete successfully (2 computers * 250 points = 500 points)
+insert into pickup_test_results select lives_ok(
+  format($$select pickup_command('complete', jsonb_build_object('id', '%s'))$$, (select id from pickup2_fixture)),
+  'complete succeeds'
+);
+
+insert into pickup_test_results select is(
+  (select status from pickups where id = (select id from pickup2_fixture)),
+  'COMPLETED',
+  'pickup status is COMPLETED'
+);
+
+insert into pickup_test_results select is(
+  (select amount from points_transactions where reference_type = 'PICKUP' and reference_id = (select id from pickup2_fixture)),
+  500::bigint,
+  'points_transactions has 500 points with reference_type PICKUP'
+);
+
+reset role;
+insert into pickup_test_results select is(
+  (select private.global_points('34000000-0000-0000-0000-000000000001')),
+  500::bigint,
+  'citizen global_points reflect pickup credit'
+);
+
+-- Replay complete is idempotent and does not duplicate points
+select set_config('request.jwt.claim.sub', '34000000-0000-0000-0000-000000000004', true);
+set local role authenticated;
+
+insert into pickup_test_results select lives_ok(
+  format($$select pickup_command('complete', jsonb_build_object('id', '%s'))$$, (select id from pickup2_fixture)),
+  'replay complete is idempotent'
+);
+
+reset role;
+insert into pickup_test_results select is(
+  (select count(*) from points_transactions where reference_type = 'PICKUP' and reference_id = (select id from pickup2_fixture)),
+  1::bigint,
+  'points_transactions does not duplicate row on replay'
+);
+
+-- 10. Direct insert in points_transactions with non-existent pickup reference fails with 23503
+reset role;
+insert into pickup_test_results select throws_ok(
+  $$insert into points_transactions (user_id, company_id, amount, type, reference_type, reference_id)
+    values ('34000000-0000-0000-0000-000000000001', '34000000-0000-0000-0000-000000000011', 100, 'PICKUP', 'PICKUP', '99999999-9999-9999-9999-999999999999')$$,
+  '23503', 'reference_id no existe en pickups.',
+  'points_transactions trigger enforces referential integrity for PICKUP'
+);
+
 reset role;
 insert into pickup_test_results select * from finish();
 select * from pickup_test_results;

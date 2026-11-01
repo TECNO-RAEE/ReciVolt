@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS public.pickups (
     company_id uuid NOT NULL REFERENCES public.companies(id),
     green_point_id uuid REFERENCES public.green_points(id),
     citizen_name text NOT NULL,
-    citizen_phone text,
+    citizen_phone text CONSTRAINT pickups_citizen_phone_check CHECK (citizen_phone IS NULL OR length(citizen_phone) <= 50),
     company_name text NOT NULL,
     point_name text,
     status text DEFAULT 'REQUESTED'::text NOT NULL,
@@ -74,6 +74,42 @@ CREATE POLICY "pickup_items_read" ON public.pickup_items
         WHERE p.id = pickup_items.pickup_id
           AND (p.user_id = auth.uid() OR private.has_company_role(p.company_id) OR (SELECT private.is_platform_admin()))
     ));
+
+-- Adjust points_transactions to support PICKUP ledgers with polymorphic validation
+ALTER TABLE public.points_transactions DROP CONSTRAINT IF EXISTS points_transactions_reference_type_check;
+ALTER TABLE public.points_transactions ADD CONSTRAINT points_transactions_reference_type_check
+    CHECK (reference_type IN ('DELIVERY', 'PICKUP'));
+
+ALTER TABLE public.points_transactions DROP CONSTRAINT IF EXISTS points_transactions_type_check;
+ALTER TABLE public.points_transactions ADD CONSTRAINT points_transactions_type_check
+    CHECK (type IN ('DELIVERY', 'PICKUP'));
+
+ALTER TABLE public.points_transactions DROP CONSTRAINT IF EXISTS points_transactions_reference_id_fkey;
+
+CREATE OR REPLACE FUNCTION private.check_points_transaction_reference() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO ''
+    AS $$
+begin
+  if NEW.reference_type = 'DELIVERY' then
+    if not exists (select 1 from public.deliveries where id = NEW.reference_id) then
+      raise exception 'reference_id no existe en deliveries.' using errcode = '23503';
+    end if;
+  elsif NEW.reference_type = 'PICKUP' then
+    if not exists (select 1 from public.pickups where id = NEW.reference_id) then
+      raise exception 'reference_id no existe en pickups.' using errcode = '23503';
+    end if;
+  end if;
+  return NEW;
+end;
+$$;
+
+ALTER FUNCTION private.check_points_transaction_reference() OWNER TO postgres;
+
+DROP TRIGGER IF EXISTS points_transactions_reference_check ON public.points_transactions;
+CREATE TRIGGER points_transactions_reference_check
+    BEFORE INSERT OR UPDATE ON public.points_transactions
+    FOR EACH ROW EXECUTE FUNCTION private.check_points_transaction_reference();
 
 CREATE OR REPLACE FUNCTION private.pickup_json(target uuid) RETURNS jsonb
     LANGUAGE sql STABLE
@@ -193,10 +229,17 @@ begin
       raise exception 'La foto no pertenece a tu cuenta.' using errcode = '42501';
     end if;
 
+    if not exists (select 1 from public.profiles where id = actor) then
+      raise exception 'Tu perfil no está registrado.' using errcode = '22023';
+    end if;
+
     random_token := upper(replace(pg_catalog.gen_random_uuid()::text, '-', ''));
     code := 'TR-' || substring(random_token, 1, 8) || '-' || substring(random_token, 9, 8) || '-' || substring(random_token, 17, 8) || '-' || substring(random_token, 25, 8);
 
     phone_val := trim(coalesce(payload->>'citizenPhone', payload->>'phone', ''));
+    if length(phone_val) > 50 then
+      raise exception 'El teléfono de contacto no puede superar los 50 caracteres.' using errcode = '22023';
+    end if;
 
     insert into public.pickups (
       user_id, company_id, green_point_id, citizen_name, citizen_phone,
@@ -270,6 +313,9 @@ begin
     if date_val is null then
       raise exception 'Indicá la fecha coordinada para el retiro.' using errcode = '22023';
     end if;
+    if date_val < current_date then
+      raise exception 'La fecha coordinada no puede ser anterior a hoy.' using errcode = '22023';
+    end if;
     update public.pickups
     set status = 'COORDINATED',
         scheduled_date = date_val,
@@ -284,10 +330,13 @@ begin
     if not private.has_company_role(p_rec.company_id) and not private.is_platform_admin() then
       raise exception 'No tenés permisos para actualizar el estado del retiro.' using errcode = '42501';
     end if;
-    if p_rec.status not in ('COORDINATED', 'REQUESTED') then
-      raise exception 'El retiro no está coordinado.' using errcode = '22023';
+    if p_rec.status = 'IN_TRANSIT' then
+      return private.pickup_json(p_rec.id);
     end if;
-    update public.pickups set status = 'IN_TRANSIT', in_transit_at = now() where id = p_rec.id;
+    if p_rec.status <> 'COORDINATED' then
+      raise exception 'El retiro debe estar coordinado para pasar a en camino.' using errcode = '22023';
+    end if;
+    update public.pickups set status = 'IN_TRANSIT', in_transit_at = coalesce(in_transit_at, now()) where id = p_rec.id;
     insert into public.audit_log(actor_id, action, target_id, company_id) values (actor, 'pickup_in_transit', p_rec.id, p_rec.company_id);
     return private.pickup_json(p_rec.id);
 
@@ -298,14 +347,24 @@ begin
     if p_rec.status = 'COMPLETED' then
       return private.pickup_json(p_rec.id);
     end if;
-    if p_rec.status not in ('COORDINATED', 'IN_TRANSIT', 'REQUESTED') then
-      raise exception 'El retiro ya no está activo.' using errcode = '22023';
+    if p_rec.status not in ('COORDINATED', 'IN_TRANSIT') then
+      raise exception 'El retiro debe estar coordinado o en camino para completarse.' using errcode = '22023';
     end if;
+
     requested_items := payload->'items';
-    if requested_items is not null and jsonb_typeof(requested_items) = 'array' then
+    if requested_items is not null then
+      if jsonb_typeof(requested_items) is distinct from 'array' then
+        raise exception 'Indicá las cantidades recibidas.' using errcode = '22023';
+      end if;
       for item in select value from jsonb_array_elements(requested_items) loop
+        if jsonb_typeof(item->'quantity') is distinct from 'number' or coalesce(item->>'quantity', '') !~ '^(0|[1-9][0-9]{0,2})$' then
+          raise exception 'Las cantidades recibidas deben ser enteras entre 0 y 999.' using errcode = '22023';
+        end if;
         update public.pickup_items set confirmed_quantity = (item->>'quantity')::integer
         where pickup_id = p_rec.id and device_category_id = (item->>'categoryId')::uuid;
+        if not found then
+          raise exception 'Categoría ajena a este retiro.' using errcode = '22023';
+        end if;
       end loop;
     else
       update public.pickup_items set confirmed_quantity = declared_quantity
@@ -324,7 +383,7 @@ begin
 
     if coalesce(point_total, 0) > 0 then
       insert into public.points_transactions(user_id, company_id, amount, type, reference_type, reference_id)
-      values (p_rec.user_id, p_rec.company_id, point_total, 'DELIVERY', 'PICKUP', p_rec.id);
+      values (p_rec.user_id, p_rec.company_id, point_total, 'PICKUP', 'PICKUP', p_rec.id);
     end if;
 
     insert into public.audit_log(actor_id, action, target_id, company_id, details)
