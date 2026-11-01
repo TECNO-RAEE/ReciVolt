@@ -14,7 +14,7 @@ import {
 } from './PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import type { ManagedPoint, PortalCompany } from '@/models/Portal';
-import { getRewards } from '@/services/reward.service';
+import { getActiveRewardCompanyIds } from '@/services/reward.service';
 import {
   getAdminPoints,
   getCompanyPortal,
@@ -24,10 +24,9 @@ import {
 import { matchesAdminSearch } from '@/models/AdminSearch';
 
 const loadOrganizations = () =>
-  Promise.all([getAdminPoints(), getRewards(undefined, true)]).then(([points, rewards]) => ({
-    points,
-    rewardCompanies: new Set(rewards.map((r) => r.companyId)),
-  }));
+  Promise.all([getAdminPoints(), getActiveRewardCompanyIds()]).then(
+    ([points, rewardCompanies]) => ({ points, rewardCompanies })
+  );
 // "Calle 123, Villa Rosa, Buenos Aires" -> "Villa Rosa, Buenos Aires"
 const locality = (address?: string) => address?.split(',').slice(-2).join(',').trim() || null;
 
@@ -36,11 +35,13 @@ export function AdminPoints({
   refresh,
   addRequest = 0,
   onListChange,
+  reload = 0,
 }: Readonly<{
   companies: PortalCompany[];
   refresh: () => Promise<void>;
   addRequest?: number;
   onListChange?: (list: boolean) => void;
+  reload?: number;
 }>) {
   const [selected, setSelected] = useState<PortalCompany | null | undefined>();
   const [search, setSearch] = useState('');
@@ -55,6 +56,11 @@ export function AdminPoints({
   const listing = selected === undefined && !creating;
   useEffect(() => onListChange?.(listing), [listing, onListChange]);
   const result = usePortalData(loadOrganizations);
+  const { refresh: reloadOrganizations } = result;
+  // Pull-to-refresh reloads the list without resetting an open editor.
+  useEffect(() => {
+    if (reload) void reloadOrganizations();
+  }, [reload, reloadOrganizations]);
   if (selected !== undefined)
     return (
       <PointWorkspace

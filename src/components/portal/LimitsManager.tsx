@@ -119,12 +119,13 @@ function LimitRequest({
         role={`Solicita ampliar su equipo${currentLimit != null ? ` · hoy ${currentLimit} cupos` : ''}`}
       />
       <View style={{ gap: 16, paddingHorizontal: 16, paddingBottom: 16 }}>
-        <PortalField
-          label="Cupo autorizado"
-          labelStyle={s.label}
-          value={`${request.requestedLimit} cupos`}
-          editable={false}
-        />
+        <View style={{ gap: 4 }}>
+          <Text style={s.label}>Cupo autorizado</Text>
+          <Text style={s.body}>
+            {request.requestedLimit} cupos{' '}
+            <Text style={s.hint}>· al aprobar se autoriza el cupo solicitado</Text>
+          </Text>
+        </View>
         <View style={{ gap: 4 }}>
           <PortalField
             label="Motivo"

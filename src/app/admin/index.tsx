@@ -21,7 +21,7 @@ const sections = [
 ] as const;
 export default function AdminScreen() {
   const [tab, setTab] = useState<string>('Puntos verdes');
-  const [historyRevision, setHistoryRevision] = useState(0);
+  const [reload, setReload] = useState(0);
   const [pointsList, setPointsList] = useState(true);
   const [addingPoint, setAddingPoint] = useState(0);
   const { data, loading, error, refresh } = usePortalData(getAdminPortal);
@@ -35,7 +35,7 @@ export default function AdminScreen() {
       }}
       refresh={() => {
         void refresh();
-        setHistoryRevision((value) => value + 1);
+        setReload((value) => value + 1);
       }}
       footer={
         tab === 'Puntos verdes' &&
@@ -55,17 +55,17 @@ export default function AdminScreen() {
           {tab === 'Buscador' && <AdminSearch companies={data.companies} refresh={refresh} />}
           {tab === 'Puntos verdes' && (
             <AdminPoints
-              key={historyRevision}
+              reload={reload}
               companies={data.companies}
               refresh={refresh}
               addRequest={addingPoint}
               onListChange={setPointsList}
             />
           )}
-          {tab === 'Premios' && <AdminRewards key={historyRevision} companies={data.companies} />}
+          {tab === 'Premios' && <AdminRewards reload={reload} companies={data.companies} />}
           {tab === 'Límites' && <LimitsManager data={data} refresh={refresh} />}
           {tab === 'Historial de cambios' && (
-            <AdminChangelog key={historyRevision} companies={data.companies} />
+            <AdminChangelog reload={reload} companies={data.companies} />
           )}
         </>
       )}

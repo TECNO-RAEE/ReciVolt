@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Text, View, type TextStyle } from 'react-native';
 import type { ComponentProps } from 'react';
 import type { Ionicons } from '@expo/vector-icons';
@@ -32,7 +32,10 @@ const groupIcons: Record<AuditGroupKey, ComponentProps<typeof Ionicons>['name']>
   documents: 'document-text-outline',
 };
 
-export function AdminChangelog({ companies }: Readonly<{ companies: PortalCompany[] }>) {
+export function AdminChangelog({
+  companies,
+  reload = 0,
+}: Readonly<{ companies: PortalCompany[]; reload?: number }>) {
   const [page, setPage] = useState(0);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
@@ -48,6 +51,17 @@ export function AdminChangelog({ companies }: Readonly<{ companies: PortalCompan
     [page, search, companyId, group]
   );
   const { data, loading, error, refresh } = usePortalData(loader);
+  useEffect(() => {
+    if (reload) void refresh();
+  }, [reload, refresh]);
+  // Same as the organization search: filter as the admin types.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(draft.trim());
+      setPage(0);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [draft]);
   const filtered = Boolean(search || companyId || group);
   return (
     <View style={s.stack}>
@@ -79,17 +93,7 @@ export function AdminChangelog({ companies }: Readonly<{ companies: PortalCompan
       />
       <SearchBar
         value={draft}
-        onChangeText={(value) => {
-          setDraft(value);
-          if (!value) {
-            setSearch('');
-            setPage(0);
-          }
-        }}
-        onSubmit={() => {
-          setSearch(draft.trim());
-          setPage(0);
-        }}
+        onChangeText={setDraft}
         label="Buscar por persona, empresa o referencia"
         placeholder="Persona, empresa o referencia"
       />

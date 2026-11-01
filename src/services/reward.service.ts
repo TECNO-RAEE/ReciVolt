@@ -35,6 +35,20 @@ export function mapRedemption(row: Row): Redemption {
     reward: mapReward(row.reward_snapshot as Row),
   };
 }
+export async function getActiveRewardCompanyIds(): Promise<Set<string>> {
+  const ids = new Set<string>();
+  for (let start = 0; ; start += 1000) {
+    const { data, error } = await supabase
+      .from('rewards')
+      .select('company_id')
+      .eq('active', true)
+      .order('id')
+      .range(start, start + 999);
+    if (error) throw error;
+    for (const row of data ?? []) ids.add(row.company_id);
+    if (!data || data.length < 1000) return ids;
+  }
+}
 export async function getRewards(companyId?: string, includeInactive = false): Promise<Reward[]> {
   const result: Reward[] = [];
   for (let page = 0; ; page++) {

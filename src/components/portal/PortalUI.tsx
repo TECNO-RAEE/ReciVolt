@@ -221,7 +221,7 @@ export function PortalListItem({
         backgroundColor: pressed ? colors.surfaceSoft : colors.surface,
       })}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16 }}>
         {leading ??
           (icon && (
             <View
@@ -237,13 +237,13 @@ export function PortalListItem({
               <Ionicons name={icon} size={26} color={colors.primaryDark} />
             </View>
           ))}
-        <View style={{ flex: 1, gap: 4 }}>
+        <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 120, minWidth: 0, gap: 4 }}>
           <Text style={portalStyles.heading}>{title}</Text>
           {!badgeBelow && badge}
           {lines
             .filter((line): line is string => !!line)
-            .map((line) => (
-              <Text key={line} style={portalStyles.hint}>
+            .map((line, i) => (
+              <Text key={i} style={portalStyles.hint}>
                 {line}
               </Text>
             ))}

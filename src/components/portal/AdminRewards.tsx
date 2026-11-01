@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoNote, RewardPhoto } from '@/components/rewards/RewardsUI';
@@ -21,9 +21,15 @@ import { getRewards, saveReward } from '@/services/reward.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import { colors } from '@/theme';
 
-export function AdminRewards({ companies }: Readonly<{ companies: PortalCompany[] }>) {
+export function AdminRewards({
+  companies,
+  reload = 0,
+}: Readonly<{ companies: PortalCompany[]; reload?: number }>) {
   const loader = useCallback(() => getRewards(undefined, true), []);
   const { data, loading, error, refresh } = usePortalData(loader);
+  useEffect(() => {
+    if (reload) void refresh();
+  }, [reload, refresh]);
   const [selected, setSelected] = useState<Reward | 'new' | null>(null);
   const [search, setSearch] = useState('');
   const rows = data?.filter((r) => matchesAdminSearch(search, r.id, r.title));
