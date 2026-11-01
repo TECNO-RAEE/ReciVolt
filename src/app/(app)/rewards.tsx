@@ -93,7 +93,11 @@ export default function RewardsScreen() {
             key={label}
             accessibilityRole="tab"
             accessibilityState={{ selected: tab === label }}
-            onPress={() => setTab(label)}
+            onPress={() => {
+              setTab(label);
+              // Clear ?tab=canjes so "Ver mis canjes" can switch tabs again later.
+              if (params.tab) router.setParams({ tab: undefined });
+            }}
             style={[styles.tab, tab === label && styles.activeTab]}
           >
             <Text style={[styles.tabText, tab === label && { color: colors.primaryDark }]}>

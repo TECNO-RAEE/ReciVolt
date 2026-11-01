@@ -187,7 +187,7 @@ export function RewardsBalance({
       style={({ pressed }) => [styles.balanceCard, pressed && { opacity: 0.75 }]}
     >
       <PointsCoin size={64} />
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={styles.balanceText}>
         <Text style={rewardStyles.label}>Tus puntos</Text>
         {loading ? (
           <View accessibilityLabel="Cargando saldo" style={styles.balanceSkeleton} />
@@ -234,7 +234,7 @@ export function StatusBanner({
           color={success ? colors.textOnPrimary : colors.primaryDark}
         />
       </View>
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={styles.balanceText}>
         <Text style={styles.bannerTitle}>{title}</Text>
         <Text style={rewardStyles.body}>{message}</Text>
       </View>
@@ -403,9 +403,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 14,
   },
+  balanceText: { flexGrow: 1, flexShrink: 1, flexBasis: 180, minWidth: 0, gap: 2 },
   compactBalance: {
     fontFamily: fonts.bold,
     fontSize: 24,
@@ -430,7 +432,14 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.primaryDark },
   badgeTextLarge: { fontFamily: fonts.bold, fontSize: 22, color: colors.text },
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 18 },
+  banner: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: 18,
+  },
   bannerPending: {
     backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
@@ -447,10 +456,16 @@ const styles = StyleSheet.create({
   },
   bannerTitle: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 26, color: colors.text },
   detailList: { paddingHorizontal: 4 },
-  detailRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 14 },
+  detailRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 14,
+  },
   detailDivider: { borderTopWidth: 1, borderTopColor: colors.border },
   detailLabel: { width: 124, fontSize: 13 },
-  detailValue: { flex: 1, color: colors.text },
+  detailValue: { flexGrow: 1, flexShrink: 1, flexBasis: 140, minWidth: 0, color: colors.text },
   codePill: {
     flexDirection: 'row',
     alignItems: 'center',

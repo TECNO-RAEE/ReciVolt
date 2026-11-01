@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, useWindowDimensions } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { ActionButton } from '@/components/ui/ActionButton';
@@ -47,6 +47,7 @@ function RedemptionDetail({ id }: Readonly<{ id: string }>) {
   );
 }
 function Reserved({ data }: Readonly<{ data: Redemption }>) {
+  const { width } = useWindowDimensions();
   return (
     <>
       <StatusBanner
@@ -56,7 +57,12 @@ function Reserved({ data }: Readonly<{ data: Redemption }>) {
       />
       <View style={[s.card, { alignItems: 'center' }]}>
         <View accessibilityLabel="Código QR del canje">
-          <QRCode value={rewardQr(data.code)} size={180} quietZone={12} ecl="M" />
+          <QRCode
+            value={rewardQr(data.code)}
+            size={Math.max(120, Math.min(180, width - 112))}
+            quietZone={12}
+            ecl="M"
+          />
         </View>
         <CopyableCode code={data.code} />
       </View>
