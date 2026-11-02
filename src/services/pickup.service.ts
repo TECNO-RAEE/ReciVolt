@@ -1,5 +1,5 @@
 import { supabase } from '@/config/supabase';
-import { canRequestPickup, type Pickup, type PickupItem, type PickupStatus } from '@/models/Pickup';
+import { activePickupStatuses, canRequestPickup, type Pickup, type PickupItem, type PickupStatus } from '@/models/Pickup';
 import type { GreenPoint } from '@/models/GreenPoint';
 export {
   pickDeliveryPhoto as pickPickupPhoto,
@@ -36,15 +36,13 @@ export function mapPickup(row: Row): Pickup {
     completedAt: row.completed_at == null ? null : String(row.completed_at),
     cancelledAt: row.cancelled_at == null ? null : String(row.cancelled_at),
     points: Number(row.confirmed_points ?? 0),
-    items: items.map(
-      (i): PickupItem => ({
-        categoryId: String(i.device_category_id),
-        categoryName: String(i.category_name),
-        declaredQuantity: Number(i.declared_quantity),
-        confirmedQuantity: i.confirmed_quantity == null ? null : Number(i.confirmed_quantity),
-        pointsSnapshot: Number(i.points_snapshot ?? 0),
-      })
-    ),
+    items: items.map((i): PickupItem => ({
+      categoryId: String(i.device_category_id),
+      categoryName: String(i.category_name),
+      declaredQuantity: Number(i.declared_quantity),
+      confirmedQuantity: i.confirmed_quantity == null ? null : Number(i.confirmed_quantity),
+      pointsSnapshot: Number(i.points_snapshot ?? 0),
+    })),
   };
 }
 
@@ -60,7 +58,8 @@ export async function pickupCommand(
 
 export async function getPickupHistory(
   companyId?: string | null,
-  page = 0
+  page = 0,
+  status?: PickupStatus | PickupStatus[]
 ): Promise<Pickup[]> {
   let query = supabase
     .from('pickups')
@@ -78,9 +77,23 @@ export async function getPickupHistory(
     query = query.eq('user_id', data.user.id);
   }
 
+  if (status) {
+    query = Array.isArray(status) ? query.in('status', status) : query.eq('status', status);
+  }
+
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []).map((row) => mapPickup(row as Row));
+}
+
+export async function getActivePickupCount(companyId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('pickups')
+    .select('id', { count: 'exact', head: true })
+    .eq('company_id', companyId)
+    .in('status', activePickupStatuses);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export function getPickupEligiblePoints(points: GreenPoint[]): GreenPoint[] {

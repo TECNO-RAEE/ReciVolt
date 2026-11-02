@@ -203,11 +203,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
+    flexShrink: 1,
   },
   codePillText: {
     fontFamily: fonts.bold,
     fontSize: 12,
     color: colors.text,
     letterSpacing: 0.5,
+    flexWrap: 'wrap',
   },
 });

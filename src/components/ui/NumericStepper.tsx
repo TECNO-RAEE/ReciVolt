@@ -10,6 +10,8 @@ export interface NumericStepperProps {
   onChange: (val: number) => void;
   disabled?: boolean;
   accessibilityLabel?: string;
+  decrementAccessibilityLabel?: string;
+  incrementAccessibilityLabel?: string;
   testID?: string;
 }
 
@@ -21,6 +23,8 @@ export function NumericStepper({
   onChange,
   disabled = false,
   accessibilityLabel = 'Cantidad',
+  decrementAccessibilityLabel = 'Disminuir cantidad',
+  incrementAccessibilityLabel = 'Aumentar cantidad',
   testID,
 }: Readonly<NumericStepperProps>) {
   const safeValue = Number.isFinite(value) ? value : min;
@@ -44,7 +48,7 @@ export function NumericStepper({
       <Pressable
         testID={testID ? `${testID}-minus` : undefined}
         accessibilityRole="button"
-        accessibilityLabel="Disminuir cantidad"
+        accessibilityLabel={decrementAccessibilityLabel}
         accessibilityState={{ disabled: !canDecrement }}
         disabled={!canDecrement}
         onPress={handleDecrement}
@@ -73,7 +77,7 @@ export function NumericStepper({
       <Pressable
         testID={testID ? `${testID}-plus` : undefined}
         accessibilityRole="button"
-        accessibilityLabel="Aumentar cantidad"
+        accessibilityLabel={incrementAccessibilityLabel}
         accessibilityState={{ disabled: !canIncrement }}
         disabled={!canIncrement}
         onPress={handleIncrement}

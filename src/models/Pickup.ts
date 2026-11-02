@@ -80,6 +80,55 @@ export function canRequestPickup(
   return Boolean(point.pickupEnabled && !point.demo && !point.id.startsWith('example-'));
 }
 
+// Company operations (Recorrido 10): allowed state transitions for the team.
+export function canCoordinatePickup(status: PickupStatus): boolean {
+  return status === 'REQUESTED';
+}
+
+export function canMarkPickupInTransit(status: PickupStatus): boolean {
+  return status === 'COORDINATED';
+}
+
+export function canReceivePickup(status: PickupStatus): boolean {
+  return status === 'COORDINATED' || status === 'IN_TRANSIT';
+}
+
+export const activePickupStatuses: PickupStatus[] = ['REQUESTED', 'COORDINATED', 'IN_TRANSIT'];
+
+export function isPickupActive(status: PickupStatus): boolean {
+  return activePickupStatuses.includes(status);
+}
+
+export function pickupMaterialSummary(items: PickupItem[]): string {
+  return items
+    .map((item) => `${item.categoryName} ×${item.confirmedQuantity ?? item.declaredQuantity}`)
+    .join(' · ');
+}
+
+export const pickupTimeSlots = ['08:00 - 12:00', '12:00 - 16:00', '16:00 - 20:00'] as const;
+
+export interface ScheduleDayOption {
+  value: string; // YYYY-MM-DD in local time
+  label: string;
+}
+
+export function pickupScheduleDays(from: Date, count: number): ScheduleDayOption[] {
+  const formatter = new Intl.DateTimeFormat('es-AR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(from.getFullYear(), from.getMonth(), from.getDate() + index);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return {
+      value: `${date.getFullYear()}-${month}-${day}`,
+      label: formatter.format(date),
+    };
+  });
+}
+
 export interface PickupTimelineStep {
   step: number;
   title: string;
@@ -91,8 +140,19 @@ export interface PickupTimelineStep {
 export function formatPickupDate(isoDateString?: string | null): string | null {
   if (!isoDateString) return null;
   try {
-    const date = new Date(isoDateString);
-    if (isNaN(date.getTime())) return null;
+    // Date-only values ('YYYY-MM-DD') must be read as local calendar days:
+    // parsing them as UTC midnight shifts the day back in negative timezones.
+    let date: Date;
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDateString);
+    if (dateOnly) {
+      const [, year, month, day] = dateOnly.map(Number);
+      date = new Date(year, month - 1, day, 12, 0, 0);
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day)
+        return null;
+    } else {
+      date = new Date(isoDateString);
+      if (isNaN(date.getTime())) return null;
+    }
     return new Intl.DateTimeFormat('es-AR', {
       day: 'numeric',
       month: 'short',
@@ -130,11 +190,7 @@ export function getPickupTimeline(pickup: Pickup): PickupTimelineStep[] {
   // 4. Recibido
   const step1Status: 'completed' | 'current' = status === 'REQUESTED' ? 'current' : 'completed';
   const step2Status: 'completed' | 'current' | 'upcoming' =
-    status === 'REQUESTED'
-      ? 'upcoming'
-      : status === 'COORDINATED'
-        ? 'current'
-        : 'completed';
+    status === 'REQUESTED' ? 'upcoming' : status === 'COORDINATED' ? 'current' : 'completed';
   const step3Status: 'completed' | 'current' | 'upcoming' =
     status === 'REQUESTED' || status === 'COORDINATED'
       ? 'upcoming'
