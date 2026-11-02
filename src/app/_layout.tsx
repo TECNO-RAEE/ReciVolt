@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { useState } from 'react';
@@ -12,13 +13,14 @@ import { useFonts } from 'expo-font';
 import { Roboto_400Regular, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto';
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
+    ...Ionicons.font,
     Roboto_400Regular,
     Roboto_500Medium,
     Roboto_700Bold,
   });
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
@@ -68,7 +70,6 @@ function Navigation() {
         <Stack.Screen name="delivery/[id]" />
         <Stack.Screen name="pickup/new" />
         <Stack.Screen name="pickup/[id]" />
-        <Stack.Screen name="my-points" />
         <Stack.Screen name="impact" />
         <Stack.Screen name="reward/[id]" />
         <Stack.Screen name="redemption/[id]" />

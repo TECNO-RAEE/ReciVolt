@@ -92,7 +92,7 @@ export default function HomeScreen() {
           points={wallet.data?.points ?? null}
           loading={!!session && wallet.loading}
           error={wallet.error}
-          onPress={() => (wallet.error ? void refreshWallet() : router.push('/my-points'))}
+          onPress={() => (wallet.error ? void refreshWallet() : router.push('/(app)/my-points'))}
         />
         <View style={styles.quickGrid}>
           <QuickAccess
@@ -103,7 +103,7 @@ export default function HomeScreen() {
           <QuickAccess
             title="Mis puntos"
             icon={<Ionicons name="bar-chart" size={25} color={colors.primaryDark} />}
-            onPress={() => router.push('/my-points')}
+            onPress={() => router.push('/(app)/my-points')}
           />
           <QuickAccess
             title="Premios"
