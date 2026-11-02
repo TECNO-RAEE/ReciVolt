@@ -15,6 +15,19 @@ export function PointsMap({
 }: PointsMapProps) {
   const element = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
+  // onSelect se llama desde un listener de Leaflet creado una sola vez; una ref evita
+  // que una nueva identidad de función (inline en el padre) dispare el efecto pesado de abajo.
+  const onSelectRef = useRef(onSelect);
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  });
+  // markers + iconos por id, para que el efecto de selección solo cambie el ícono
+  // (marker.setIcon) en vez de reconstruir todo el mapa en cada tap.
+  const markersRef = useRef<Map<string, import('leaflet').Marker>>(new Map());
+  const iconsRef = useRef<{
+    normal: import('leaflet').DivIcon;
+    selected: import('leaflet').DivIcon;
+  } | null>(null);
   useEffect(() => {
     let cancelled = false;
     let dispose: (() => void) | undefined;
@@ -46,6 +59,8 @@ export function PointsMap({
           });
         const icon = makeIcon(colors.primary);
         const selectedIcon = makeIcon(colors.primaryDark);
+        iconsRef.current = { normal: icon, selected: selectedIcon };
+        markersRef.current = new Map();
         const bounds: [number, number][] = [];
         points.forEach((point) => {
           const coordinate: [number, number] = [point.latitude, point.longitude];
@@ -61,8 +76,9 @@ export function PointsMap({
           marker.on('add', () => {
             marker.getElement()?.setAttribute('aria-label', `Ver ${title}`);
           });
-          marker.on('click', () => onSelect(point));
+          marker.on('click', () => onSelectRef.current(point));
           marker.addTo(map);
+          markersRef.current.set(point.id, marker);
         });
         if (location) {
           const coordinate: [number, number] = [location.latitude, location.longitude];
@@ -78,6 +94,8 @@ export function PointsMap({
         dispose = () => {
           observer.disconnect();
           map.remove();
+          markersRef.current = new Map();
+          iconsRef.current = null;
         };
       })
       .catch(() => {
@@ -87,7 +105,19 @@ export function PointsMap({
       cancelled = true;
       dispose?.();
     };
-  }, [points, location, preview, selectedId, onSelect]);
+    // selectedId deliberadamente afuera: lo maneja el efecto de abajo, que solo
+    // cambia el ícono del marker correspondiente en vez de recrear el mapa entero.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points, location, preview]);
+  // Resalta el punto seleccionado sin reconstruir el mapa (evita el parpadeo/reset
+  // de zoom y centro que ocurría cuando selectedId estaba en el efecto de arriba).
+  useEffect(() => {
+    const icons = iconsRef.current;
+    if (!icons) return;
+    markersRef.current.forEach((marker, id) => {
+      marker.setIcon(id === selectedId ? icons.selected : icons.normal);
+    });
+  }, [selectedId]);
   return (
     <View style={fill ? { flex: 1, gap: 8 } : { gap: 8 }}>
       <div

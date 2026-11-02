@@ -117,6 +117,7 @@ function GreenPointsExplorer({
   const clear = () => {
     setSearch('');
     setFilters(emptyPointFilters);
+    setSelectedId(null);
   };
   return (
     <View style={styles.container}>
@@ -188,7 +189,8 @@ function GreenPointsExplorer({
               {points.some((p) => p.demo) && (
                 <View style={styles.mapNotice}>
                   <Text style={styles.mapNoticeText}>
-                    Todavía no hay puntos publicados. Este es un punto de ejemplo.
+                    Todavía no hay puntos publicados. Explorá este punto verde de ejemplo; no
+                    permite registrar entregas reales.
                   </Text>
                 </View>
               )}
@@ -350,7 +352,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 12px rgba(22,65,39,0.14)',
+    boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
   },
   mapNotices: {
     position: 'absolute',
@@ -363,7 +365,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 10,
-    boxShadow: '0 4px 12px rgba(22,65,39,0.14)',
+    boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
   },
   mapNoticeText: { fontFamily: fonts.regular, fontSize: 13, color: colors.text },
   floatingCard: {
@@ -377,7 +379,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     gap: 12,
-    boxShadow: '0 7px 20px rgba(22,65,39,0.14)',
+    boxShadow: '0 7px 20px rgba(22,65,39,0.10)',
   },
   listContent: {
     width: '100%',

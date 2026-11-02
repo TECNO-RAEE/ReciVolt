@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 18,
     overflow: 'hidden',
-    boxShadow: '0 7px 20px rgba(22,65,39,0.14)',
+    boxShadow: '0 7px 20px rgba(22,65,39,0.10)',
   },
   summaryRow: {
     minHeight: 50,
