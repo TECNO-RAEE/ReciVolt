@@ -14,11 +14,10 @@ import { usePortalData } from '@/hooks/usePortalData';
 import {
   canReceivePickup,
   formatPickupDate,
-  isPickupActive,
   pickupMaterialSummary,
   type PickupStatus,
 } from '@/models/Pickup';
-import { getPickupHistory, getPickupStatusCounts } from '@/services/pickup.service';
+import { getActivePickupCount, getPickupHistory } from '@/services/pickup.service';
 import type { CompanyPortalData } from '@/models/Portal';
 
 const tabs = [
@@ -35,18 +34,16 @@ function PickupInbox({ companyId }: Readonly<{ companyId: string }>) {
   const [page, setPage] = useState(0);
   const loader = useCallback(() => getPickupHistory(companyId, page, tab), [companyId, page, tab]);
   const { data, loading, error, refresh } = usePortalData(loader);
+  const {
+    data: activeCount,
+    refresh: refreshCounts,
+  } = usePortalData(useCallback(() => getActivePickupCount(companyId), [companyId]));
   useFocusEffect(
     useCallback(() => {
       void refresh();
-    }, [refresh])
+      void refreshCounts();
+    }, [refresh, refreshCounts])
   );
-  const counts = usePortalData(useCallback(() => getPickupStatusCounts(companyId), [companyId]));
-  const activeCount = counts.data
-    ? Object.entries(counts.data).reduce(
-        (total, [status, count]) => total + (isPickupActive(status as PickupStatus) ? count : 0),
-        0
-      )
-    : null;
 
   function openPickup(id: string, status: PickupStatus) {
     if (canReceivePickup(status) || status === 'COMPLETED' || status === 'CANCELLED') {

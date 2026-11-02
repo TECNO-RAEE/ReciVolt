@@ -93,8 +93,10 @@ export function canReceivePickup(status: PickupStatus): boolean {
   return status === 'COORDINATED' || status === 'IN_TRANSIT';
 }
 
+export const activePickupStatuses: PickupStatus[] = ['REQUESTED', 'COORDINATED', 'IN_TRANSIT'];
+
 export function isPickupActive(status: PickupStatus): boolean {
-  return status === 'REQUESTED' || status === 'COORDINATED' || status === 'IN_TRANSIT';
+  return activePickupStatuses.includes(status);
 }
 
 export function pickupMaterialSummary(items: PickupItem[]): string {
@@ -138,8 +140,19 @@ export interface PickupTimelineStep {
 export function formatPickupDate(isoDateString?: string | null): string | null {
   if (!isoDateString) return null;
   try {
-    const date = new Date(isoDateString);
-    if (isNaN(date.getTime())) return null;
+    // Date-only values ('YYYY-MM-DD') must be read as local calendar days:
+    // parsing them as UTC midnight shifts the day back in negative timezones.
+    let date: Date;
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDateString);
+    if (dateOnly) {
+      const [, year, month, day] = dateOnly.map(Number);
+      date = new Date(year, month - 1, day, 12, 0, 0);
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day)
+        return null;
+    } else {
+      date = new Date(isoDateString);
+      if (isNaN(date.getTime())) return null;
+    }
     return new Intl.DateTimeFormat('es-AR', {
       day: 'numeric',
       month: 'short',

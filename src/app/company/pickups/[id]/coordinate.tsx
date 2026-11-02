@@ -103,22 +103,24 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
           editable={!action.busy}
         />
         <PortalFeedback error={action.error} notice={action.notice} />
-        <ActionButton
-          title="Confirmar coordinación"
-          icon={<Ionicons name="checkmark" size={22} color={colors.textOnPrimary} />}
-          loading={action.busy}
-          onPress={() =>
-            void action.run(async () => {
-              await pickupCommand('coordinate', {
-                id: pickup!.id,
-                scheduledDate: date,
-                scheduledTimeSlot: slot,
-                driverName: driver,
-              });
-              await refresh();
-            }, 'Coordinación confirmada.')
-          }
-        />
+        {!confirmingReject && (
+          <ActionButton
+            title="Confirmar coordinación"
+            icon={<Ionicons name="checkmark" size={22} color={colors.textOnPrimary} />}
+            loading={action.busy}
+            onPress={() =>
+              void action.run(async () => {
+                await pickupCommand('coordinate', {
+                  id: pickup!.id,
+                  scheduledDate: date,
+                  scheduledTimeSlot: slot,
+                  driverName: driver,
+                });
+                await refresh();
+              }, 'Coordinación confirmada.')
+            }
+          />
+        )}
         {confirmingReject ? (
           <View style={s.actions}>
             <ActionButton

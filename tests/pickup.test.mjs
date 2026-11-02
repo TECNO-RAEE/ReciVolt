@@ -202,6 +202,13 @@ test('pickupTimeSlots offers fixed day ranges', () => {
   assert.deepEqual(pickupTimeSlots, ['08:00 - 12:00', '12:00 - 16:00', '16:00 - 20:00']);
 });
 
+test('formatPickupDate treats date-only values as local calendar days', () => {
+  const localNoon = new Date(2026, 10, 1, 12, 0, 0);
+  assert.equal(formatPickupDate('2026-11-01'), formatPickupDate(localNoon.toISOString()));
+  assert.equal(formatPickupDate('2026-11-31'), null);
+  assert.equal(formatPickupDate(null), null);
+});
+
 test('operation guards reflect the pickup state machine', () => {
   assert.equal(canCoordinatePickup('REQUESTED'), true);
   assert.equal(canCoordinatePickup('COORDINATED'), false);

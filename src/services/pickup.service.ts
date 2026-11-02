@@ -1,5 +1,5 @@
 import { supabase } from '@/config/supabase';
-import { canRequestPickup, type Pickup, type PickupItem, type PickupStatus } from '@/models/Pickup';
+import { activePickupStatuses, canRequestPickup, type Pickup, type PickupItem, type PickupStatus } from '@/models/Pickup';
 import type { GreenPoint } from '@/models/GreenPoint';
 export {
   pickDeliveryPhoto as pickPickupPhoto,
@@ -86,26 +86,14 @@ export async function getPickupHistory(
   return (data ?? []).map((row) => mapPickup(row as Row));
 }
 
-export async function getPickupStatusCounts(
-  companyId: string
-): Promise<Record<PickupStatus, number>> {
-  const { data, error } = await supabase
+export async function getActivePickupCount(companyId: string): Promise<number> {
+  const { count, error } = await supabase
     .from('pickups')
-    .select('status')
-    .eq('company_id', companyId);
+    .select('id', { count: 'exact', head: true })
+    .eq('company_id', companyId)
+    .in('status', activePickupStatuses);
   if (error) throw error;
-  const counts: Record<PickupStatus, number> = {
-    REQUESTED: 0,
-    COORDINATED: 0,
-    IN_TRANSIT: 0,
-    COMPLETED: 0,
-    CANCELLED: 0,
-  };
-  for (const row of data ?? []) {
-    const status = row.status as PickupStatus;
-    if (status in counts) counts[status] += 1;
-  }
-  return counts;
+  return count ?? 0;
 }
 
 export function getPickupEligiblePoints(points: GreenPoint[]): GreenPoint[] {

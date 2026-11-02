@@ -47,9 +47,13 @@ export function PickupCitizenCard({ pickup }: Readonly<{ pickup: Pickup }>) {
       subtitle={
         pickup.citizenPhone ? `Teléfono: ${pickup.citizenPhone}` : 'Sin teléfono de contacto'
       }
-      right={<CodePill code={pickup.code} />}
     >
       <View style={{ gap: 4 }}>
+        <View style={styles.codeRow}>
+          <Ionicons name="key-outline" size={18} color={colors.textSecondary} />
+          <Text style={s.hint}>Código de verificación:</Text>
+          <CodePill code={pickup.code} />
+        </View>
         <View style={styles.dataRow}>
           <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
           <Text style={s.body}>
@@ -97,6 +101,8 @@ export function PickupMaterialCard({
               max={999}
               onChange={(value) => onChangeQuantity(item.categoryId, value)}
               accessibilityLabel={`Cantidad recibida de ${item.categoryName}`}
+              decrementAccessibilityLabel={`Disminuir cantidad de ${item.categoryName}`}
+              incrementAccessibilityLabel={`Aumentar cantidad de ${item.categoryName}`}
             />
           ) : (
             <Text style={styles.quantity}>×{item.confirmedQuantity ?? item.declaredQuantity}</Text>
@@ -163,6 +169,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  codeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
   },
   materialRow: {
     flexDirection: 'row',

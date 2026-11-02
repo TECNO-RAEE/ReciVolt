@@ -204,6 +204,14 @@ test('CARD-10: empresa coordina, recibe y acredita retiros; rechazo cancela la s
     await owner.getByText('Coordinación', { exact: true }).waitFor();
     await owner.getByText(citizenName, { exact: true }).waitFor();
     await owner.getByText('Teléfono: 1122334455', { exact: true }).waitFor();
+    // Mobile width (360px): the citizen card with the long verification code must not overflow.
+    await owner.setViewportSize({ width: 360, height: 640 });
+    await owner.waitForTimeout(300);
+    const overflow = await owner.evaluate(
+      () => document.scrollingElement.scrollWidth - document.scrollingElement.clientWidth
+    );
+    assert.ok(overflow <= 0, `La pantalla desborda ${overflow}px con 360px de ancho`);
+    await owner.setViewportSize({ width: 1280, height: 720 });
     await owner.getByPlaceholder('Nombre de quien retira', { exact: true }).fill('Roberto Chofer');
     await owner.getByRole('button', { name: /Confirmar coordinación/ }).click();
     await owner.getByText('Coordinación confirmada.', { exact: true }).waitFor();
@@ -221,7 +229,9 @@ test('CARD-10: empresa coordina, recibe y acredita retiros; rechazo cancela la s
     await owner.getByRole('button', { name: 'Ver solicitud', exact: true }).click();
     await owner.waitForURL(new RegExp(`/company/pickups/${pickupId}/receive$`));
     await owner.getByText(`${rate * 2} puntos a acreditar`, { exact: true }).waitFor();
-    await owner.getByRole('button', { name: 'Disminuir cantidad', exact: true }).click();
+    await owner
+      .getByRole('button', { name: `Disminuir cantidad de ${categoryName}`, exact: true })
+      .click();
     await owner.getByText(`${rate} puntos a acreditar`, { exact: true }).waitFor();
     await capture(owner, 'receive');
     await owner.getByRole('button', { name: /Marcar en camino/ }).click();
@@ -256,9 +266,13 @@ test('CARD-10: empresa coordina, recibe y acredita retiros; rechazo cancela la s
     await owner
       .getByRole('button', { name: 'No podemos realizar este retiro', exact: true })
       .click();
+    // DESIGN.md: una sola acción primaria por bloque mientras se confirma la cancelación.
+    assert.equal(await owner.getByRole('button', { name: /Confirmar coordinación/ }).count(), 0);
     await owner.getByRole('button', { name: 'Confirmar cancelación', exact: true }).click();
     await owner.waitForURL(/\/company\/pickups$/);
     await owner.getByText('No hay retiros en este estado.', { exact: true }).waitFor();
+    // The active counter refreshes with the list when returning from an operation.
+    await owner.getByText('No hay solicitudes activas.', { exact: true }).waitFor();
     await capture(owner, 'rejected');
     await citizenOpenTracking(citizen);
     await citizen.getByText('Cancelado', { exact: true }).waitFor();
