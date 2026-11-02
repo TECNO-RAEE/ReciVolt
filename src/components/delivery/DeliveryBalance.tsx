@@ -16,6 +16,9 @@ export function DeliveryBalance() {
         points={data?.points ?? null}
         loading={loading}
         error={error}
+        label="Saldo disponible"
+        hint="Un solo saldo para canjear en toda la red."
+        showPointsUnit
         onPress={() => (error ? void refresh() : router.push('/my-points'))}
       />
     </View>

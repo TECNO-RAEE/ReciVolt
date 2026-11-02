@@ -7,13 +7,11 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { PortalLoading } from '@/components/portal/PortalUI';
 import {
   CitizenPage,
-  InfoNote,
-  PointsCard,
   rewardStyles as s,
 } from '@/components/rewards/RewardsUI';
+import { CitizenBalanceCard } from '@/components/account/CitizenBalanceCard';
 import { usePortalData } from '@/hooks/usePortalData';
 import { useAuth } from '@/providers/AuthProvider';
-import { useWallet } from '@/providers/WalletProvider';
 import { getPointsHistory } from '@/services/reward.service';
 import { colors, fonts } from '@/theme';
 export default function MyPointsScreen() {
@@ -21,30 +19,18 @@ export default function MyPointsScreen() {
   return session ? <MyPoints key={session.user.id} /> : <AccountRequired title="Mis puntos" />;
 }
 function MyPoints() {
-  const wallet = useWallet();
   const history = usePortalData(getPointsHistory);
-  const { refresh: refreshWallet } = wallet;
   const { refresh: refreshHistory } = history;
   useFocusEffect(
     useCallback(() => {
-      void refreshWallet();
       void refreshHistory();
-    }, [refreshWallet, refreshHistory])
+    }, [refreshHistory])
   );
   return (
     <CitizenPage title="Mis puntos">
-      <PointsCard
-        points={wallet.data?.points ?? null}
-        loading={wallet.loading}
-        error={wallet.error}
-        onPress={wallet.error ? () => void refreshWallet() : undefined}
-      />
-      <InfoNote>
-        Un solo saldo para toda la red. Los puntos que sumás en cualquier organización sirven para
-        todos los premios disponibles.
-      </InfoNote>
-      <ActionButton title="Explorar premios" onPress={() => router.push('/rewards')} />
-      <Text style={s.subtitle}>Últimos movimientos</Text>
+      <CitizenBalanceCard />
+      <ActionButton title="Ver premios" onPress={() => router.push('/rewards')} />
+      <Text style={s.subtitle}>Historial de movimientos</Text>
       <PortalLoading
         loading={history.loading}
         error={history.error}
@@ -71,16 +57,27 @@ function MyPoints() {
             <Text style={s.body}>{m.source}</Text>
             <Text style={s.body}>{new Date(m.createdAt).toLocaleDateString('es-AR')}</Text>
           </View>
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 20,
-              color: m.amount > 0 ? colors.primaryDark : colors.text,
-            }}
-          >
-            {m.amount > 0 ? '+' : ''}
-            {m.amount.toLocaleString('es-AR')}
-          </Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text
+              style={{
+                fontFamily: fonts.bold,
+                fontSize: 20,
+                color: m.amount >= 0 ? colors.primaryDark : colors.danger,
+              }}
+            >
+              {m.amount > 0 ? '+' : ''}
+              {m.amount.toLocaleString('es-AR')}
+            </Text>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 14,
+                color: m.amount >= 0 ? colors.primaryDark : colors.danger,
+              }}
+            >
+              {Math.abs(m.amount) === 1 ? 'punto' : 'puntos'}
+            </Text>
+          </View>
         </View>
       ))}
     </CitizenPage>

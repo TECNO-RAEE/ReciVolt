@@ -74,12 +74,18 @@ export function PointsCard({
   loading = false,
   error,
   onPress,
+  label = 'Tus puntos',
+  hint,
+  showPointsUnit = false,
 }: Readonly<{
   points: number | null;
   guest?: boolean;
   loading?: boolean;
   error?: string | null;
   onPress?: () => void;
+  label?: string;
+  hint?: string;
+  showPointsUnit?: boolean;
 }>) {
   return (
     <Pressable
@@ -91,12 +97,16 @@ export function PointsCard({
     >
       <PointsCoin />
       <View style={{ flex: 1, gap: 3 }}>
-        <Text style={rewardStyles.label}>Tus puntos</Text>
+        <Text style={rewardStyles.label}>{label}</Text>
         {loading ? (
           <View accessibilityLabel="Cargando saldo" style={styles.balanceSkeleton} />
         ) : (
           <Text style={[styles.balance, guest && styles.guestBalance]}>
-            {guest ? 'Empezá hoy' : error || points == null ? '—' : points.toLocaleString('es-AR')}
+            {guest
+              ? 'Empezá hoy'
+              : error || points == null
+                ? '—'
+                : `${points.toLocaleString('es-AR')}${showPointsUnit ? ` ${points === 1 ? 'punto' : 'puntos'}` : ''}`}
           </Text>
         )}
         <Text style={styles.pointsHint}>
@@ -104,7 +114,7 @@ export function PointsCard({
             ? 'Registrá tus entregas y disfrutá premios.'
             : error
               ? 'No pudimos cargar tu saldo. Tocá para reintentar.'
-              : 'Sumás puntos por tus entregas confirmadas en toda la red.'}
+              : hint ?? 'Sumás puntos por tus entregas confirmadas en toda la red.'}
         </Text>
       </View>
       {onPress && <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} />}
