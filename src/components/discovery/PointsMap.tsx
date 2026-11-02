@@ -4,7 +4,14 @@ import { View } from 'react-native';
 import type { PointsMapProps } from './PointsMap.types';
 import { colors } from '@/theme';
 
-export function PointsMap({ points, location, preview = false, onSelect }: PointsMapProps) {
+export function PointsMap({
+  points,
+  location,
+  preview = false,
+  fill = false,
+  selectedId = null,
+  onSelect,
+}: PointsMapProps) {
   const map = useRef<MapView>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -17,7 +24,13 @@ export function PointsMap({ points, location, preview = false, onSelect }: Point
       });
   }, [points, location, ready]);
   return (
-    <View style={{ height: preview ? 230 : 380, overflow: 'hidden', borderRadius: 8 }}>
+    <View
+      style={
+        fill
+          ? { flex: 1, overflow: 'hidden' }
+          : { height: preview ? 230 : 380, overflow: 'hidden', borderRadius: 8 }
+      }
+    >
       <MapView
         ref={map}
         style={{ flex: 1 }}
@@ -40,7 +53,7 @@ export function PointsMap({ points, location, preview = false, onSelect }: Point
             title={point.name}
             description={point.demo ? 'Punto verde de ejemplo' : point.companyName}
             accessibilityLabel={`Ver ${point.name}${point.demo ? ', punto verde de ejemplo' : ''}`}
-            pinColor={colors.primary}
+            pinColor={point.id === selectedId ? colors.primaryDark : colors.primary}
             onPress={() => onSelect(point)}
           />
         ))}

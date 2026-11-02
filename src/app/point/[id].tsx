@@ -1,9 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { InfoCard } from '@/components/ui/InfoCard';
+import { DevicePreparationArtwork } from '@/components/ui/EcoArtwork';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { DiscoveryState } from '@/components/discovery/DiscoveryState';
 import { PointsMap } from '@/components/discovery/PointsMap';
@@ -16,12 +19,13 @@ import {
   openingStatus,
   weekdayNames,
 } from '@/models/GreenPoint';
-import { getCategoryVisual } from '@/models/DeviceCategory';
 import { canRequestPickup } from '@/models/Pickup';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { colors, fonts } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
+
+const PREVIEW_CATEGORY_LIMIT = 4;
 
 export default function PointDetailScreen() {
   const scroll = useScrollReset();
@@ -52,10 +56,22 @@ export default function PointDetailScreen() {
         </View>
       </View>
     );
+  const acceptedPolicies = point
+    ? point.intakePolicies.filter((policy) => policy.category && policy.mode !== 'not_accepted')
+    : [];
+  const rejectedPolicies = point
+    ? point.intakePolicies.filter((policy) => policy.category && policy.mode === 'not_accepted')
+    : [];
   return (
     <View style={styles.container}>
       <ScreenHeader title="Detalle del punto" back="/green-points" />
-      <ScrollView ref={scroll} contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={[
+          styles.content,
+          point && !loading && !error && styles.contentWithFooter,
+        ]}
+      >
         {loading || error ? (
           <DiscoveryState loading={loading} error={error} retry={refresh} />
         ) : !point ? (
@@ -69,6 +85,14 @@ export default function PointDetailScreen() {
           </>
         ) : (
           <>
+            <View
+              style={styles.photoHeader}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            >
+              <DevicePreparationArtwork />
+            </View>
+            <Text style={styles.photoCaption}>Foto del punto pendiente de publicar</Text>
             <View style={styles.heading}>
               <Text style={styles.title}>{point.name}</Text>
               {!point.demo && <Text style={styles.company}>{point.companyName}</Text>}
@@ -102,76 +126,80 @@ export default function PointDetailScreen() {
             {point.description && !point.demo && (
               <Text style={styles.text}>{point.description}</Text>
             )}
-            <Text style={styles.sectionTitle}>Qué recibe este punto</Text>
             {!point.intakeConfirmed && (
               <InfoNote>
                 La política de recepción de este punto todavía está pendiente de confirmar.
               </InfoNote>
             )}
-            {point.intakePolicies.some((policy) => policy.mode === 'onsite') ? (
-              point.intakePolicies
-                .filter((policy) => policy.mode === 'onsite')
-                .map((policy) => {
-                  const category = policy.category;
-                  return category ? (
-                    <View style={styles.categoryRow} key={policy.categoryId}>
-                      <MaterialCommunityIcons
-                        name={getCategoryVisual(category).icon}
-                        size={22}
-                        color={colors.brandDark}
-                        accessibilityElementsHidden
-                        importantForAccessibility="no"
-                      />
-                      <Text style={styles.categoryText}>{category.name}</Text>
+            <InfoCard
+              variant="highlight"
+              icon={{ name: 'checkmark-circle', color: colors.primaryDark }}
+              title="Qué recibimos"
+              subtitle={
+                acceptedPolicies.length
+                  ? undefined
+                  : point.intakePolicies.length
+                    ? 'Este punto no recibe dispositivos para entrega presencial.'
+                    : 'El punto todavía no informó qué dispositivos recibe. Consultá antes de acercarte.'
+              }
+            >
+              {acceptedPolicies.length > 0 && (
+                <View style={styles.policyList}>
+                  {acceptedPolicies.slice(0, PREVIEW_CATEGORY_LIMIT).map((policy) => (
+                    <View style={styles.policyRow} key={policy.categoryId}>
+                      <Ionicons name="checkmark" size={18} color={colors.primaryDark} />
+                      <Text style={styles.categoryText}>
+                        {policy.category!.name}
+                        {policy.mode === 'pickup' ? ' (coordinar retiro)' : ''}
+                      </Text>
                     </View>
-                  ) : null;
-                })
-            ) : (
-              <Text style={styles.text}>
-                {point.intakePolicies.length
-                  ? 'Este punto no recibe dispositivos para entrega presencial.'
-                  : 'El punto todavía no informó qué dispositivos recibe. Consultá antes de acercarte.'}
+                  ))}
+                  <ActionButton
+                    title="Ver listado completo"
+                    secondary
+                    onPress={() =>
+                      router.push({ pathname: '/device-categories', params: { pointId: point.id } })
+                    }
+                  />
+                </View>
+              )}
+            </InfoCard>
+            {point.intakePolicies.some((policy) => policy.mode === 'pickup') && (
+              <Text style={styles.caption}>
+                Contactá al punto para consultar cómo coordinar el retiro.
               </Text>
             )}
-            {point.intakePolicies.some((policy) => policy.mode === 'pickup') && (
-              <>
-                <Text style={styles.sectionTitle}>Requieren coordinar retiro</Text>
-                {point.intakePolicies
-                  .filter((policy) => policy.mode === 'pickup')
-                  .map((policy) => {
-                    const category = policy.category;
-                    return category ? (
-                      <View style={styles.categoryRow} key={policy.categoryId}>
-                        <MaterialCommunityIcons
-                          name={getCategoryVisual(category).icon}
-                          size={22}
-                          color={colors.brandDark}
-                          accessibilityElementsHidden
-                          importantForAccessibility="no"
-                        />
-                        <Text style={styles.categoryText}>{category.name}</Text>
-                      </View>
-                    ) : null;
-                  })}
-                <Text style={styles.caption}>
-                  Contactá al punto para consultar cómo coordinar el retiro.
-                </Text>
-              </>
-            )}
-            <ActionButton
-              title="Ver lista completa de recepción"
-              secondary
-              onPress={() =>
-                router.push({ pathname: '/device-categories', params: { pointId: point.id } })
+            <InfoCard
+              icon={{
+                name: 'close-circle',
+                color: colors.danger,
+                backgroundColor: colors.dangerBackground,
+              }}
+              title="Qué no recibimos"
+              subtitle={
+                rejectedPolicies.length
+                  ? undefined
+                  : 'Este punto no registró dispositivos excluidos.'
               }
-            />
-            <ActionButton
-              title="Ver qué no recibe"
-              secondary
-              onPress={() =>
-                router.push({ pathname: '/device-unaccepted', params: { pointId: point.id } })
-              }
-            />
+            >
+              {rejectedPolicies.length > 0 && (
+                <View style={styles.policyList}>
+                  {rejectedPolicies.slice(0, PREVIEW_CATEGORY_LIMIT).map((policy) => (
+                    <View style={styles.policyRow} key={policy.categoryId}>
+                      <Ionicons name="close" size={18} color={colors.danger} />
+                      <Text style={styles.categoryText}>{policy.category!.name}</Text>
+                    </View>
+                  ))}
+                  <ActionButton
+                    title="Ver qué no recibe"
+                    secondary
+                    onPress={() =>
+                      router.push({ pathname: '/device-unaccepted', params: { pointId: point.id } })
+                    }
+                  />
+                </View>
+              )}
+            </InfoCard>
             <Text style={styles.sectionTitle}>Horarios</Text>
             <Text style={styles.caption}>Hora local del punto · {point.timeZone}</Text>
             {point.schedules.length ? (
@@ -223,45 +251,42 @@ export default function PointDetailScreen() {
                     : 'Este punto recibe entregas presenciales.'}
               </Text>
             )}
+            {canRegisterDelivery(point) && canRequestPickup(point) && (
+              <ActionButton
+                title="Solicitar retiro a domicilio"
+                secondary
+                onPress={() =>
+                  guest
+                    ? setNeedsAccount(true)
+                    : router.push({ pathname: '/pickup/new', params: { pointId: point.id } })
+                }
+              />
+            )}
+          </>
+        )}
+      </ScrollView>
+      {point && !loading && !error && (
+        <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.footerOuter}>
+          <View style={styles.footer}>
             {!canRegisterDelivery(point) ? (
               <ActionButton
                 title="Ver otros puntos verdes"
                 secondary
                 onPress={() => router.replace('/green-points')}
               />
-            ) : guest ? (
-              <>
-                <ActionButton title="Registrar una entrega" onPress={() => setNeedsAccount(true)} />
-                {canRequestPickup(point) && (
-                  <ActionButton
-                    title="Solicitar retiro a domicilio"
-                    secondary
-                    onPress={() => setNeedsAccount(true)}
-                  />
-                )}
-              </>
             ) : (
-              <>
-                <ActionButton
-                  title="Registrar una entrega"
-                  onPress={() =>
-                    router.push({ pathname: '/new-delivery', params: { pointId: point.id } })
-                  }
-                />
-                {canRequestPickup(point) && (
-                  <ActionButton
-                    title="Solicitar retiro a domicilio"
-                    secondary
-                    onPress={() =>
-                      router.push({ pathname: '/pickup/new', params: { pointId: point.id } })
-                    }
-                  />
-                )}
-              </>
+              <ActionButton
+                title="Registrar entrega"
+                onPress={() =>
+                  guest
+                    ? setNeedsAccount(true)
+                    : router.push({ pathname: '/new-delivery', params: { pointId: point.id } })
+                }
+              />
             )}
-          </>
-        )}
-      </ScrollView>
+          </View>
+        </SafeAreaView>
+      )}
     </View>
   );
 }
@@ -275,13 +300,29 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingBottom: 40,
   },
+  contentWithFooter: { paddingBottom: 24 },
+  photoHeader: {
+    height: 180,
+    borderRadius: 18,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  photoCaption: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
   heading: { gap: 8 },
   title: { fontFamily: fonts.bold, fontSize: 28, color: colors.primary },
   company: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text },
   text: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.text },
   status: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 16 },
   sectionTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.text, marginTop: 8 },
-  categoryRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  policyList: { marginTop: 12, gap: 10 },
+  policyRow: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 10 },
   categoryText: {
     flex: 1,
     fontFamily: fonts.regular,
@@ -299,4 +340,10 @@ const styles = StyleSheet.create({
   },
   day: { width: 100, fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
   hours: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.text },
+  footerOuter: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  footer: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16 },
 });
