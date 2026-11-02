@@ -193,7 +193,7 @@ set local role authenticated;
 
 -- Cannot coordinate with past date
 insert into pickup_test_results select throws_ok(
-  format($$select pickup_command('coordinate', jsonb_build_object('id', '%s', 'scheduledDate', (current_date - 1)::text, 'scheduledTimeSlot', '10:00'))$$, (select id from pickup2_fixture)),
+  format($$select pickup_command('coordinate', jsonb_build_object('id', '%s', 'scheduledDate', ((now() at time zone 'America/Argentina/Buenos_Aires')::date - 1)::text, 'scheduledTimeSlot', '10:00'))$$, (select id from pickup2_fixture)),
   '22023', 'La fecha coordinada no puede ser anterior a hoy.',
   'coordinate rejects past date'
 );
