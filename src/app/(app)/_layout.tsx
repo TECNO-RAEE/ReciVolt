@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
 
-
 import type { ColorValue } from 'react-native';
 import { colors, fonts } from '@/theme';
 
@@ -13,7 +12,13 @@ function tabIcon(name: TabIconName) {
     size,
     focused,
   }: Readonly<{ color: ColorValue; size: number; focused: boolean }>) {
-    return <Ionicons name={focused ? name : `${name}-outline`} size={size} color={color ? (color as string) : undefined} />;
+    return (
+      <Ionicons
+        name={focused ? name : `${name}-outline`}
+        size={size}
+        color={color ? (color as string) : undefined}
+      />
+    );
   };
 }
 
@@ -61,8 +66,8 @@ export default function AppLayout() {
         }}
       />
 
-      <Tabs.Screen name="my-activity" options={{ tabBarButton: () => null }} />
-      <Tabs.Screen name="my-points" options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="my-activity" options={{ href: null }} />
+      <Tabs.Screen name="my-points" options={{ href: null }} />
 
       <Tabs.Screen
         name="profile"
