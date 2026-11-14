@@ -12,6 +12,12 @@ import {
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { rewardStyles as s } from '@/components/rewards/RewardsUI';
+import {
+  activityErrorsForFilter,
+  activityFilterFromParam,
+  activityFilters,
+  formatActivityError,
+} from '@/models/ActivitySources';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   getActivityHistoryPage,
@@ -21,8 +27,7 @@ import {
 } from '@/services/activity.service';
 import { colors, fonts } from '@/theme';
 
-const filters = ['Todos', 'Entregas', 'Retiros', 'Canjes'] as const;
-type Filter = (typeof filters)[number];
+type Filter = (typeof activityFilters)[number];
 const kindForFilter: Record<Exclude<Filter, 'Todos'>, ActivityEntry['kind']> = {
   Entregas: 'DELIVERY',
   Retiros: 'PICKUP',
@@ -37,15 +42,23 @@ export default function MyActivityScreen() {
 
 function MyActivity() {
   const params = useLocalSearchParams<{ tab?: string }>();
-  const initialFilter =
-    filters.find((filter) => filter.toLowerCase() === params.tab?.toLowerCase()) ?? 'Todos';
-  const [filter, setFilter] = useState<Filter>(initialFilter);
+  const [filterSelection, setFilterSelection] = useState(() => ({
+    routeTab: params.tab,
+    selected: activityFilterFromParam(params.tab),
+  }));
+  const filter =
+    filterSelection.routeTab === params.tab
+      ? filterSelection.selected
+      : activityFilterFromParam(params.tab);
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [nextCursor, setNextCursor] = useState<ActivityPageCursor>(initialCursor);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sourceErrors, setSourceErrors] = useState<
+    Partial<Record<keyof ActivityPageCursor, string>>
+  >({});
   const requestVersion = useRef(0);
   const requestLock = useRef(false);
 
@@ -58,16 +71,18 @@ function MyActivity() {
     setLoading(true);
     setLoadingMore(false);
     setError(null);
+    setSourceErrors({});
     try {
       const page = await getActivityHistoryPage(initialCursor());
       if (request === requestVersion.current) {
         setEntries(page.entries);
         setNextCursor(page.next);
         setHasMore(page.hasMore);
+        setSourceErrors(page.errors);
       }
     } catch (cause) {
       if (request === requestVersion.current) {
-        setError(cause instanceof Error ? cause.message : 'No pudimos cargar tu actividad.');
+        setError(formatActivityError(cause, 'No pudimos cargar tu actividad.'));
         setHasMore(false);
       }
     } finally {
@@ -100,10 +115,11 @@ function MyActivity() {
         });
         setNextCursor(page.next);
         setHasMore(page.hasMore);
+        setSourceErrors((current) => ({ ...current, ...page.errors }));
       }
     } catch (cause) {
       if (request === requestVersion.current) {
-        setError(cause instanceof Error ? cause.message : 'No pudimos cargar más actividad.');
+        setError(formatActivityError(cause, 'No pudimos cargar más actividad.'));
       }
     } finally {
       if (request === requestVersion.current) {
@@ -122,20 +138,43 @@ function MyActivity() {
   const mayHaveMorePickups = nextCursor.pickups !== null;
   const showRetirementInfo =
     !hasPickups &&
+    !sourceErrors.pickups &&
     !mayHaveMorePickups &&
     (filter === 'Retiros' || filter === 'Todos');
 
+  const visibleSourceErrors = activityErrorsForFilter(sourceErrors, filter);
+  const visibleErrors = [
+    ...visibleSourceErrors.map(({ label, message }) => `${label}: ${message}`),
+    ...(error ? [`Mi actividad: ${error}`] : []),
+  ];
+
   const listHeader = (
     <View style={styles.listHeader}>
+      {visibleErrors.length > 0 && (
+        <View style={styles.errorNotice} accessibilityLiveRegion="polite">
+          {visibleErrors.map((message) => (
+            <Text key={message} style={styles.errorText}>
+              {message}
+            </Text>
+          ))}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void reload()}
+            style={styles.errorRetry}
+          >
+            <Text style={styles.errorRetryText}>Reintentar carga</Text>
+          </Pressable>
+        </View>
+      )}
       <View style={styles.filters} accessibilityRole="tablist">
-        {filters.map((item) => {
+        {activityFilters.map((item) => {
           const selected = filter === item;
           return (
             <Pressable
               key={item}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
-              onPress={() => setFilter(item)}
+              onPress={() => setFilterSelection({ routeTab: params.tab, selected: item })}
               style={[styles.filter, selected && styles.selectedFilter]}
             >
               <Text style={[styles.filterText, selected && styles.selectedFilterText]}>{item}</Text>
@@ -151,11 +190,12 @@ function MyActivity() {
     if (error && entries.length === 0) {
       return (
         <Pressable onPress={() => void reload()} style={s.card} accessibilityRole="button">
-          <Text style={s.body}>No pudimos cargar tu actividad. Tocá para reintentar.</Text>
+          <Text style={s.body}>No pudimos cargar actividad. Tocá para reintentar.</Text>
         </Pressable>
       );
     }
-    if (filter !== 'Retiros' && !showRetirementInfo) {
+    if (visibleSourceErrors.length > 0) return null;
+    if (filter !== 'Retiros' || !showRetirementInfo) {
       return (
         <View style={s.card}>
           <Text style={s.body}>Todavía no hay actividad en esta sección.</Text>
@@ -262,6 +302,22 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
 
 const styles = StyleSheet.create({
   listHeader: { paddingBottom: 16 },
+  errorNotice: {
+    marginBottom: 12,
+    padding: 12,
+    gap: 8,
+    borderRadius: 14,
+    backgroundColor: colors.dangerBackground,
+  },
+  errorText: { color: colors.danger, fontFamily: fonts.regular, fontSize: 13, lineHeight: 20 },
+  errorRetry: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+  },
+  errorRetryText: { color: colors.primaryDark, fontFamily: fonts.semiBold, fontSize: 14 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   filter: { minHeight: 44, minWidth: 72, paddingHorizontal: 14, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   selectedFilter: { backgroundColor: colors.primary, borderColor: colors.primary },
