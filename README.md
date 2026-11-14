@@ -29,7 +29,7 @@ Para dispositivos: `npm run android` / `npm run ios`. La configuración conserva
 
 La primera apertura muestra onboarding; Saltar o Comenzar abre Home como invitado y las siguientes visitas abren la app directamente. El login es opcional y redirige según permisos reales. Las entradas directas y recargas conservan la ruta solicitada una vez recuperada la sesión. La evidencia de pruebas y las limitaciones de publicación están en [tasks/validation.md](tasks/validation.md).
 
-El mapa web usa Leaflet/OpenStreetMap, con atribución y carga diferida compatible con renderizado estático. Android/iOS usan `react-native-maps`. Expo Go no requiere una clave propia; para un build Android configurar `GOOGLE_MAPS_ANDROID_API_KEY` restringida a la app y su SHA-1. iOS usa Apple Maps. La ubicación se solicita sólo al tocar el botón y permanece en memoria; la búsqueda funciona sin habilitarla. Las distancias son en línea recta.
+El mapa web usa Leaflet/OpenStreetMap, con atribución y carga diferida compatible con renderizado estático. Android/iOS usan `react-native-maps`. Expo Go no requiere una clave propia; para un build Android configurar `GOOGLE_MAPS_ANDROID_API_KEY` restringida a la app y su SHA-1. Sin esa clave, el build Android usa OpenStreetMap + Leaflet dentro de un WebView (`OsmPointsMap`), porque `MapView` cierra la app si falta la clave. iOS usa Apple Maps. La ubicación se solicita sólo al tocar el botón y permanece en memoria; la búsqueda funciona sin habilitarla. Las distancias son en línea recta.
 
 ## Supabase local
 

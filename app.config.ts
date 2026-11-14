@@ -7,8 +7,13 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
     ...config,
     name: brand.name,
     slug: config.slug ?? staticConfig.expo.slug,
+    extra: {
+      ...config.extra,
+      hasGoogleMapsKey: Boolean(process.env.GOOGLE_MAPS_ANDROID_API_KEY),
+    },
     plugins: [
       ...(config.plugins ?? []),
+      './plugins/withProguardKeepRules',
       [
         'expo-location',
         {

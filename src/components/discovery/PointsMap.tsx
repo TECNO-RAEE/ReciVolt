@@ -1,10 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import MapView, { Marker } from 'react-native-maps';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { PointsMapProps } from './PointsMap.types';
+import { OsmPointsMap } from './OsmPointsMap';
 import { colors } from '@/theme';
 
-export function PointsMap({
+// Sin clave de Google Maps, MapView aborta la app en Android (fuera de Expo Go).
+const googleMapsAvailable =
+  Platform.OS !== 'android' ||
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
+  Constants.expoConfig?.extra?.hasGoogleMapsKey === true;
+
+export function PointsMap(props: PointsMapProps) {
+  return googleMapsAvailable ? <NativePointsMap {...props} /> : <OsmPointsMap {...props} />;
+}
+
+function NativePointsMap({
   points,
   location,
   preview = false,

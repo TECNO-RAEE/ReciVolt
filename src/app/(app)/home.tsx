@@ -46,6 +46,7 @@ export default function HomeScreen() {
     }, [refresh])
   );
   const sorted = useMemo(() => filterGreenPoints(points, {}, location), [points, location]);
+  const nearest = useMemo(() => sorted.slice(0, 1), [sorted]);
   const openPoint = useCallback(
     (point: GreenPoint) => router.push({ pathname: '/point/[id]', params: { id: point.id } }),
     []
@@ -130,7 +131,7 @@ export default function HomeScreen() {
                 puntos reales publicados.
               </InfoNote>
             )}
-            <PointsMap points={sorted} location={location} preview onSelect={openPoint} />
+            <PointsMap points={nearest} location={location} preview onSelect={openPoint} />
             {sorted.length ? (
               <PointRow
                 point={sorted[0]}
