@@ -6,7 +6,7 @@ import {
   PortalLink,
   PortalLoading,
   PortalNav,
-  portalStyles as s,
+  makePortalStyles,
 } from '@/components/portal/PortalUI';
 import { PickupStatusBadge } from '@/components/pickup/PickupOps';
 import { InfoCard } from '@/components/ui/InfoCard';
@@ -19,6 +19,7 @@ import {
 } from '@/models/Pickup';
 import { getActivePickupCount, getPickupHistory } from '@/services/pickup.service';
 import type { CompanyPortalData } from '@/models/Portal';
+import { useThemedStyles } from '@/theme';
 
 const tabs = [
   { key: 'REQUESTED', label: 'Solicitados' },
@@ -30,6 +31,7 @@ const tabs = [
 type TabKey = (typeof tabs)[number]['key'];
 
 function PickupInbox({ companyId }: Readonly<{ companyId: string }>) {
+  const s = useThemedStyles(makePortalStyles);
   const [tab, setTab] = useState<TabKey>('REQUESTED');
   const [page, setPage] = useState(0);
   const loader = useCallback(() => getPickupHistory(companyId, page, tab), [companyId, page, tab]);
@@ -109,6 +111,7 @@ function PickupInbox({ companyId }: Readonly<{ companyId: string }>) {
 }
 
 export default function CompanyPickupsScreen() {
+  const s = useThemedStyles(makePortalStyles);
   return (
     <CompanyPage title="Retiros">
       {(data: CompanyPortalData) => (

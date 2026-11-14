@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import type { CompanyPortalData } from '@/models/Portal';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
-import { PortalLoading, PortalPage, portalStyles as s } from './PortalUI';
+import { PortalLoading, PortalPage, makePortalStyles } from './PortalUI';
+import { useThemedStyles } from '@/theme';
 
 // Inner company screen: shared header, load/error states and the owner-only guard.
 export function CompanyPage({
@@ -19,6 +20,7 @@ export function CompanyPage({
   action?: ReactNode;
   children: (data: CompanyPortalData) => ReactNode;
 }>) {
+  const s = useThemedStyles(makePortalStyles);
   const { data, loading, error, refresh, owner } = useCompanyPortal();
   return (
     <PortalPage title={title} back={back} action={action} onRefresh={() => void refresh()}>

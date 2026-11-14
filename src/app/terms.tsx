@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Linking, Text, View } from 'react-native';
-import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, makeRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { termsUrl } from '@/config/legal';
 import { brand } from '@/config/brand';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 
 export default function TermsScreen() {
+  const colors = useColors();
+  const s = useThemedStyles(makeRewardStyles);
   const [error, setError] = useState<string | null>(null);
   return (
     <CitizenPage title="Términos de uso" back="/settings">

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function ActionButton({
   title,
@@ -17,6 +17,8 @@ export function ActionButton({
   disabled?: boolean;
   icon?: ReactNode;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -41,7 +43,7 @@ export function ActionButton({
     </Pressable>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   button: {
     minHeight: 50,
     paddingHorizontal: 20,

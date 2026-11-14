@@ -28,9 +28,11 @@ import {
 import { getCategoryVisual } from '@/models/DeviceCategory';
 import { useAuth } from '@/providers/AuthProvider';
 import { deliveryCommand, getDeliveryPhotoUrl } from '@/services/delivery.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function DeliveryDetailScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const loader = useCallback(() => deliveryCommand('get', { id }), [id]);
@@ -504,6 +506,8 @@ export default function DeliveryDetailScreen() {
 }
 
 function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const loader = useCallback(() => getDeliveryPhotoUrl(path), [path]);
   const { data, loading } = usePortalData(loader);
 
@@ -529,7 +533,7 @@ function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,

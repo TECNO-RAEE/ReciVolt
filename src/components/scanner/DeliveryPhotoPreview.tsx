@@ -2,13 +2,15 @@ import { useCallback } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import { usePortalData } from '@/hooks/usePortalData';
 import { getDeliveryPhotoUrl } from '@/services/delivery.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type DeliveryPhotoPreviewProps = {
   readonly path: string;
 };
 
 export function DeliveryPhotoPreview({ path }: DeliveryPhotoPreviewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const loader = useCallback(() => getDeliveryPhotoUrl(path), [path]);
   const { data, loading } = usePortalData(loader);
 
@@ -35,7 +37,7 @@ export function DeliveryPhotoPreview({ path }: DeliveryPhotoPreviewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderWidth: 1,

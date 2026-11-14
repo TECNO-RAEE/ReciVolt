@@ -22,12 +22,14 @@ import {
 import { canRequestPickup } from '@/models/Pickup';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 const PREVIEW_CATEGORY_LIMIT = 4;
 
 export default function PointDetailScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { guest } = useAuth();
@@ -290,7 +292,7 @@ export default function PointDetailScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: {
     width: '100%',

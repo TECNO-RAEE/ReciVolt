@@ -2,13 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, makeRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { contactEmail, contactTopics } from '@/config/contact';
 import { brand } from '@/config/brand';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function ContactScreen() {
+  const colors = useColors();
+  const s = useThemedStyles(makeRewardStyles);
+  const styles = useThemedStyles(makeStyles);
   const { topic: initialTopic } = useLocalSearchParams<{ topic?: string }>();
   const [reason, setReason] = useState<keyof typeof contactTopics>(
     initialTopic === 'reward' ? 'reward' : 'point'
@@ -107,7 +110,7 @@ export default function ContactScreen() {
     </CitizenPage>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',

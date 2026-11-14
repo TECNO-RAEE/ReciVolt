@@ -16,7 +16,7 @@ import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { brand } from '@/config/brand';
 import { termsUrl } from '@/config/legal';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { register } from '@/services/auth.service';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
 import { useAuth } from '@/providers/AuthProvider';
@@ -63,6 +63,8 @@ function getRegisterErrorMessage(error: unknown) {
 }
 
 export default function CreateAccountScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ intent?: string }>();
   const intent = parseAuthIntent(params.intent);
   const registrationIntent = intent === 'invitations' ? intent : null;
@@ -259,7 +261,7 @@ export default function CreateAccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
   screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },

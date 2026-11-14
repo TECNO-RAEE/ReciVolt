@@ -65,6 +65,7 @@
     "supabase:test": "npx --yes supabase test db supabase/tests --local",
     "dev:local": "node ./scripts/dev-local.mjs",
     "lint": "expo lint",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

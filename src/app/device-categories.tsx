@@ -16,7 +16,7 @@ import type { DeviceCategory } from '@/models/DeviceCategory';
 import { getCategoryVisual } from '@/models/DeviceCategory';
 import { getDeviceCategoryGroupKey } from '@/models/DeviceCategory';
 import { getDeviceCategories } from '@/services/device-category.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 
@@ -36,6 +36,8 @@ const normalize = (value: string) =>
     .trim();
 
 export default function DeviceCategoriesScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { pointId } = useLocalSearchParams<{ pointId?: string }>();
   const { points } = useDiscovery();
@@ -231,7 +233,7 @@ export default function DeviceCategoriesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: {
     width: '100%',

@@ -31,9 +31,11 @@ import {
 } from '@/models/Pickup';
 import { useAuth } from '@/providers/AuthProvider';
 import { getPickupPhotoUrl, pickupCommand } from '@/services/pickup.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function PickupDetailScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const loader = useCallback(() => pickupCommand('get', { id }), [id]);
@@ -468,7 +470,7 @@ export default function PickupDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,

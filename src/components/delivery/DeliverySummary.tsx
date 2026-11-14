@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Image, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { PortalLoading, portalStyles as s } from '@/components/portal/PortalUI';
+import { PortalLoading, makePortalStyles } from '@/components/portal/PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import {
   deliveryEstimate,
@@ -11,11 +11,13 @@ import {
   type Delivery,
 } from '@/models/Delivery';
 import { getDeliveryPhotoUrl } from '@/services/delivery.service';
+import { useThemedStyles } from '@/theme';
 
 export function DeliverySummary({
   delivery,
   showQr = false,
 }: Readonly<{ delivery: Delivery; showQr?: boolean }>) {
+  const s = useThemedStyles(makePortalStyles);
   const status = effectiveDeliveryStatus(delivery);
   const estimate = deliveryEstimate(delivery.items);
   return (
@@ -72,6 +74,7 @@ export function DeliverySummary({
   );
 }
 function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
+  const s = useThemedStyles(makePortalStyles);
   const loader = useCallback(() => getDeliveryPhotoUrl(path), [path]);
   const { data, loading, error, refresh } = usePortalData(loader);
   return (

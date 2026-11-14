@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ScannerHelpModalProps = {
   readonly visible: boolean;
@@ -17,6 +17,8 @@ type ScannerHelpModalProps = {
 };
 
 export function ScannerHelpModal({ visible, onClose }: ScannerHelpModalProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Modal
       visible={visible}
@@ -95,7 +97,7 @@ export function ScannerHelpModal({ visible, onClose }: ScannerHelpModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.overlay,

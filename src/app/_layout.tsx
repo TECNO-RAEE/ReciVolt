@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { DiscoveryProvider } from '@/providers/DiscoveryProvider';
 import { WalletProvider } from '@/providers/WalletProvider';
 import { canAccessCitizen } from '@/models/Access';
-import { colors } from '@/theme';
+import { ThemeProvider, useTheme, useColors } from '@/theme';
 import { useFonts } from 'expo-font';
 import { Roboto_400Regular, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto';
 
@@ -25,19 +25,27 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <StatusBar style="dark" />
+    <ThemeProvider>
+      <AuthProvider>
+        <ThemedStatusBar />
 
-      <DiscoveryProvider>
-        <WalletProvider>
-          <Navigation />
-        </WalletProvider>
-      </DiscoveryProvider>
-    </AuthProvider>
+        <DiscoveryProvider>
+          <WalletProvider>
+            <Navigation />
+          </WalletProvider>
+        </DiscoveryProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
+}
+
 function Navigation() {
+  const colors = useColors();
   const { session, role, guest, loading, recoveringPassword } = useAuth();
   const [ready, setReady] = useState(false);
   if (!ready && !loading) setReady(true);
@@ -49,7 +57,9 @@ function Navigation() {
       </View>
     );
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
+    >
       <Stack.Screen name="index" />
       <Stack.Screen name="portal-access" />
       <Stack.Screen name="company-application" />

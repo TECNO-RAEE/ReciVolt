@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { pointsLabel, type Reward } from '@/models/Reward';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { PointsBadge, RewardPhoto } from './RewardsUI';
 
 export function RewardCard({
@@ -9,6 +9,8 @@ export function RewardCard({
   onPress,
   status,
 }: Readonly<{ reward: Reward; onPress: () => void; status?: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -42,6 +44,8 @@ export function RewardCard({
   );
 }
 export function RewardsSkeleton() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View accessibilityLabel="Cargando premios" style={{ gap: 12 }}>
       {[0, 1, 2].map((i) => (
@@ -59,7 +63,7 @@ export function RewardsSkeleton() {
     </View>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',

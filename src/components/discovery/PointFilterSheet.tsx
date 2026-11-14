@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import type { DeviceCategory } from '@/models/DeviceCategory';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface PointFilterValues {
   categoryIds: string[];
@@ -42,6 +42,8 @@ export function PointFilterSheet({
   onApply: (values: PointFilterValues) => void;
   onClose: () => void;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [draft, setDraft] = useState(values);
   // Al abrir la hoja, el borrador vuelve a partir de los filtros aplicados (sin useEffect:
   // se ajusta durante el render, como recomienda React para sincronizar con una prop).
@@ -201,7 +203,7 @@ export function PointFilterSheet({
     </Modal>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: {
     width: '100%',

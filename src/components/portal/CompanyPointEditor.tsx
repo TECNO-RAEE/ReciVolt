@@ -9,8 +9,8 @@ import {
   PortalFeedback,
   PortalLink,
   PortalSelect,
-  portalFieldStyle,
-  portalStyles as s,
+  makePortalFieldStyle,
+  makePortalStyles,
 } from './PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData, ManagedPoint, PointInput } from '@/models/Portal';
@@ -29,7 +29,7 @@ import { portalCommand, saveGreenPointDevicePolicy } from '@/services/portal.ser
 import { AddressField } from './AddressField';
 import { LocationPicker } from './LocationPicker';
 import { joinPointAddress, splitPointAddress } from '@/models/PointAddress';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function CompanyPointEditor({
   data,
@@ -44,6 +44,9 @@ export function CompanyPointEditor({
   onCancel?: () => void;
   savePoint?: (input: PointInput) => Promise<unknown>;
 }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
+  const intakeCard = useThemedStyles(makeIntakeCard);
   const initialAddress = splitPointAddress(point?.address ?? '');
   const [name, setName] = useState(point?.name ?? ''),
     [address, setAddress] = useState(initialAddress.address);
@@ -400,6 +403,8 @@ function ScheduleGrid({
   onChange: (ranges: ScheduleRange[]) => void;
   disabled: boolean;
 }>) {
+  const s = useThemedStyles(makePortalStyles);
+  const portalFieldStyle = useThemedStyles(makePortalFieldStyle);
   const set = (i: number, key: keyof ScheduleRange, value: string) =>
     onChange(ranges.map((r, j) => (i === j ? { ...r, [key]: formatTimeInput(value) } : r)));
   const input = (i: number, key: keyof ScheduleRange, label: string) => (
@@ -434,9 +439,9 @@ const intakeOptions: { value: DeviceIntakeMode | ''; label: string }[] = [
   { value: 'pickup', label: 'Requiere coordinar retiro' },
   { value: 'not_accepted', label: 'No se recibe' },
 ];
-const intakeCard = {
+const makeIntakeCard = (colors: ThemeColors) => ({
   borderWidth: 1,
   borderColor: colors.border,
   borderRadius: 12,
   backgroundColor: colors.surface,
-} as const;
+} as const);

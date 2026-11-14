@@ -13,13 +13,13 @@ import {
   InfoNote,
   RewardPhoto,
   StatusBanner,
-  rewardStyles as s,
+  makeRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import { pointsLabel, rewardQr, type Redemption } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { rewardCommand } from '@/services/reward.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 
 export default function RedemptionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,6 +47,7 @@ function RedemptionDetail({ id }: Readonly<{ id: string }>) {
   );
 }
 function Reserved({ data }: Readonly<{ data: Redemption }>) {
+  const s = useThemedStyles(makeRewardStyles);
   const { width } = useWindowDimensions();
   return (
     <>
@@ -87,6 +88,8 @@ function Reserved({ data }: Readonly<{ data: Redemption }>) {
   );
 }
 function Delivered({ data }: Readonly<{ data: Redemption }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makeRewardStyles);
   return (
     <>
       <StatusBanner tone="success" title="Premio entregado" message="¡Disfrutá tu beneficio!" />

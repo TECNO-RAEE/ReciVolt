@@ -1,12 +1,14 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
-import { PortalLink, PortalLoading, portalStyles as s } from '@/components/portal/PortalUI';
+import { PortalLink, PortalLoading, makePortalStyles } from '@/components/portal/PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import { deliveryStatusNames, effectiveDeliveryStatus } from '@/models/Delivery';
 import { getDeliveryHistory } from '@/services/delivery.service';
+import { useThemedStyles } from '@/theme';
 
 export function DeliveryHistory({ companyId = null }: Readonly<{ companyId?: string | null }>) {
+  const s = useThemedStyles(makePortalStyles);
   const [page, setPage] = useState(0);
   const loader = useCallback(() => getDeliveryHistory(companyId, page), [companyId, page]);
   const { data, loading, error, refresh } = usePortalData(loader);

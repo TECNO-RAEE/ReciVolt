@@ -5,9 +5,11 @@ import { getRewards } from '@/services/reward.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import { RewardPhoto } from '@/components/rewards/RewardsUI';
 import { brand } from '@/config/brand';
-import { PortalField, PortalLoading, portalStyles as s } from './PortalUI';
+import { PortalField, PortalLoading, makePortalStyles } from './PortalUI';
+import { useThemedStyles } from '@/theme';
 
 export function CompanyRewards({ companyId }: Readonly<{ companyId: string }>) {
+  const s = useThemedStyles(makePortalStyles);
   const loader = useCallback(() => getRewards(companyId, true), [companyId]);
   const { data, loading, error, refresh } = usePortalData(loader);
   const [search, setSearch] = useState('');

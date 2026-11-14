@@ -12,7 +12,7 @@ import {
   type Delivery,
 } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type DeliveryConfirmationViewProps = {
   readonly delivery: Delivery;
@@ -39,6 +39,8 @@ export function DeliveryConfirmationView({
   onRefresh,
   onReset,
 }: DeliveryConfirmationViewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const status = effectiveDeliveryStatus(delivery);
   const isPending = status === 'PENDING_RECEPTION';
 
@@ -232,7 +234,7 @@ export function DeliveryConfirmationView({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   fieldSection: {
     gap: 10,
   },

@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import type { Map, Marker } from 'leaflet';
 import type { LocationPickerProps } from './LocationPicker.types';
-import { colors } from '@/theme';
-import { portalStyles as s } from './PortalUI';
+import { useColors, useThemedStyles } from '@/theme';
+import { makePortalStyles } from './PortalUI';
 import '../discovery/leaflet.web.css';
 
 export function LocationPicker({ value, onChange, disabled = false }: LocationPickerProps) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
   const element = useRef<HTMLDivElement>(null);
   const map = useRef<Map | null>(null);
   const marker = useRef<Marker | null>(null);
@@ -95,7 +97,7 @@ export function LocationPicker({ value, onChange, disabled = false }: LocationPi
     return () => {
       cancelled = true;
     };
-  }, [ready, value, disabled]);
+  }, [ready, value, disabled, colors.primary]);
   return (
     <View style={{ gap: 8 }}>
       <div

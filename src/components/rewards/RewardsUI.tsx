@@ -6,12 +6,12 @@ import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { pointsLabel, type Reward } from '@/models/Reward';
 import { PointsCoin } from '@/components/ui/EcoArtwork';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
-export const rewardStyles = StyleSheet.create({
+export const makeRewardStyles = (colors: ThemeColors) => StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.background },
   content: {
     width: '100%',
@@ -48,6 +48,8 @@ export function CitizenPage({
   action?: ReactNode;
   footer?: ReactNode;
 }>) {
+  const rewardStyles = useThemedStyles(makeRewardStyles);
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   return (
     <View style={rewardStyles.page}>
@@ -87,6 +89,9 @@ export function PointsCard({
   hint?: string;
   showPointsUnit?: boolean;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const rewardStyles = useThemedStyles(makeRewardStyles);
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
@@ -134,6 +139,8 @@ function RewardPhotoSource({
   reward,
   height,
 }: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'>; height: number }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(Boolean(reward.imageUrl));
 
@@ -189,6 +196,8 @@ export function RewardsBalance({
   error: string | null;
   onPress: () => void;
 }>) {
+  const styles = useThemedStyles(makeStyles);
+  const rewardStyles = useThemedStyles(makeRewardStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -219,6 +228,8 @@ export function PointsBadge({
   points,
   large = false,
 }: Readonly<{ points: number; large?: boolean }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.badge, large && styles.badgeLarge]}>
       {large && <Ionicons name="gift-outline" size={28} color={colors.primaryDark} />}
@@ -231,6 +242,9 @@ export function StatusBanner({
   title,
   message,
 }: Readonly<{ tone: 'pending' | 'success'; title: string; message: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const rewardStyles = useThemedStyles(makeRewardStyles);
   const success = tone === 'success';
   return (
     <View
@@ -260,6 +274,8 @@ export function InfoSection({
   title: string;
   children: ReactNode;
 }>) {
+  const colors = useColors();
+  const rewardStyles = useThemedStyles(makeRewardStyles);
   return (
     <View style={{ flexDirection: 'row', gap: 16, paddingHorizontal: 4 }}>
       <Ionicons name={icon} size={26} color={colors.text} />
@@ -277,6 +293,9 @@ export function DetailList({
 }: Readonly<{
   rows: { icon: ComponentProps<typeof Ionicons>['name']; label: string; value: string }[];
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const rewardStyles = useThemedStyles(makeRewardStyles);
   return (
     <View style={styles.detailList}>
       {rows.map((row, i) => (
@@ -290,6 +309,8 @@ export function DetailList({
   );
 }
 export function CopyableCode({ code }: Readonly<{ code: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -334,6 +355,9 @@ export function CopyableCode({ code }: Readonly<{ code: string }>) {
   );
 }
 export function InfoNote({ children }: Readonly<{ children: ReactNode }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const rewardStyles = useThemedStyles(makeRewardStyles);
   return (
     <View style={styles.info}>
       <Ionicons name="information-circle-outline" size={23} color={colors.primaryDark} />
@@ -341,7 +365,7 @@ export function InfoNote({ children }: Readonly<{ children: ReactNode }>) {
     </View>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   pointsCard: {
     backgroundColor: colors.primarySoft,
     borderRadius: 22,
@@ -352,7 +376,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     borderWidth: 1,
-    borderColor: '#fff',
+    borderColor: colors.surface,
     boxShadow: '0 7px 20px rgba(22,65,39,0.10)',
   },
   guestBalance: { fontSize: 25, lineHeight: 32 },
@@ -368,7 +392,7 @@ const styles = StyleSheet.create({
     height: 38,
     marginVertical: 3,
     borderRadius: 8,
-    backgroundColor: '#D6E7DB',
+    backgroundColor: colors.primarySoft,
   },
   pointsHint: {
     fontFamily: fonts.regular,

@@ -2,10 +2,10 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { CitizenPage, InfoNote, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, InfoNote, makeRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { DevicePreparationArtwork } from '@/components/ui/EcoArtwork';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const steps = [
   {
@@ -41,6 +41,9 @@ const answers = [
 ] as const;
 
 export default function ImpactScreen() {
+  const colors = useColors();
+  const s = useThemedStyles(makeRewardStyles);
+  const styles = useThemedStyles(makeStyles);
   const [expanded, setExpanded] = useState(false);
   const [answer, setAnswer] = useState<(typeof answers)[number]['key'] | null>(null);
   return (
@@ -112,7 +115,7 @@ export default function ImpactScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   heroTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 26, lineHeight: 34 },
   steps: { gap: 10 },
   step: {

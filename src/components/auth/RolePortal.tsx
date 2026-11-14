@@ -4,9 +4,10 @@ import { Logo } from '@/components/auth/Logo';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { activeMemberships, canManageCompany } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function RolePortal({ admin = false }: Readonly<{ admin?: boolean }>) {
+  const styles = useThemedStyles(makeStyles);
   const { profile, role, company, access, selectCompany, logout } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const memberships = activeMemberships(access);
@@ -57,7 +58,7 @@ export function RolePortal({ admin = false }: Readonly<{ admin?: boolean }>) {
     </ScrollView>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: {
     flexGrow: 1,

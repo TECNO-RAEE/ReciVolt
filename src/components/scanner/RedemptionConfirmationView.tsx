@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
 import type { Redemption } from '@/models/Reward';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type RedemptionConfirmationViewProps = {
   readonly redemption: Redemption;
@@ -26,6 +26,8 @@ export function RedemptionConfirmationView({
   onRefresh,
   onReset,
 }: RedemptionConfirmationViewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const isRedemptionReserved = redemption.status === 'RESERVED';
 
   const statusBadge = (
@@ -129,7 +131,7 @@ export function RedemptionConfirmationView({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   statusBadge: {
     backgroundColor: colors.primarySoft,
     paddingHorizontal: 10,

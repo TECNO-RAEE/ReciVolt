@@ -3,9 +3,11 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useWallet } from '@/providers/WalletProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function CitizenBalanceCard({ onPress }: Readonly<{ onPress?: () => void }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const wallet = useWallet();
   const { refresh } = wallet;
   useFocusEffect(
@@ -46,7 +48,7 @@ export function CitizenBalanceCard({ onPress }: Readonly<{ onPress?: () => void 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     minHeight: 112,
     width: '100%',
@@ -66,7 +68,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 5,
-    borderColor: '#C7E4CC',
+    borderColor: colors.border,
     backgroundColor: colors.primary,
   },
   content: { flex: 1, gap: 3 },

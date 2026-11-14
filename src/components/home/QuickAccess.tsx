@@ -1,4 +1,4 @@
-import { colors, fonts } from '@/theme';
+import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -9,6 +9,7 @@ type QuickAccessProps = {
 };
 
 export function QuickAccess({ title, icon, onPress }: Readonly<QuickAccessProps>) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -22,7 +23,7 @@ export function QuickAccess({ title, icon, onPress }: Readonly<QuickAccessProps>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   quickAccess: {
     flex: 1,
     minHeight: 80,

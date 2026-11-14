@@ -16,7 +16,7 @@ import { AuthTextField } from '@/components/auth/AuthTextField';
 import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { sendRecoveryCode, verifyRecoveryCode } from '@/services/auth.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
 
 const OTP_LENGTH = 6;
 const OTP_SLOTS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'] as const;
@@ -91,6 +91,7 @@ function getVerifyCodeErrorMessage(error: unknown) {
 }
 
 export default function ForgotPasswordScreen() {
+  const styles = useThemedStyles(makeStyles);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -300,7 +301,7 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
   screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },

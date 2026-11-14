@@ -20,13 +20,15 @@ import {
   PortalLink,
   PortalLoading,
   PortalNav,
-  portalStyles as s,
+  makePortalStyles,
 } from './PortalUI';
+import { useThemedStyles } from '@/theme';
 
 export function AdminSearch({
   companies,
   refresh,
 }: Readonly<{ companies: PortalCompany[]; refresh: () => Promise<void> }>) {
+  const s = useThemedStyles(makePortalStyles);
   const [kind, setKind] = useState<AdminKind>('users');
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
@@ -139,6 +141,7 @@ function UserEditor({
   close,
   cancel,
 }: Readonly<{ record: AdminRecord; close: () => Promise<void>; cancel: () => void }>) {
+  const s = useThemedStyles(makePortalStyles);
   const [name, setName] = useState(record.name);
   const action = usePortalAction();
   return (
@@ -181,6 +184,7 @@ function SearchReward({
   close: () => Promise<void>;
   cancel: () => void;
 }>) {
+  const s = useThemedStyles(makePortalStyles);
   const loader = useCallback(() => getReward(record.id), [record.id]);
   const { data, loading, error, refresh } = usePortalData(loader);
   return (
@@ -204,6 +208,7 @@ function CompanyRecordEditor({
   close,
   cancel,
 }: Readonly<{ record: AdminRecord; close: () => Promise<void>; cancel: () => void }>) {
+  const s = useThemedStyles(makePortalStyles);
   const loader = useCallback(() => getCompanyPortal(record.company_id!), [record.company_id]);
   const { data, loading, error, refresh } = usePortalData(loader);
   const point = data?.points.find((p) => p.id === record.id);
@@ -239,6 +244,7 @@ function CompanyFields({
   close: () => Promise<void>;
   cancel: () => void;
 }>) {
+  const s = useThemedStyles(makePortalStyles);
   const [name, setName] = useState(data.company.name);
   const [fields, setFields] = useState(
     data.details ?? { phone: '', address: '', website: '', description: '' }

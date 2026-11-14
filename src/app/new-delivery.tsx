@@ -29,7 +29,7 @@ import {
   pickDeliveryPhoto,
   removeDeliveryPhoto,
 } from '@/services/delivery.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 interface DeliveryDraftItem {
   id: string; // unique draft item id
@@ -38,6 +38,8 @@ interface DeliveryDraftItem {
 }
 
 export default function NewDeliveryScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
   const { pointId: initialPoint } = useLocalSearchParams<{ pointId?: string }>();
   const [pointId, setPointId] = useState(initialPoint ?? '');
@@ -241,6 +243,8 @@ function DeliveryForm({
   onRequestDispatched: () => void;
   onSubmitSuccess: () => void;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const loader = useCallback(() => getDeliveryRates(point.companyId), [point.companyId]);
   const { data: rates } = usePortalData(loader);
@@ -758,7 +762,7 @@ function DeliveryForm({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,

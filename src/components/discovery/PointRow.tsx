@@ -7,13 +7,15 @@ import {
   type Coordinates,
   type GreenPoint,
 } from '@/models/GreenPoint';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 export function PointRow({
   point,
   location,
   now,
   onPress,
 }: Readonly<{ point: GreenPoint; location: Coordinates | null; now: Date; onPress: () => void }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const status = openingStatus(point, now);
   const listedCategories = [
     ...point.categories.map((category) => category.name),
@@ -56,7 +58,7 @@ export function PointRow({
     </Pressable>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   row: {
     paddingVertical: 20,
     borderBottomWidth: 1,

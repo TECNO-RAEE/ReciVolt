@@ -5,8 +5,8 @@ import {
   suggestAddresses,
   type AddressSuggestion,
 } from '@/services/address.service';
-import { colors } from '@/theme';
-import { PortalField, PortalLink, portalStyles as s } from './PortalUI';
+import { useColors, useThemedStyles } from '@/theme';
+import { PortalField, PortalLink, makePortalStyles } from './PortalUI';
 
 export function AddressField({
   value,
@@ -19,6 +19,8 @@ export function AddressField({
   onSelect: (address: AddressSuggestion) => void;
   disabled?: boolean;
 }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
   const [state, setState] = useState<{
     query: string;
     rows: AddressSuggestion[];

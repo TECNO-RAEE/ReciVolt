@@ -2,13 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { PickupTimelineStep } from '@/models/Pickup';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface PickupTimelineProps {
   steps: PickupTimelineStep[];
 }
 
 export function PickupTimeline({ steps }: Readonly<PickupTimelineProps>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Seguimiento del retiro</Text>
@@ -84,7 +86,7 @@ export function PickupTimeline({ steps }: Readonly<PickupTimelineProps>) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
     borderRadius: 16,

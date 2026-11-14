@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -11,20 +11,24 @@ import {
   emptyPointFilters,
   type PointFilterValues,
 } from '@/components/discovery/PointFilterSheet';
+import { CategoryChips } from '@/components/discovery/CategoryChips';
 import { PointsMap } from '@/components/discovery/PointsMap';
 import { PointRow } from '@/components/discovery/PointRow';
 import { SearchBar } from '@/components/discovery/SearchBar';
 import { InfoNote } from '@/components/rewards/RewardsUI';
+import { groupCategories, toggleGroupSelection } from '@/models/DeviceCategory';
 import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { useScrollReset } from '@/hooks/useScrollReset';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 function ViewToggle({
   label,
   selected,
   onPress,
 }: Readonly<{ label: string; selected: boolean; onPress: () => void }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -50,6 +54,8 @@ function GreenPointsExplorer({
   initialSearch,
   initialCategory,
 }: Readonly<{ initialSearch: string; initialCategory: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const {
     points,
@@ -76,6 +82,15 @@ function GreenPointsExplorer({
   const [view, setView] = useState<'map' | 'list'>('map');
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const categoryGroups = useMemo(() => groupCategories(categories), [categories]);
+  // Pide la ubicación una sola vez al abrir el mapa, para centrarlo en la persona.
+  // Si ya la tenemos o el permiso fue denegado, no insiste: queda el botón manual.
+  const autoLocated = useRef(false);
+  useEffect(() => {
+    if (autoLocated.current || location || view !== 'map') return;
+    autoLocated.current = true;
+    void requestLocation();
+  }, [location, view, requestLocation]);
   const companies = useMemo(
     () =>
       [...new Map(points.map((p) => [p.companyId, p.companyName])).entries()].sort((a, b) =>
@@ -166,6 +181,17 @@ function GreenPointsExplorer({
             fill
             selectedId={selectedPoint?.id ?? null}
             onSelect={(point) => setSelectedId(point.id)}
+          />
+          <CategoryChips
+            groups={categoryGroups}
+            selectedIds={filters.categoryIds}
+            onToggle={(group) =>
+              setFilters((current) => ({
+                ...current,
+                categoryIds: toggleGroupSelection(group, current.categoryIds),
+              }))
+            }
+            onClear={() => setFilters((current) => ({ ...current, categoryIds: [] }))}
           />
           <Pressable
             accessibilityRole="button"
@@ -289,7 +315,7 @@ function GreenPointsExplorer({
     </View>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   toolbar: {
     width: '100%',
@@ -356,7 +382,7 @@ const styles = StyleSheet.create({
   },
   mapNotices: {
     position: 'absolute',
-    top: 16,
+    top: 64,
     left: 16,
     right: 68,
     gap: 8,

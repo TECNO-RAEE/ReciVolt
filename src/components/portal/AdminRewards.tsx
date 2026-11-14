@@ -12,19 +12,21 @@ import {
   PortalListItem,
   PortalNav,
   PortalToggle,
-  portalStyles as s,
+  makePortalStyles,
 } from './PortalUI';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import type { PortalCompany } from '@/models/Portal';
 import { pointsLabel, rewardCategories, type Reward, type RewardCategory } from '@/models/Reward';
 import { getRewards, saveReward } from '@/services/reward.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 
 export function AdminRewards({
   companies,
   reload = 0,
 }: Readonly<{ companies: PortalCompany[]; reload?: number }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
   const loader = useCallback(() => getRewards(undefined, true), []);
   const { data, loading, error, refresh } = usePortalData(loader);
   useEffect(() => {
@@ -110,6 +112,7 @@ export function RewardEditor({
   close: () => void;
   cancel?: () => void;
 }>) {
+  const s = useThemedStyles(makePortalStyles);
   const activeCompanies = companies.filter((c) => c.status === 'ACTIVE');
   const [companyId, setCompanyId] = useState(reward?.companyId ?? '');
   const [companySearch, setCompanySearch] = useState('');

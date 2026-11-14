@@ -3,12 +3,12 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text } from 'react-native';
 import { CompanyPage } from '@/components/portal/CompanyPage';
-import { PortalField, portalStyles as s } from '@/components/portal/PortalUI';
+import { PortalField, makePortalStyles } from '@/components/portal/PortalUI';
 import { InfoCard } from '@/components/ui/InfoCard';
 import { brand } from '@/config/brand';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import type { CompanyPortalData } from '@/models/Portal';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 
 export default function CompanyPointsScreen() {
   return (
@@ -18,6 +18,8 @@ export default function CompanyPointsScreen() {
   );
 }
 function CompanyPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
   const [search, setSearch] = useState('');
   return (
     <>

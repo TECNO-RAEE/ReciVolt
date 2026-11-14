@@ -10,26 +10,29 @@ import type { CompanyPortalData } from '@/models/Portal';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
 import { portalCommand, sendCompanyInvitation } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import {
   OrganizationCard,
   PortalFeedback,
   PortalField,
   PortalLink,
   PortalSelect,
-  portalStyles as s,
+  makePortalStyles,
 } from './PortalUI';
 
-const formCard = {
+const makeFormCard = (colors: ThemeColors) => ({
   gap: 16,
   padding: 16,
   borderWidth: 1,
   borderColor: colors.border,
   borderRadius: 12,
   backgroundColor: colors.surface,
-} as const;
+} as const);
 
 export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
+  const formCard = useThemedStyles(makeFormCard);
   const { user, profile } = useAuth();
   const { refresh } = useCompanyPortal();
   const [name, setName] = useState(''),

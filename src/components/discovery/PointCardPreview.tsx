@@ -7,7 +7,7 @@ import {
   type Coordinates,
   type GreenPoint,
 } from '@/models/GreenPoint';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 /**
  * Tarjeta flotante sobre el mapa de Puntos verdes: resume cuántos puntos hay en el
@@ -30,6 +30,8 @@ export function PointCardPreview({
   onViewAll: () => void;
   onOpenPoint: () => void;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const status = point ? openingStatus(point, now) : 'unknown';
   return (
     <View style={styles.card}>
@@ -83,7 +85,7 @@ export function PointCardPreview({
     </View>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 960,

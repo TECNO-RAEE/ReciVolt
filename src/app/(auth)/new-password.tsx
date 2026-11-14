@@ -5,9 +5,10 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } fr
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function NewPasswordScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { completePasswordRecovery } = useAuth();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +111,7 @@ export default function NewPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
   screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 18 },

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ScannerLookupViewProps = {
   readonly camera: boolean;
@@ -35,6 +35,8 @@ export function ScannerLookupView({
   error,
   notice,
 }: ScannerLookupViewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <>
       {/* Cámara con marco y esquinas de visor de escáner */}
@@ -144,7 +146,7 @@ export function ScannerLookupView({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   viewfinderCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,

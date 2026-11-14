@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ProfileImpactCardProps = {
   recycledCount: number;
@@ -12,6 +12,8 @@ export function ProfileImpactCard({
   recycledCount,
   recoveredWeight,
 }: Readonly<ProfileImpactCardProps>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Mi impacto</Text>
@@ -43,7 +45,7 @@ export function ProfileImpactCard({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     height: 144,
     marginTop: 25,

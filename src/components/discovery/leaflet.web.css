@@ -703,3 +703,20 @@ svg.leaflet-image-layer.leaflet-interactive path {
     print-color-adjust: exact;
   }
 }
+
+/* ReciVolt: modo oscuro para los tiles de OpenStreetMap y pines propios */
+.rv-map-dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.7);
+}
+.rv-map-dark .leaflet-control-zoom a {
+  background: #16221d;
+  color: #e6f0ea;
+  border-color: #2a3a33;
+}
+.rv-map-dark .leaflet-control-attribution {
+  background: rgba(13, 22, 18, 0.8);
+  color: #a3b7ad;
+}
+.rv-map-dark .leaflet-control-attribution a {
+  color: #8ed6ae;
+}

@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import type { LocationPickerProps } from './LocationPicker.types';
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 
 export function LocationPicker({ value, onChange, disabled = false }: LocationPickerProps) {
+  const colors = useColors();
   const map = useRef<MapView>(null);
   useEffect(() => {
     if (value)

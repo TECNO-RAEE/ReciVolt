@@ -6,7 +6,7 @@ import {
   CitizenPage,
   InfoNote,
   RewardsBalance,
-  rewardStyles as s,
+  makeRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { RewardCard, RewardsSkeleton } from '@/components/rewards/RewardCard';
 import { PortalLink, PortalLoading } from '@/components/portal/PortalUI';
@@ -18,9 +18,12 @@ import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { getRewards, getRedemptions } from '@/services/reward.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function RewardsScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const s = useThemedStyles(makeRewardStyles);
   const params = useLocalSearchParams<{ tab?: string }>();
   const [tab, setTab] = useState(params.tab === 'canjes' ? 'Mis canjes' : 'Disponibles');
   const [requestedTab, setRequestedTab] = useState(params.tab);
@@ -143,7 +146,7 @@ export default function RewardsScreen() {
                 onPress={() => setCategory(key)}
                 style={[styles.chip, category === key && styles.selectedChip]}
               >
-                <Text style={[styles.chipText, category === key && { color: '#fff' }]}>
+                <Text style={[styles.chipText, category === key && { color: colors.textOnPrimary }]}>
                   {label}
                 </Text>
               </Pressable>
@@ -186,6 +189,7 @@ export default function RewardsScreen() {
   );
 }
 function MyRedemptions() {
+  const s = useThemedStyles(makeRewardStyles);
   const [page, setPage] = useState(0);
   const loader = useCallback(() => getRedemptions(page), [page]);
   const { data, loading, error, refresh } = usePortalData(loader);
@@ -218,7 +222,7 @@ function MyRedemptions() {
     </View>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   searchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: colors.border },
   tab: {

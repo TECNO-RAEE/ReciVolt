@@ -9,17 +9,17 @@ import {
   PortalLink,
   PortalLoading,
   PortalSelect,
-  portalStyles as s,
+  makePortalStyles,
 } from '@/components/portal/PortalUI';
 import {
   PickupCitizenCard,
   PickupMaterialCard,
   PickupReadOnlySummary,
-  pickupCard,
+  makePickupCard,
 } from '@/components/pickup/PickupOps';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 import {
   canCoordinatePickup,
   canReceivePickup,
@@ -29,6 +29,9 @@ import {
 import { pickupCommand } from '@/services/pickup.service';
 
 function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
+  const pickupCard = useThemedStyles(makePickupCard);
   const loader = useCallback(() => pickupCommand('get', { id: pickupId }), [pickupId]);
   const { data: pickup, loading, error, refresh } = usePortalData(loader);
   const action = usePortalAction();

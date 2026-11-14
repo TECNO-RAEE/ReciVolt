@@ -23,10 +23,10 @@ import {
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoCard } from '@/components/ui/InfoCard';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
-export const portalStyles = StyleSheet.create({
+export const makePortalStyles = (colors: ThemeColors) => StyleSheet.create({
   title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 36, color: colors.text },
   subtitle: { fontFamily: fonts.semiBold, fontSize: 20, lineHeight: 28, color: colors.brandDark },
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 23, color: colors.text },
@@ -62,6 +62,8 @@ export function PortalPage({
   action?: ReactNode;
   onRefresh?: () => void;
 }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   const scroll = useScrollReset();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -94,6 +96,7 @@ export function PortalLink({
   onPress,
   disabled = false,
 }: Readonly<{ title: string; onPress: () => void; disabled?: boolean }>) {
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -120,6 +123,8 @@ export function PortalMenuItem({
   icon: ComponentProps<typeof Ionicons>['name'];
   onPress: () => void;
 }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -151,6 +156,8 @@ export function PortalBadge({
   label,
   tone = 'success',
 }: Readonly<{ label: string; tone?: 'success' | 'neutral' | 'danger' }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <View
       style={{
@@ -206,6 +213,8 @@ export function PortalListItem({
   accessibilityHint?: string;
   children?: ReactNode;
 }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
@@ -256,6 +265,8 @@ export function PortalListItem({
   );
 }
 export function OrganizationCard({ name, role }: Readonly<{ name: string; role: string }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <InfoCard
       style={{ backgroundColor: colors.surfaceSoft, padding: 20 }}
@@ -278,7 +289,7 @@ export function OrganizationCard({ name, role }: Readonly<{ name: string; role: 
     />
   );
 }
-export const portalFieldStyle = {
+export const makePortalFieldStyle = (colors: ThemeColors) => ({
   borderWidth: 1,
   borderColor: colors.border,
   borderRadius: 8,
@@ -288,7 +299,7 @@ export const portalFieldStyle = {
   fontFamily: fonts.regular,
   fontSize: 15,
   color: colors.text,
-} as const;
+} as const);
 export function PortalField({
   label,
   compact = false,
@@ -301,6 +312,9 @@ export function PortalField({
   suffix?: string;
   labelStyle?: TextInputProps['style'];
 }) {
+  const colors = useColors();
+  const portalFieldStyle = useThemedStyles(makePortalFieldStyle);
+  const portalStyles = useThemedStyles(makePortalStyles);
   const input = (
     <TextInput
       accessibilityLabel={suffix ? `${label}, ${suffix}` : label}
@@ -363,6 +377,9 @@ export function PortalSelect<T extends string>({
   disabled?: boolean;
   hideLabel?: boolean;
 }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
+  const portalFieldStyle = useThemedStyles(makePortalFieldStyle);
   const [open, setOpen] = useState(false);
   const current = options.find((option) => option.value === value);
   return (
@@ -450,6 +467,8 @@ export function PortalToggle({
   onChange: (value: boolean) => void;
   disabled?: boolean;
 }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <View
       style={{
@@ -477,6 +496,8 @@ export function PortalChoice({
   onPress,
   disabled = false,
 }: Readonly<{ label: string; selected: boolean; onPress: () => void; disabled?: boolean }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -498,6 +519,7 @@ export function PortalFeedback({
   error,
   notice,
 }: Readonly<{ error?: string | null; notice?: string | null }>) {
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <>
       {error && (
@@ -518,6 +540,8 @@ export function PortalLoading({
   error,
   retry,
 }: Readonly<{ loading: boolean; error: string | null; retry: () => void }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <>
       {loading && <ActivityIndicator color={colors.primary} accessibilityLabel="Cargando datos" />}
@@ -535,6 +559,8 @@ export function PortalNav({
   selected,
   onSelect,
 }: Readonly<{ items: readonly string[]; selected: string; onSelect: (item: string) => void }>) {
+  const colors = useColors();
+  const portalStyles = useThemedStyles(makePortalStyles);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const positions = useRef<Record<string, number>>({});
   useEffect(() => {

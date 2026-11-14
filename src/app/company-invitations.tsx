@@ -9,15 +9,17 @@ import {
   PortalField,
   PortalFeedback,
   PortalLoading,
-  portalStyles as s,
+  makePortalStyles,
 } from '@/components/portal/PortalUI';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAuthFlowArrival } from '@/hooks/useAuthFlowArrival';
 import { authRoute } from '@/models/AuthFlow';
 import { getMyInvitations, portalCommand } from '@/services/portal.service';
+import { useThemedStyles } from '@/theme';
 
 export default function CompanyInvitationsScreen() {
+  const s = useThemedStyles(makePortalStyles);
   useAuthFlowArrival();
   const { session } = useAuth();
   const url = Linking.useURL();
@@ -68,6 +70,7 @@ export default function CompanyInvitationsScreen() {
   );
 }
 function Invitations({ needsPassword }: Readonly<{ needsPassword: boolean }>) {
+  const s = useThemedStyles(makePortalStyles);
   const { data, loading, error, refresh } = usePortalData(getMyInvitations);
   const { retryAccess } = useAuth();
   const action = usePortalAction();

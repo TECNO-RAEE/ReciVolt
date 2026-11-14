@@ -6,7 +6,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 const normalize = (value: string) =>
@@ -17,6 +17,8 @@ const normalize = (value: string) =>
     .trim();
 
 export default function DeviceUnacceptedScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { pointId } = useLocalSearchParams<{ pointId?: string }>();
   const { points } = useDiscovery();
@@ -127,7 +129,7 @@ export default function DeviceUnacceptedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: {
     width: '100%',

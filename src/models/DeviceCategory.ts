@@ -168,3 +168,99 @@ export function getCategoryVisual(
     description: customDesc || 'Dispositivos y accesorios electrónicos.',
   };
 }
+
+/** Orden fijo en que se muestran los grupos de categorías (chips del mapa, íconos de pines). */
+export const CATEGORY_GROUP_ORDER = [
+  'especiales',
+  'informatica',
+  'electrodomesticos',
+  'insumos',
+  'herramientas',
+  'juguetes',
+  'otros',
+] as const;
+export type CategoryGroupKey = (typeof CATEGORY_GROUP_ORDER)[number];
+
+export const CATEGORY_GROUP_LABELS: Record<CategoryGroupKey, string> = {
+  especiales: 'Pilas y baterías',
+  informatica: 'Celulares y computadoras',
+  electrodomesticos: 'Electrodomésticos',
+  insumos: 'Cables y cargadores',
+  herramientas: 'Herramientas',
+  juguetes: 'Juguetes y consolas',
+  otros: 'Otros',
+};
+
+/** Ícono (MaterialCommunityIcons) que identifica a cada grupo en los pines del mapa. */
+export const CATEGORY_GROUP_ICONS: Record<
+  CategoryGroupKey,
+  keyof typeof MaterialCommunityIcons.glyphMap
+> = {
+  especiales: 'battery',
+  informatica: 'cellphone',
+  electrodomesticos: 'washing-machine',
+  insumos: 'power-plug',
+  herramientas: 'tools',
+  juguetes: 'gamepad-variant',
+  otros: 'recycle',
+};
+
+function asGroupKey(key: string): CategoryGroupKey {
+  return (CATEGORY_GROUP_ORDER as readonly string[]).includes(key)
+    ? (key as CategoryGroupKey)
+    : 'otros';
+}
+
+export interface CategoryGroup {
+  key: CategoryGroupKey;
+  label: string;
+  categoryIds: string[];
+}
+
+/** Agrupa las categorías disponibles por tipo de residuo, en orden fijo y sin grupos vacíos. */
+export function groupCategories(categories: readonly DeviceCategory[]): CategoryGroup[] {
+  const byKey = new Map<CategoryGroupKey, string[]>();
+  for (const category of categories) {
+    const key = asGroupKey(getDeviceCategoryGroupKey(category));
+    byKey.set(key, [...(byKey.get(key) ?? []), category.id]);
+  }
+  return CATEGORY_GROUP_ORDER.filter((key) => byKey.has(key)).map((key) => ({
+    key,
+    label: CATEGORY_GROUP_LABELS[key],
+    categoryIds: byKey.get(key) ?? [],
+  }));
+}
+
+/** Un grupo está activo cuando todas sus categorías están seleccionadas. */
+export function isGroupSelected(group: CategoryGroup, selectedIds: readonly string[]): boolean {
+  return group.categoryIds.length > 0 && group.categoryIds.every((id) => selectedIds.includes(id));
+}
+
+/** Activa o desactiva todas las categorías de un grupo sin tocar las demás selecciones. */
+export function toggleGroupSelection(group: CategoryGroup, selectedIds: readonly string[]): string[] {
+  if (isGroupSelected(group, selectedIds))
+    return selectedIds.filter((id) => !group.categoryIds.includes(id));
+  return [...new Set([...selectedIds, ...group.categoryIds])];
+}
+
+/**
+ * Grupo "principal" de un punto: el más frecuente entre sus categorías aceptadas
+ * (desempata por el orden fijo de grupos). Sin categorías devuelve 'otros'.
+ */
+export function dominantGroupKey(categories: readonly DeviceCategory[]): CategoryGroupKey {
+  const counts = new Map<CategoryGroupKey, number>();
+  for (const category of categories) {
+    const key = asGroupKey(getDeviceCategoryGroupKey(category));
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  let best: CategoryGroupKey = 'otros';
+  let bestCount = 0;
+  for (const key of CATEGORY_GROUP_ORDER) {
+    const count = counts.get(key) ?? 0;
+    if (count > bestCount) {
+      best = key;
+      bestCount = count;
+    }
+  }
+  return best;
+}

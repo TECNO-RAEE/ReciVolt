@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Text } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CompanyPage } from '@/components/portal/CompanyPage';
-import { PortalFeedback, PortalField, portalStyles as s } from '@/components/portal/PortalUI';
+import { PortalFeedback, PortalField, makePortalStyles } from '@/components/portal/PortalUI';
 import { brand } from '@/config/brand';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData } from '@/models/Portal';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
 import { portalCommand } from '@/services/portal.service';
+import { useThemedStyles } from '@/theme';
 
 export default function CompanyProfileScreen() {
   return (
@@ -17,6 +18,7 @@ export default function CompanyProfileScreen() {
   );
 }
 function CompanyProfile({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const s = useThemedStyles(makePortalStyles);
   const { refresh } = useCompanyPortal();
   const [name, setName] = useState(data.company.name),
     [phone, setPhone] = useState(data.details?.phone ?? ''),

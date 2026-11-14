@@ -23,9 +23,11 @@ import type { Redemption } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { deliveryCommand } from '@/services/delivery.service';
 import { rewardCommand } from '@/services/reward.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function ScannerScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { company } = useAuth();
   const { code: initialCode } = useLocalSearchParams<{ code?: string }>();
 
@@ -65,6 +67,8 @@ function Scanner({
   companyName,
   initialCode,
 }: Readonly<{ companyId: string; companyName: string; initialCode?: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [permission, requestPermission] = useCameraPermissions();
   const [camera, setCamera] = useState(false);
   const scanLock = useRef(false);
@@ -270,7 +274,7 @@ function Scanner({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,

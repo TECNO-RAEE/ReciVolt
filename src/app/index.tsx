@@ -4,11 +4,13 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { roleHome } from '@/models/Access';
 import { authDestination } from '@/models/AuthFlow';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { useAuth } from '@/providers/AuthProvider';
 
 export default function Index() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const {
     session,
     role,
@@ -62,7 +64,7 @@ export default function Index() {
   if (session && role) return <Redirect href={roleHome(role)} />;
   return <Redirect href={onboardingComplete ? '/home' : '/onboarding'} />;
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.background },
   content: { gap: 16, width: '100%', maxWidth: 420, alignSelf: 'center' },
   title: { fontFamily: fonts.bold, fontSize: 24, color: colors.primary },

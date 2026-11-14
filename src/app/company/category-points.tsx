@@ -3,12 +3,12 @@ import { View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { CompanyPage } from '@/components/portal/CompanyPage';
-import { PortalFeedback, PortalField, portalStyles as s } from '@/components/portal/PortalUI';
+import { PortalFeedback, PortalField, makePortalStyles } from '@/components/portal/PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData } from '@/models/Portal';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
 import { portalCommand } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 
 export default function CategoryPointsScreen() {
   return (
@@ -18,6 +18,8 @@ export default function CategoryPointsScreen() {
   );
 }
 function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
   const { refresh } = useCompanyPortal();
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(

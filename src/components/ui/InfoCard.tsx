@@ -7,7 +7,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { colors, fonts } from '@/theme';
+import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
 
 export type InfoCardIcon =
   | {
@@ -44,6 +44,8 @@ export function InfoCard({
   variant = 'default',
   style,
 }: InfoCardProps) {
+  const variantStyles = useThemedStyles(makeVariantStyles);
+  const styles = useThemedStyles(makeStyles);
   const variantStyle = variantStyles[variant];
 
   const hasTitle = title !== undefined && title !== null && title !== '';
@@ -67,7 +69,7 @@ export function InfoCard({
     <View style={[styles.card, variantStyle.card, style]}>
       {(icon != null || hasTitle || hasSubtitle || right != null) && (
         <View style={styles.headerRow}>
-          {renderIcon(icon, variantStyle.iconBg, variantStyle.iconColor)}
+          {renderIcon(icon, variantStyle.iconBg, variantStyle.iconColor, styles)}
 
           {(hasTitle || hasSubtitle) ? (
             <View style={styles.textCol}>
@@ -95,6 +97,7 @@ export function InfoCard({
 }
 
 export function CodePill({ code }: Readonly<{ code: string }>) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.codePill}>
       <Text style={styles.codePillText}>{code}</Text>
@@ -105,7 +108,8 @@ export function CodePill({ code }: Readonly<{ code: string }>) {
 function renderIcon(
   icon: InfoCardIcon | React.ReactNode,
   fallbackBg: string,
-  fallbackColor: string
+  fallbackColor: string,
+  styles: ReturnType<typeof makeStyles>
 ) {
   if (!icon) return null;
 
@@ -136,7 +140,7 @@ function renderIcon(
   );
 }
 
-const variantStyles = {
+const makeVariantStyles = (colors: ThemeColors) => ({
   default: {
     card: {
       backgroundColor: colors.surface,
@@ -157,9 +161,9 @@ const variantStyles = {
     title: { color: colors.primaryDark },
     subtitle: { color: colors.textSecondary },
   },
-};
+});
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     borderWidth: 1,
     borderRadius: 16,

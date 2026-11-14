@@ -7,7 +7,7 @@ import {
   PortalFeedback,
   PortalLink,
   PortalLoading,
-  portalStyles as s,
+  makePortalStyles,
 } from '@/components/portal/PortalUI';
 import {
   PickupCitizenCard,
@@ -18,7 +18,7 @@ import {
 } from '@/components/pickup/PickupOps';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 import {
   canCoordinatePickup,
   canMarkPickupInTransit,
@@ -35,6 +35,8 @@ function initialQuantities(items: PickupItem[]): Record<string, number> {
 }
 
 function ReceiveContent({ pickupId }: Readonly<{ pickupId: string }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
   const loader = useCallback(() => pickupCommand('get', { id: pickupId }), [pickupId]);
   const { data: pickup, loading, error, refresh } = usePortalData(loader);
   const transit = usePortalAction();

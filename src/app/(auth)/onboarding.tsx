@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 
 const slides = [
@@ -25,6 +25,8 @@ const slides = [
   },
 ] as const;
 export default function OnboardingScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { replay } = useLocalSearchParams<{ replay?: string }>();
   const { onboardingComplete, continueAsGuest } = useAuth();
   const [index, setIndex] = useState(0);
@@ -160,7 +162,7 @@ export default function OnboardingScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', padding: 24 },
   skip: { paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center' },

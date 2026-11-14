@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type IconName =
   'person-outline' | 'location-outline' | 'notifications-outline' | 'settings-outline';
@@ -19,6 +19,8 @@ export function ProfileMenuItem({
   icon,
   onPress,
 }: Readonly<ProfileMenuItemProps>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
@@ -37,7 +39,7 @@ export function ProfileMenuItem({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     minHeight: 63,
     flexDirection: 'row',

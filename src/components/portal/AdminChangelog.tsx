@@ -13,14 +13,14 @@ import {
 } from '@/models/Changelog';
 import type { AuditEntry, PortalCompany } from '@/models/Portal';
 import { getChangelog } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 import { AdminEmpty } from './AdminPage';
 import {
   PortalLink,
   PortalListItem,
   PortalLoading,
   PortalSelect,
-  portalStyles as s,
+  makePortalStyles,
 } from './PortalUI';
 
 const groupIcons: Record<AuditGroupKey, ComponentProps<typeof Ionicons>['name']> = {
@@ -37,6 +37,7 @@ export function AdminChangelog({
   companies,
   reload = 0,
 }: Readonly<{ companies: PortalCompany[]; reload?: number }>) {
+  const s = useThemedStyles(makePortalStyles);
   const [page, setPage] = useState(0);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
@@ -149,6 +150,8 @@ function ChangelogEntry({
   open,
   toggle,
 }: Readonly<{ entry: AuditEntry; open: boolean; toggle: () => void }>) {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
   const group = auditGroupOf(entry.action);
   const changes = changelogChanges(entry.details.before, entry.details.after);
   const name = typeof entry.details.name === 'string' ? entry.details.name : null;

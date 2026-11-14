@@ -1,32 +1,34 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
-import { portalStyles as s } from '@/components/portal/PortalUI';
+import { makePortalStyles } from '@/components/portal/PortalUI';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { InfoCard, CodePill } from '@/components/ui/InfoCard';
 import { NumericStepper } from '@/components/ui/NumericStepper';
 import type { Pickup, PickupItem, PickupStatus } from '@/models/Pickup';
 import { getPickupTimeline, pickupStatusNames } from '@/models/Pickup';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { PickupTimeline } from './PickupTimeline';
 
-export const pickupCard = {
+export const makePickupCard = (colors: ThemeColors) => ({
   gap: 12,
   padding: 16,
   borderWidth: 1,
   borderColor: colors.border,
   borderRadius: 12,
   backgroundColor: colors.surface,
-} as const;
+} as const);
 
-const badgePalette: Record<PickupStatus, { backgroundColor: string; color: string }> = {
+const makeBadgePalette = (colors: ThemeColors): Record<PickupStatus, { backgroundColor: string; color: string }> => ({
   REQUESTED: { backgroundColor: colors.surfaceSoft, color: colors.text },
   COORDINATED: { backgroundColor: colors.primarySoft, color: colors.primaryDark },
   IN_TRANSIT: { backgroundColor: colors.primarySoft, color: colors.primaryDark },
   COMPLETED: { backgroundColor: colors.primary, color: colors.textOnPrimary },
   CANCELLED: { backgroundColor: colors.dangerBackground, color: colors.danger },
-};
+});
 
 export function PickupStatusBadge({ status }: Readonly<{ status: PickupStatus }>) {
+  const badgePalette = useThemedStyles(makeBadgePalette);
+  const styles = useThemedStyles(makeStyles);
   const palette = badgePalette[status];
   return (
     <View
@@ -40,6 +42,9 @@ export function PickupStatusBadge({ status }: Readonly<{ status: PickupStatus }>
 
 // Citizen, contact and pickup address. Shared by the coordination and reception screens.
 export function PickupCitizenCard({ pickup }: Readonly<{ pickup: Pickup }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const s = useThemedStyles(makePortalStyles);
   return (
     <InfoCard
       icon={{ name: 'person-outline' }}
@@ -79,6 +84,9 @@ export function PickupMaterialCard({
   quantities?: Record<string, number>;
   onChangeQuantity?: (categoryId: string, quantity: number) => void;
 }>) {
+  const pickupCard = useThemedStyles(makePickupCard);
+  const s = useThemedStyles(makePortalStyles);
+  const styles = useThemedStyles(makeStyles);
   const editable = quantities != null && onChangeQuantity != null;
   return (
     <View style={pickupCard}>
@@ -126,6 +134,7 @@ export function PickupPointsEstimateCard({ points }: Readonly<{ points: number }
 
 // Read-only closing view for pickups that no longer accept operations.
 export function PickupReadOnlySummary({ pickup }: Readonly<{ pickup: Pickup }>) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <>
       <View style={styles.statusRow}>
@@ -154,7 +163,7 @@ export function PickupTariffNote() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,

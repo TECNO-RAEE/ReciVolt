@@ -11,7 +11,7 @@ import {
   InfoSection,
   PointsBadge,
   RewardPhoto,
-  rewardStyles as s,
+  makeRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { rewardExamples } from '@/data/rewardExamples';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
@@ -20,7 +20,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { getReward, rewardCommand } from '@/services/reward.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function RewardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,6 +28,9 @@ export default function RewardDetailScreen() {
   return <RewardDetail key={`${id}:${user?.id ?? 'guest'}`} id={id} />;
 }
 function RewardDetail({ id }: Readonly<{ id: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const s = useThemedStyles(makeRewardStyles);
   const { session } = useAuth();
   const wallet = useWallet();
   const { now } = useDiscovery();
@@ -187,7 +190,7 @@ function RewardDetail({ id }: Readonly<{ id: string }>) {
     </CitizenPage>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   hero: { borderRadius: 18, overflow: 'hidden' },
   backdrop: {
     flex: 1,

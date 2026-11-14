@@ -15,11 +15,13 @@ import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export default function HomeScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { profile, session } = useAuth();
   const wallet = useWallet();
@@ -179,7 +181,7 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: {
     width: '100%',
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#DCEBE0',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },

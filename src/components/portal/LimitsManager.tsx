@@ -5,7 +5,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { AdminPortalData, CompanyLimitRequest } from '@/models/Portal';
 import { portalCommand } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { AdminEmpty } from './AdminPage';
 import {
   OrganizationCard,
@@ -13,7 +13,7 @@ import {
   PortalFeedback,
   PortalField,
   PortalListItem,
-  portalStyles as s,
+  makePortalStyles,
 } from './PortalUI';
 
 const noteLimit = 200;
@@ -27,19 +27,22 @@ const roles = [
   ['Responsable', 'administra su organización, sus puntos y su equipo.'],
   ['Trabajador', 'recibe entregas y valida premios en el local.'],
 ] as const;
-const card = {
+const makeCard = (colors: ThemeColors) => ({
   gap: 16,
   padding: 16,
   borderRadius: 16,
   borderWidth: 1,
   borderColor: colors.border,
   backgroundColor: colors.surface,
-} as const;
+} as const);
 
 export function LimitsManager({
   data,
   refresh,
 }: Readonly<{ data: AdminPortalData; refresh: () => Promise<void> }>) {
+  const colors = useColors();
+  const card = useThemedStyles(makeCard);
+  const s = useThemedStyles(makePortalStyles);
   const pending = data.limitRequests.filter((r) => r.status === 'SUBMITTED');
   const reviewed = data.limitRequests.filter((r) => r.status !== 'SUBMITTED');
   return (
@@ -105,6 +108,8 @@ function LimitRequest({
   currentLimit?: number;
   refresh: () => Promise<void>;
 }>) {
+  const card = useThemedStyles(makeCard);
+  const s = useThemedStyles(makePortalStyles);
   const action = usePortalAction();
   const [note, setNote] = useState('');
   const review = (status: 'APPROVED' | 'REJECTED') =>
@@ -170,6 +175,8 @@ function LimitRequest({
   );
 }
 function StatusLegend() {
+  const colors = useColors();
+  const s = useThemedStyles(makePortalStyles);
   return (
     <View
       style={{

@@ -1,8 +1,44 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import './leaflet.web.css';
+import type { CategoryGroupKey } from '@/models/DeviceCategory';
+import { dominantGroupKey } from '@/models/DeviceCategory';
+import { cellDegreesForZoom, clusterPoints } from '@/models/PointCluster';
+import { fonts, useColors, useTheme, type ThemeColors } from '@/theme';
 import type { PointsMapProps } from './PointsMap.types';
-import { colors, fonts } from '@/theme';
+
+type Leaflet = typeof import('leaflet');
+type LeafletMap = import('leaflet').Map;
+
+const DEFAULT_CENTER: [number, number] = [-34.6037, -58.3816];
+const LOCATION_ZOOM = 14;
+
+/** Glifos 24x24 (Material Design Icons) para cada grupo de categorías. */
+const GLYPHS: Record<CategoryGroupKey, string> = {
+  especiales:
+    'M16.67 4H15V2H9v2H7.33C6.6 4 6 4.6 6 5.33v15.33C6 21.4 6.6 22 7.33 22h9.34c.73 0 1.33-.6 1.33-1.33V5.33C18 4.6 17.4 4 16.67 4z',
+  informatica:
+    'M17 1.01 7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z',
+  electrodomesticos:
+    'M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm7 6.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9zM7 4.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
+  insumos: 'M16 7V3h-2v4h-4V3H8v4H6v7l3 3v4h6v-4l3-3V7h-2z',
+  herramientas:
+    'M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z',
+  juguetes:
+    'M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z',
+  otros:
+    'M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z',
+};
+
+function pinHtml(kind: CategoryGroupKey, selected: boolean, colors: ThemeColors) {
+  const size = selected ? 46 : 38;
+  const bg = selected ? colors.primaryDark : colors.primary;
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};border:${selected ? 3 : 2.5}px solid ${colors.surface};box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;box-sizing:border-box"><svg width="${selected ? 24 : 20}" height="${selected ? 24 : 20}" viewBox="0 0 24 24" aria-hidden="true"><path fill="${colors.textOnPrimary}" fill-rule="evenodd" d="${GLYPHS[kind]}"/></svg></div>`;
+}
+
+function clusterHtml(count: number, colors: ThemeColors) {
+  return `<div style="width:54px;height:54px;border-radius:50%;background:${colors.primarySoft};display:flex;align-items:center;justify-content:center;opacity:.95"><div style="width:42px;height:42px;border-radius:50%;background:${colors.primary};border:2.5px solid ${colors.surface};display:flex;align-items:center;justify-content:center;box-sizing:border-box;color:${colors.textOnPrimary};font:700 15px ${fonts.bold},Roboto,sans-serif">${count > 99 ? '99+' : count}</div></div>`;
+}
 
 // Leaflet touches window on import; load it only after mounting (Expo static rendering).
 export function PointsMap({
@@ -13,27 +49,27 @@ export function PointsMap({
   selectedId = null,
   onSelect,
 }: PointsMapProps) {
+  const colors = useColors();
+  const { scheme } = useTheme();
   const element = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
-  // onSelect se llama desde un listener de Leaflet creado una sola vez; una ref evita
-  // que una nueva identidad de función (inline en el padre) dispare el efecto pesado de abajo.
+  const [view, setView] = useState<{ L: Leaflet; map: LeafletMap } | null>(null);
+  const [zoom, setZoom] = useState(11);
+  // onSelect se llama desde listeners de Leaflet; una ref evita reconstruir el mapa
+  // cuando el padre pasa una nueva identidad de función.
   const onSelectRef = useRef(onSelect);
   useEffect(() => {
     onSelectRef.current = onSelect;
   });
-  // markers + iconos por id, para que el efecto de selección solo cambie el ícono
-  // (marker.setIcon) en vez de reconstruir todo el mapa en cada tap.
-  const markersRef = useRef<Map<string, import('leaflet').Marker>>(new Map());
-  const iconsRef = useRef<{
-    normal: import('leaflet').DivIcon;
-    selected: import('leaflet').DivIcon;
-  } | null>(null);
+
+  // 1) El mapa se crea una sola vez: filtros, zoom y selección no lo reinician.
   useEffect(() => {
     let cancelled = false;
     let dispose: (() => void) | undefined;
     void import('leaflet')
-      .then((L) => {
+      .then((module) => {
         if (cancelled || !element.current) return;
+        const L = ((module as { default?: Leaflet }).default ?? module) as Leaflet;
         setError(false);
         const map = L.map(element.current, {
           zoomControl: !preview,
@@ -43,6 +79,7 @@ export function PointsMap({
           touchZoom: !preview,
           boxZoom: !preview,
         });
+        map.setView(DEFAULT_CENTER, 11);
         const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -50,52 +87,14 @@ export function PointsMap({
         tiles.on('tileerror', () => {
           if (!cancelled) setError(true);
         });
-        const makeIcon = (color: string) =>
-          L.divIcon({
-            className: '',
-            html: `<svg width="26" height="34" viewBox="0 0 26 34" aria-hidden="true"><path fill="${color}" stroke="white" stroke-width="2" d="M13 33S1 20 1 13a12 12 0 0 1 24 0c0 7-12 20-12 20Z"/><circle cx="13" cy="13" r="4" fill="white"/></svg>`,
-            iconSize: [26, 34],
-            iconAnchor: [13, 34],
-          });
-        const icon = makeIcon(colors.primary);
-        const selectedIcon = makeIcon(colors.primaryDark);
-        iconsRef.current = { normal: icon, selected: selectedIcon };
-        markersRef.current = new Map();
-        const bounds: [number, number][] = [];
-        points.forEach((point) => {
-          const coordinate: [number, number] = [point.latitude, point.longitude];
-          bounds.push(coordinate);
-          const title = `${point.name}${point.demo ? ' · Punto verde de ejemplo' : ''}`;
-          const label = document.createElement('span');
-          label.textContent = point.demo ? title : `${title} · ${point.companyName}`;
-          const marker = L.marker(coordinate, {
-            icon: point.id === selectedId ? selectedIcon : icon,
-            title,
-            alt: title,
-          }).bindTooltip(label);
-          marker.on('add', () => {
-            marker.getElement()?.setAttribute('aria-label', `Ver ${title}`);
-          });
-          marker.on('click', () => onSelectRef.current(point));
-          marker.addTo(map);
-          markersRef.current.set(point.id, marker);
-        });
-        if (location) {
-          const coordinate: [number, number] = [location.latitude, location.longitude];
-          bounds.push(coordinate);
-          L.circleMarker(coordinate, { radius: 6, color: colors.brandDark, fillOpacity: 1 })
-            .addTo(map)
-            .bindTooltip('Tu ubicación');
-        }
-        if (bounds.length) map.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
-        else map.setView([-34.6037, -58.3816], 11);
+        map.on('zoomend', () => setZoom(map.getZoom()));
         const observer = new ResizeObserver(() => map.invalidateSize());
         observer.observe(element.current);
+        setView({ L, map });
         dispose = () => {
           observer.disconnect();
           map.remove();
-          markersRef.current = new Map();
-          iconsRef.current = null;
+          setView(null);
         };
       })
       .catch(() => {
@@ -105,23 +104,95 @@ export function PointsMap({
       cancelled = true;
       dispose?.();
     };
-    // selectedId deliberadamente afuera: lo maneja el efecto de abajo, que solo
-    // cambia el ícono del marker correspondiente en vez de recrear el mapa entero.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, location, preview]);
-  // Resalta el punto seleccionado sin reconstruir el mapa (evita el parpadeo/reset
-  // de zoom y centro que ocurría cuando selectedId estaba en el efecto de arriba).
+  }, [preview]);
+
+  const items = useMemo(
+    () => clusterPoints(points, preview ? 0 : cellDegreesForZoom(zoom)),
+    [points, zoom, preview]
+  );
+
+  // 2) Pines y clusters: se redibujan al cambiar puntos, zoom, selección o tema.
   useEffect(() => {
-    const icons = iconsRef.current;
-    if (!icons) return;
-    markersRef.current.forEach((marker, id) => {
-      marker.setIcon(id === selectedId ? icons.selected : icons.normal);
+    if (!view) return;
+    const { L, map } = view;
+    const layer = L.layerGroup().addTo(map);
+    items.forEach((entry) => {
+      if (entry.kind === 'cluster') {
+        const marker = L.marker([entry.latitude, entry.longitude], {
+          icon: L.divIcon({
+            className: '',
+            html: clusterHtml(entry.count, colors),
+            iconSize: [54, 54],
+            iconAnchor: [27, 27],
+          }),
+          title: `${entry.count} puntos verdes agrupados`,
+          alt: `${entry.count} puntos verdes agrupados. Tocá para acercar`,
+        });
+        marker.on('click', () => {
+          const bounds = L.latLngBounds(entry.items.map((p) => [p.latitude, p.longitude]));
+          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+        });
+        marker.addTo(layer);
+        return;
+      }
+      const point = entry.item;
+      const selected = point.id === selectedId;
+      const size = selected ? 46 : 38;
+      const title = `${point.name}${point.demo ? ' · Punto verde de ejemplo' : ''}`;
+      const label = document.createElement('span');
+      label.textContent = point.demo ? title : `${title} · ${point.companyName}`;
+      const marker = L.marker([point.latitude, point.longitude], {
+        icon: L.divIcon({
+          className: '',
+          html: pinHtml(dominantGroupKey(point.categories ?? []), selected, colors),
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+        }),
+        title,
+        alt: title,
+        zIndexOffset: selected ? 1000 : 0,
+      }).bindTooltip(label);
+      marker.on('add', () => marker.getElement()?.setAttribute('aria-label', `Ver ${title}`));
+      marker.on('click', () => onSelectRef.current(point));
+      marker.addTo(layer);
     });
-  }, [selectedId]);
+    if (location) {
+      L.circleMarker([location.latitude, location.longitude], {
+        radius: 7,
+        color: colors.surface,
+        weight: 2,
+        fillColor: colors.accent,
+        fillOpacity: 1,
+      })
+        .addTo(layer)
+        .bindTooltip('Tu ubicación');
+    }
+    return () => {
+      layer.remove();
+    };
+  }, [view, items, selectedId, location, colors]);
+
+  // 3) Encuadre: al cambiar los puntos se muestran todos...
+  useEffect(() => {
+    if (!view) return;
+    const bounds = points.map((p): [number, number] => [p.latitude, p.longitude]);
+    if (bounds.length) view.map.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
+    // La ubicación se maneja en el efecto siguiente.
+  }, [view, points]);
+
+  // ...y al conocer la ubicación del usuario se centra el mapa en ella.
+  const lat = location?.latitude;
+  const lng = location?.longitude;
+  useEffect(() => {
+    if (!view || preview || lat === undefined || lng === undefined) return;
+    view.map.setView([lat, lng], LOCATION_ZOOM, { animate: true });
+  }, [view, lat, lng, preview]);
+
   return (
     <View style={fill ? { flex: 1, gap: 8 } : { gap: 8 }}>
       <div
         ref={element}
+        className={scheme === 'dark' ? 'rv-map-dark' : undefined}
         aria-label="Mapa de puntos verdes"
         style={{
           height: fill ? '100%' : preview ? 230 : 380,

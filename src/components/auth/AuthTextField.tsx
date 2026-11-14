@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -31,6 +31,8 @@ export function AuthTextField({
   style,
   ...inputProps
 }: AuthTextFieldProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [visible, setVisible] = useState(false);
   return (
     <>
@@ -69,7 +71,7 @@ export function AuthTextField({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   label: {
     height: 24,
     fontFamily: fonts.semiBold,

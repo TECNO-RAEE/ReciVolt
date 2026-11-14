@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { makeRewardStyles } from '@/components/rewards/RewardsUI';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   getActivityHistoryPage,
@@ -19,7 +19,7 @@ import {
   type ActivityEntry,
   type ActivityPageCursor,
 } from '@/services/activity.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const filters = ['Todos', 'Entregas', 'Retiros', 'Canjes'] as const;
 type Filter = (typeof filters)[number];
@@ -36,6 +36,9 @@ export default function MyActivityScreen() {
 }
 
 function MyActivity() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const s = useThemedStyles(makeRewardStyles);
   const params = useLocalSearchParams<{ tab?: string }>();
   const initialFilter =
     filters.find((filter) => filter.toLowerCase() === params.tab?.toLowerCase()) ?? 'Todos';
@@ -218,6 +221,9 @@ function ActivitySeparator() {
 }
 
 function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const s = useThemedStyles(makeRewardStyles);
 
   return (
     <Pressable
@@ -260,7 +266,7 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   listHeader: { paddingBottom: 16 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   filter: { minHeight: 44, minWidth: 72, paddingHorizontal: 14, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },

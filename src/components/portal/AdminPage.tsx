@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { PortalNav, portalStyles } from './PortalUI';
-import { colors } from '@/theme';
+import { PortalNav, makePortalStyles } from './PortalUI';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export function AdminPage({
@@ -36,6 +36,8 @@ export function AdminPage({
   footer?: ReactNode;
   children: ReactNode;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const [refreshing, setRefreshing] = useState(false);
   const reload = () => {
@@ -114,6 +116,9 @@ export function AdminEmpty({
   description: string;
   icon?: ComponentProps<typeof Ionicons>['name'];
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const portalStyles = useThemedStyles(makePortalStyles);
   return (
     <View style={styles.empty}>
       <Ionicons name={icon} color={colors.textSecondary} size={44} />
@@ -122,7 +127,7 @@ export function AdminEmpty({
     </View>
   );
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.background },
   frame: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 16 },
   navRow: { flexDirection: 'row', alignItems: 'stretch' },

@@ -2,16 +2,19 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, makeRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { PortalFeedback } from '@/components/portal/PortalUI';
+import { ThemeSetting } from '@/components/settings/ThemeSetting';
 import { brand } from '@/config/brand';
 import { usePortalAction } from '@/hooks/usePortalData';
 import { roleHome } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles } from '@/theme';
 
 export default function SettingsScreen() {
+  const colors = useColors();
+  const s = useThemedStyles(makeRewardStyles);
   const { session, profile, role, logout } = useAuth();
   const action = usePortalAction();
   return (
@@ -47,6 +50,8 @@ export default function SettingsScreen() {
           </>
         )}
       </View>
+      <Text style={s.subtitle}>Apariencia</Text>
+      <ThemeSetting />
       <Text style={s.subtitle}>Información legal</Text>
       <Pressable
         accessibilityRole="button"

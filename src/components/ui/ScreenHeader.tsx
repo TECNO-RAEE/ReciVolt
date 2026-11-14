@@ -3,7 +3,7 @@ import { router, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function ScreenHeader({
   title,
@@ -16,6 +16,8 @@ export function ScreenHeader({
   onBack?: () => void;
   action?: ReactNode;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <View testID="screen-header" style={styles.header}>
@@ -36,7 +38,7 @@ export function ScreenHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { backgroundColor: colors.background },
   header: {
     width: '100%',

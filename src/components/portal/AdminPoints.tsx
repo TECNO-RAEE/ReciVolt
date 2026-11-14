@@ -10,7 +10,7 @@ import {
   PortalChoice,
   PortalBadge,
   PortalListItem,
-  portalStyles as s,
+  makePortalStyles,
 } from './PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import type { ManagedPoint, PortalCompany } from '@/models/Portal';
@@ -22,6 +22,7 @@ import {
   portalCommand,
 } from '@/services/portal.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
+import { useThemedStyles } from '@/theme';
 
 const loadOrganizations = () =>
   Promise.all([getAdminPoints(), getActiveRewardCompanyIds()]).then(
@@ -43,6 +44,7 @@ export function AdminPoints({
   onListChange?: (list: boolean) => void;
   reload?: number;
 }>) {
+  const s = useThemedStyles(makePortalStyles);
   const [selected, setSelected] = useState<PortalCompany | null | undefined>();
   const [search, setSearch] = useState('');
   const [pointId, setPointId] = useState<string>();
@@ -180,6 +182,7 @@ function PointWorkspace({
   back: () => void;
   saved: () => Promise<void>;
 }>) {
+  const s = useThemedStyles(makePortalStyles);
   const loader = useCallback(
     () => (company ? getCompanyPortal(company.id) : getNewPointData()),
     [company]
