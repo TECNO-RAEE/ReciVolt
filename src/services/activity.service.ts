@@ -4,6 +4,7 @@ import { pickupStatusNames } from '@/models/Pickup';
 import { getDeliveryHistory } from '@/services/delivery.service';
 import { getPickupHistory } from '@/services/pickup.service';
 import { getRedemptions } from '@/services/reward.service';
+import { activityDestination, settleActivitySources } from '@/models/ActivitySources';
 
 export type ActivityKind = 'DELIVERY' | 'PICKUP' | 'REDEMPTION';
 
@@ -30,6 +31,7 @@ export interface ActivityPage {
   entries: ActivityEntry[];
   next: ActivityPageCursor;
   hasMore: boolean;
+  errors: Partial<Record<keyof ActivityPageCursor, string>>;
 }
 
 function pickupEventDate(pickup: Awaited<ReturnType<typeof getPickupHistory>>[number]) {
@@ -47,14 +49,23 @@ function pickupEventDate(pickup: Awaited<ReturnType<typeof getPickupHistory>>[nu
   }
 }
 
-export async function getActivityHistoryPage(
-  cursor: ActivityPageCursor
-): Promise<ActivityPage> {
-  const [deliveries, pickups, redemptions] = await Promise.all([
-    cursor.deliveries === null ? [] : getDeliveryHistory(null, cursor.deliveries),
-    cursor.pickups === null ? [] : getPickupHistory(null, cursor.pickups),
-    cursor.redemptions === null ? [] : getRedemptions(cursor.redemptions),
-  ]);
+export async function getActivityHistoryPage(cursor: ActivityPageCursor): Promise<ActivityPage> {
+  const settled = await settleActivitySources<{
+    deliveries: Awaited<ReturnType<typeof getDeliveryHistory>>;
+    pickups: Awaited<ReturnType<typeof getPickupHistory>>;
+    redemptions: Awaited<ReturnType<typeof getRedemptions>>;
+  }>({
+    deliveries:
+      cursor.deliveries === null
+        ? Promise.resolve([])
+        : getDeliveryHistory(null, cursor.deliveries),
+    pickups: cursor.pickups === null ? Promise.resolve([]) : getPickupHistory(null, cursor.pickups),
+    redemptions:
+      cursor.redemptions === null ? Promise.resolve([]) : getRedemptions(cursor.redemptions),
+  });
+  const deliveries = settled.values.deliveries ?? [];
+  const pickups = settled.values.pickups ?? [];
+  const redemptions = settled.values.redemptions ?? [];
 
   const entries: ActivityEntry[] = [
     ...deliveries.map((delivery) => {
@@ -65,11 +76,16 @@ export async function getActivityHistoryPage(
         title: deliveryStatusNames[status],
         source: delivery.pointName || delivery.companyName,
         detail: delivery.items
-          .map((item) => `${item.categoryName} × ${item.confirmedQuantity ?? item.declaredQuantity}`)
+          .map(
+            (item) => `${item.categoryName} × ${item.confirmedQuantity ?? item.declaredQuantity}`
+          )
           .join(' · '),
-        createdAt: status === 'CONFIRMED' ? delivery.confirmedAt ?? delivery.createdAt : delivery.createdAt,
+        createdAt:
+          status === 'CONFIRMED'
+            ? (delivery.confirmedAt ?? delivery.createdAt)
+            : delivery.createdAt,
         amount: status === 'CONFIRMED' ? delivery.points : null,
-        destination: { pathname: '/delivery/[id]', params: { id: delivery.id } } as const,
+        destination: activityDestination('DELIVERY', delivery.id),
       };
     }),
     ...pickups.map((pickup) => ({
@@ -82,7 +98,7 @@ export async function getActivityHistoryPage(
         .join(' · '),
       createdAt: pickupEventDate(pickup),
       amount: pickup.status === 'COMPLETED' ? pickup.points : null,
-      destination: { pathname: '/pickup/[id]', params: { id: pickup.id } } as const,
+      destination: activityDestination('PICKUP', pickup.id),
     })),
     ...redemptions.map((redemption) => ({
       id: `redemption:${redemption.id}`,
@@ -93,19 +109,21 @@ export async function getActivityHistoryPage(
       // Points are charged when the redemption is reserved, not when the reward is delivered.
       createdAt: redemption.createdAt,
       amount: -redemption.pointsCost,
-      destination: { pathname: '/redemption/[id]', params: { id: redemption.id } } as const,
+      destination: activityDestination('REDEMPTION', redemption.id),
     })),
   ];
 
   const next: ActivityPageCursor = {
     deliveries:
-      cursor.deliveries !== null && deliveries.length === PAGE_SIZE
+      !settled.errors.deliveries && cursor.deliveries !== null && deliveries.length === PAGE_SIZE
         ? cursor.deliveries + 1
         : null,
     pickups:
-      cursor.pickups !== null && pickups.length === PAGE_SIZE ? cursor.pickups + 1 : null,
+      !settled.errors.pickups && cursor.pickups !== null && pickups.length === PAGE_SIZE
+        ? cursor.pickups + 1
+        : null,
     redemptions:
-      cursor.redemptions !== null && redemptions.length === PAGE_SIZE
+      !settled.errors.redemptions && cursor.redemptions !== null && redemptions.length === PAGE_SIZE
         ? cursor.redemptions + 1
         : null,
   };
@@ -114,6 +132,7 @@ export async function getActivityHistoryPage(
     entries: sortActivityEntries(entries),
     next,
     hasMore: next.deliveries !== null || next.pickups !== null || next.redemptions !== null,
+    errors: settled.errors,
   };
 }
 

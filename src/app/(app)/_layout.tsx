@@ -66,8 +66,9 @@ export default function AppLayout() {
         }}
       />
 
-      <Tabs.Screen name="my-activity" options={{ href: null }} />
-      <Tabs.Screen name="my-points" options={{ href: null }} />
+      {/* Keep these routes pushable from the app while omitting their tab buttons. */}
+      <Tabs.Screen name="my-activity" options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="my-points" options={{ tabBarButton: () => null }} />
 
       <Tabs.Screen
         name="profile"
