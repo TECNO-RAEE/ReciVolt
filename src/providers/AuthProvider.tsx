@@ -18,6 +18,7 @@ import {
 } from '@/models/Access';
 import type { Profile } from '@/models/Profile';
 import type { AuthIntent } from '@/models/AuthFlow';
+import { accountForUser } from '@/models/AuthAccount';
 import { getAccess } from '@/services/access.service';
 import { logout as logoutService, updateRecoveredPassword } from '@/services/auth.service';
 import { getAccessPreferences, saveOnboardingComplete } from '@/services/onboarding.service';
@@ -47,7 +48,7 @@ type AuthContextValue = {
 };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 type LoadedAccount = {
-  token: string;
+  userId: string;
   profile: Profile | null;
   access: Access | null;
   error: string | null;
@@ -107,12 +108,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     void Promise.all([getProfile(userId), getAccess(userId, session?.user.email)])
       .then(([profile, access]) => {
         if (!profile) throw new Error('No se encontró tu perfil.');
-        if (!cancelled) setAccount({ token, profile, access, error: null });
+        if (!cancelled) setAccount({ userId, profile, access, error: null });
       })
       .catch(() => {
         if (!cancelled)
           setAccount({
-            token,
+            userId,
             profile: null,
             access: null,
             error:
@@ -124,7 +125,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     };
   }, [token, userId, session?.user.email, revision]);
 
-  const currentAccount = account?.token === token ? account : null;
+  // A token refresh changes credentials, not the authenticated user's identity.
+  // Keep the resolved role during that refresh so Stack.Protected does not
+  // temporarily remove the citizen route group and send the person to Inicio.
+  const currentAccount = accountForUser(account, userId);
   const access = currentAccount?.access ?? null;
   const role = session ? resolveRole(access, selectedCompanyId) : null;
   const company =
