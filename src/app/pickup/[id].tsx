@@ -294,7 +294,10 @@ export default function PickupDetailScreen() {
                 </View>
                 <View style={styles.quantityBadge}>
                   <Text style={styles.quantityText}>
-                    {it.confirmedQuantity ?? it.declaredQuantity} {it.declaredQuantity === 1 ? 'unidad' : 'unidades'}
+                    {(() => {
+                      const displayQuantity = it.confirmedQuantity ?? it.declaredQuantity;
+                      return `${displayQuantity} ${displayQuantity === 1 ? 'unidad' : 'unidades'}`;
+                    })()}
                   </Text>
                 </View>
               </View>
@@ -327,7 +330,7 @@ export default function PickupDetailScreen() {
         {/* 7. Acciones principales */}
         <View style={styles.actionsContainer}>
           <ActionButton
-            title="Ver detalle de la solicitud"
+            title="Ver código / QR de retiro"
             secondary
             onPress={() => setDetailsModalVisible(true)}
           />
@@ -452,11 +455,13 @@ export default function PickupDetailScreen() {
             <View style={styles.confirmModalActions}>
               <ActionButton
                 title="Conservar solicitud"
-                secondary
+                secondary={false}
+                disabled={action.busy}
                 onPress={() => setCancelModalVisible(false)}
               />
               <ActionButton
                 title="Sí, cancelar retiro"
+                secondary={true}
                 loading={action.busy}
                 onPress={handleConfirmCancel}
               />

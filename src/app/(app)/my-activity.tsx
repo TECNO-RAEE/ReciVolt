@@ -12,6 +12,13 @@ import {
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { rewardStyles as s } from '@/components/rewards/RewardsUI';
+import {
+  activityFilters,
+  filterActivityEntries,
+  getActivityPresentationState,
+  resolveActivityFilter,
+  type ActivityFilter,
+} from '@/models/ActivityFilter';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   getActivityHistoryPage,
@@ -21,13 +28,6 @@ import {
 } from '@/services/activity.service';
 import { colors, fonts } from '@/theme';
 
-const filters = ['Todos', 'Entregas', 'Retiros', 'Canjes'] as const;
-type Filter = (typeof filters)[number];
-const kindForFilter: Record<Exclude<Filter, 'Todos'>, ActivityEntry['kind']> = {
-  Entregas: 'DELIVERY',
-  Retiros: 'PICKUP',
-  Canjes: 'REDEMPTION',
-};
 const initialCursor = (): ActivityPageCursor => ({ deliveries: 0, pickups: 0, redemptions: 0 });
 
 export default function MyActivityScreen() {
@@ -37,9 +37,13 @@ export default function MyActivityScreen() {
 
 function MyActivity() {
   const params = useLocalSearchParams<{ tab?: string }>();
-  const initialFilter =
-    filters.find((filter) => filter.toLowerCase() === params.tab?.toLowerCase()) ?? 'Todos';
-  const [filter, setFilter] = useState<Filter>(initialFilter);
+  const requestedFilter = resolveActivityFilter(params.tab);
+  const [filter, setFilter] = useState<ActivityFilter>(requestedFilter);
+
+  useEffect(() => {
+    const syncFilter = setTimeout(() => setFilter(requestedFilter), 0);
+    return () => clearTimeout(syncFilter);
+  }, [requestedFilter]);
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [nextCursor, setNextCursor] = useState<ActivityPageCursor>(initialCursor);
   const [hasMore, setHasMore] = useState(true);
@@ -113,29 +117,36 @@ function MyActivity() {
     }
   }, [hasMore, nextCursor]);
 
-  const visible = useMemo(
-    () =>
-      entries.filter((entry) => filter === 'Todos' || entry.kind === kindForFilter[filter]),
-    [entries, filter]
-  );
+  const visible = useMemo(() => filterActivityEntries(entries, filter), [entries, filter]);
   const hasPickups = entries.some((entry) => entry.kind === 'PICKUP');
   const mayHaveMorePickups = nextCursor.pickups !== null;
-  const showRetirementInfo =
-    !hasPickups &&
-    !mayHaveMorePickups &&
-    (filter === 'Retiros' || filter === 'Todos');
+  const presentation = getActivityPresentationState({
+    filter,
+    visibleCount: visible.length,
+    totalCount: entries.length,
+    hasPickups,
+    mayHaveMorePickups,
+    loading,
+    error,
+  });
+  const { showRetirementInfo } = presentation;
 
   const listHeader = (
     <View style={styles.listHeader}>
       <View style={styles.filters} accessibilityRole="tablist">
-        {filters.map((item) => {
+        {activityFilters.map((item) => {
           const selected = filter === item;
           return (
             <Pressable
               key={item}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
-              onPress={() => setFilter(item)}
+              onPress={() => {
+                setFilter(item);
+                if (params.tab !== undefined || item !== 'Todos') {
+                  router.setParams({ tab: item === 'Todos' ? undefined : item });
+                }
+              }}
               style={[styles.filter, selected && styles.selectedFilter]}
             >
               <Text style={[styles.filterText, selected && styles.selectedFilterText]}>{item}</Text>
@@ -147,15 +158,17 @@ function MyActivity() {
   );
 
   const listEmpty = () => {
-    if (loading) return <ActivityIndicator accessibilityLabel="Cargando actividad" color={colors.primary} />;
-    if (error && entries.length === 0) {
+    if (presentation.showLoading) {
+      return <ActivityIndicator accessibilityLabel="Cargando actividad" color={colors.primary} />;
+    }
+    if (presentation.showInitialError) {
       return (
         <Pressable onPress={() => void reload()} style={s.card} accessibilityRole="button">
           <Text style={s.body}>No pudimos cargar tu actividad. Tocá para reintentar.</Text>
         </Pressable>
       );
     }
-    if (filter !== 'Retiros' && !showRetirementInfo) {
+    if (presentation.showEmptySectionMessage) {
       return (
         <View style={s.card}>
           <Text style={s.body}>Todavía no hay actividad en esta sección.</Text>
