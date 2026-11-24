@@ -52,6 +52,7 @@ export function PortalPage({
   subtitle,
   children,
   back,
+  onBack,
   action,
   onRefresh,
 }: Readonly<{
@@ -59,13 +60,14 @@ export function PortalPage({
   subtitle?: string;
   children: ReactNode;
   back?: Href;
+  onBack?: () => void;
   action?: ReactNode;
   onRefresh?: () => void;
 }>) {
   const scroll = useScrollReset();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenHeader title={title} back={back} action={action} />
+      <ScreenHeader title={title} back={back} onBack={onBack} action={action} />
       <ScrollView
         ref={scroll}
         keyboardShouldPersistTaps="handled"

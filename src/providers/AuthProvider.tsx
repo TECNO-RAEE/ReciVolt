@@ -41,6 +41,8 @@ type AuthContextValue = {
   completeOnboarding: () => Promise<void>;
   retryAccess: () => void;
   selectCompany: (companyId: string) => void;
+  invitationsPostponed: boolean;
+  postponeInvitations: () => void;
   authIntent: AuthIntent | null;
   prepareAuth: (intent: AuthIntent | null) => void;
   clearAuthIntent: () => void;
@@ -61,6 +63,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [recoveringPassword, setRecoveringPassword] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [postponedInvitationsUserId, setPostponedInvitationsUserId] = useState<string | null>(
+    null
+  );
   const [revision, setRevision] = useState(0);
   const [authIntent, prepareAuth] = useState<AuthIntent | null>(null);
   const clearAuthIntent = useCallback(() => prepareAuth(null), []);
@@ -91,6 +96,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         setRecoveringPassword(false);
         setAccount(null);
         setSelectedCompanyId(null);
+        setPostponedInvitationsUserId(null);
       }
     });
     return () => {
@@ -170,6 +176,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const selectCompany = useCallback((companyId: string) => {
     setSelectedCompanyId(companyId);
   }, []);
+  const invitationsPostponed = Boolean(userId && postponedInvitationsUserId === userId);
+  const postponeInvitations = useCallback(() => {
+    if (userId) setPostponedInvitationsUserId(userId);
+  }, [userId]);
 
   const value = useMemo(
     () => ({
@@ -190,6 +200,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       completeOnboarding,
       retryAccess,
       selectCompany,
+      invitationsPostponed,
+      postponeInvitations,
       authIntent,
       prepareAuth,
       clearAuthIntent,
@@ -210,6 +222,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       completeOnboarding,
       retryAccess,
       selectCompany,
+      invitationsPostponed,
+      postponeInvitations,
       authIntent,
       clearAuthIntent,
     ]

@@ -2,7 +2,7 @@ import { Redirect } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { roleHome } from '@/models/Access';
+import { roleHome, shouldRedirectToPendingInvitations } from '@/models/Access';
 import { authDestination } from '@/models/AuthFlow';
 import { colors, fonts } from '@/theme';
 
@@ -19,6 +19,7 @@ export default function Index() {
     accessError,
     retryAccess,
     logout,
+    invitationsPostponed,
     authIntent,
   } = useAuth();
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -57,7 +58,14 @@ export default function Index() {
   if (session && role && role !== 'citizen') return <Redirect href={roleHome(role)} />;
   if (session && role === 'citizen' && authIntent)
     return <Redirect href={authDestination(authIntent)} />;
-  if (session && role === 'citizen' && access?.hasPendingInvitations)
+  if (
+    session &&
+    shouldRedirectToPendingInvitations({
+      role,
+      hasPendingInvitations: access?.hasPendingInvitations,
+      invitationsPostponed,
+    })
+  )
     return <Redirect href="/company-invitations" />;
   if (session && role) return <Redirect href={roleHome(role)} />;
   return <Redirect href={onboardingComplete ? '/home' : '/onboarding'} />;
