@@ -27,9 +27,15 @@ const realPoint = {
   description: null,
   time_zone: 'America/Argentina/Buenos_Aires',
   pickup_enabled: false,
+  intake_confirmed: true,
   companies: { name: 'Organización de prueba', status: 'ACTIVE' },
   green_point_schedules: [],
   green_point_device_categories: categories.map((category) => ({ device_categories: category })),
+  green_point_device_policies: categories.map((category) => ({
+    device_category_id: category.id,
+    mode: 'onsite',
+    device_categories: category,
+  })),
 };
 
 async function setup(page, state = { mode: 'empty' }) {
@@ -68,7 +74,7 @@ test('invitado explora la muestra en Inicio, mapa, lista y ficha sin registrar e
     await page.getByRole('button', { name: rowName, exact: true }).waitFor();
     await capture(page, 'home-mobile');
     await page.goto(base + '/green-points', { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: rowName, exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Ver detalle de Universidad de Pilar', exact: true }).waitFor();
     await page
       .getByLabel('Ver Universidad de Pilar · Punto verde de ejemplo', { exact: true })
       .waitFor()
@@ -87,7 +93,9 @@ test('invitado explora la muestra en Inicio, mapa, lista y ficha sin registrar e
       });
     await page.getByRole('button', { name: 'Lista', exact: true }).click();
     await page.getByRole('textbox', { name: 'Buscar puntos verdes' }).fill('pueyrredon');
-    await page.getByRole('button', { name: 'Computadoras', exact: true }).click();
+    await page.getByRole('button', { name: 'Filtrar puntos verdes' }).click();
+    await page.getByRole('checkbox', { name: 'Computadoras', exact: true }).click();
+    await page.getByRole('button', { name: 'Aplicar filtros', exact: true }).click();
     await page.getByRole('button', { name: rowName, exact: true }).waitFor();
     await capture(page, 'list-mobile');
     await page.getByRole('button', { name: rowName, exact: true }).click();
@@ -110,7 +118,7 @@ test('invitado explora la muestra en Inicio, mapa, lista y ficha sin registrar e
     await page.getByRole('textbox', { name: 'Buscar puntos verdes' }).fill('inexistente');
     await page.getByText('No encontramos puntos con estos filtros.', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Limpiar filtros', exact: true }).click();
-    await page.getByRole('button', { name: rowName, exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Ver detalle de Universidad de Pilar', exact: true }).waitFor();
     await page.getByRole('textbox', { name: 'Buscar puntos verdes' }).focus();
     await page.keyboard.press('Tab');
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('role')), 'button');
@@ -136,8 +144,7 @@ test('carga y error no se sustituyen por la muestra, y los puntos reales tienen 
     const errors = await setup(page, state);
     await page.goto(base + '/green-points', { waitUntil: 'networkidle' });
     await page
-      .getByRole('button', { name: 'Ver Punto operativo de prueba', exact: true })
-      .first()
+      .getByRole('button', { name: 'Ver detalle de Punto operativo de prueba', exact: true })
       .waitFor();
     assert.equal(await page.getByRole('button', { name: rowName, exact: true }).count(), 0);
     await page.getByRole('textbox', { name: 'Buscar puntos verdes' }).fill('universidad');
@@ -155,7 +162,7 @@ test('carga y error no se sustituyen por la muestra, y los puntos reales tienen 
     assert.equal(await page.getByRole('button', { name: rowName, exact: true }).count(), 0);
     state.mode = 'empty';
     await page.getByRole('button', { name: 'Reintentar', exact: true }).click();
-    await page.getByRole('button', { name: rowName, exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Ver detalle de Universidad de Pilar', exact: true }).waitFor();
     state.mode = 'real';
     await page.goto(base + '/point/' + exampleId, { waitUntil: 'networkidle' });
     await page.getByText('Punto no disponible', { exact: true }).waitFor();

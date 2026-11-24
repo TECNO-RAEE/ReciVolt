@@ -180,7 +180,7 @@ test('ciudadano con saldo de lectura simulado suficiente no reserva la muestra n
     await page.waitForURL('**/home');
     assert.equal(localLogin, true);
     await page.goto(base + '/rewards', { waitUntil: 'networkidle' });
-    await page.getByText('500 puntos disponibles', { exact: true }).waitFor();
+    await page.getByText('500 puntos', { exact: true }).waitFor();
     await page.getByRole('button', { name: cafeCard, exact: true }).click();
     await page.waitForURL('**/reward/example-cafe');
     const button = page.getByRole('button', { name: 'Premio de ejemplo', exact: true });
