@@ -87,13 +87,20 @@ export function PointsCard({
   hint?: string;
   showPointsUnit?: boolean;
 }>) {
+  const accessibilityLabel = guest
+    ? 'Creá tu cuenta para sumar puntos'
+    : error
+      ? 'No pudimos cargar tu saldo. Tocá para reintentar.'
+      : onPress
+        ? 'Ver mis puntos globales'
+        : 'Tus puntos';
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={guest ? 'Creá tu cuenta para sumar puntos' : 'Ver mis puntos globales'}
+      accessibilityLabel={accessibilityLabel}
       disabled={!onPress}
       onPress={onPress}
-      style={({ pressed }) => [styles.pointsCard, pressed && { opacity: 0.75 }]}
+      style={({ pressed }) => [styles.pointsCard, pressed && onPress && { opacity: 0.75 }]}
     >
       <PointsCoin />
       <View style={{ flex: 1, gap: 3 }}>
@@ -117,7 +124,7 @@ export function PointsCard({
               : hint ?? 'Sumás puntos por tus entregas confirmadas en toda la red.'}
         </Text>
       </View>
-      {onPress && <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} />}
+      {onPress ? <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} /> : null}
     </Pressable>
   );
 }
@@ -187,14 +194,20 @@ export function RewardsBalance({
   points: number | null;
   loading: boolean;
   error: string | null;
-  onPress: () => void;
+  onPress?: () => void;
 }>) {
+  const accessibilityLabel = error
+    ? 'No pudimos cargar tu saldo. Tocá para reintentar.'
+    : onPress
+      ? 'Ver mis puntos'
+      : 'Tus puntos';
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Ver mis puntos"
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={accessibilityLabel}
+      disabled={!onPress}
       onPress={onPress}
-      style={({ pressed }) => [styles.balanceCard, pressed && { opacity: 0.75 }]}
+      style={({ pressed }) => [styles.balanceCard, pressed && onPress && { opacity: 0.75 }]}
     >
       <PointsCoin size={64} />
       <View style={styles.balanceText}>

@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { Text, View } from 'react-native';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { PortalLoading } from '@/components/portal/PortalUI';
+import { PortalFeedback, PortalLoading } from '@/components/portal/PortalUI';
 import {
   CitizenPage,
   rewardStyles as s,
@@ -12,6 +12,7 @@ import {
 import { CitizenBalanceCard } from '@/components/account/CitizenBalanceCard';
 import { usePortalData } from '@/hooks/usePortalData';
 import { useAuth } from '@/providers/AuthProvider';
+import { useWallet } from '@/providers/WalletProvider';
 import { getPointsHistory } from '@/services/reward.service';
 import { colors, fonts } from '@/theme';
 export default function MyPointsScreen() {
@@ -19,6 +20,7 @@ export default function MyPointsScreen() {
   return session ? <MyPoints key={session.user.id} /> : <AccountRequired title="Mis puntos" />;
 }
 function MyPoints() {
+  const wallet = useWallet();
   const history = usePortalData(getPointsHistory);
   const { refresh: refreshHistory } = history;
   useFocusEffect(
@@ -26,16 +28,21 @@ function MyPoints() {
       void refreshHistory();
     }, [refreshHistory])
   );
+  const historyError =
+    wallet.error && history.error
+      ? 'No pudimos cargar tu saldo ni tu historial de movimientos.'
+      : history.error;
+  const retryAll = () => {
+    if (wallet.error) void wallet.refresh();
+    void refreshHistory();
+  };
   return (
     <CitizenPage title="Mis puntos">
       <CitizenBalanceCard />
+      {wallet.error && !history.error && <PortalFeedback error={wallet.error} />}
       <ActionButton title="Ver premios" onPress={() => router.push('/rewards')} />
       <Text style={s.subtitle}>Historial de movimientos</Text>
-      <PortalLoading
-        loading={history.loading}
-        error={history.error}
-        retry={() => void refreshHistory()}
-      />
+      <PortalLoading loading={history.loading} error={historyError} retry={retryAll} />
       {!history.loading && !history.error && history.data?.length === 0 && (
         <View style={s.card}>
           <Ionicons name="leaf-outline" size={30} color={colors.primaryDark} />

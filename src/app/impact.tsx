@@ -44,7 +44,7 @@ export default function ImpactScreen() {
   const [expanded, setExpanded] = useState(false);
   const [answer, setAnswer] = useState<(typeof answers)[number]['key'] | null>(null);
   return (
-    <CitizenPage title="Mi impacto">
+    <CitizenPage title="Preparar dispositivos">
       <View style={s.card}>
         <DevicePreparationArtwork />
         <Text style={styles.heroTitle}>Prepará tus dispositivos</Text>
@@ -108,6 +108,11 @@ export default function ImpactScreen() {
         dispositivo.
       </InfoNote>
       <ActionButton title="Buscar un punto verde" onPress={() => router.push('/green-points')} />
+      <ActionButton
+        title="Ver qué dispositivos recibimos"
+        secondary
+        onPress={() => router.push('/device-categories')}
+      />
     </CitizenPage>
   );
 }

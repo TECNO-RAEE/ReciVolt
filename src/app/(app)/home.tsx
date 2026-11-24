@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { QuickAccess } from '@/components/home/QuickAccess';
 import { HomeBotanical, ImpactPlant, LeafMark } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { PortalLink } from '@/components/portal/PortalUI';
+import { PortalFeedback, PortalLink } from '@/components/portal/PortalUI';
 import { InfoNote, PointsCard } from '@/components/rewards/RewardsUI';
 import { PointsMap } from '@/components/discovery/PointsMap';
 import { PointRow } from '@/components/discovery/PointRow';
@@ -112,7 +112,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/rewards')}
           />
           <QuickAccess
-            title="Impacto"
+            title="Preparar equipos"
             icon={<Ionicons name="leaf" size={26} color={colors.primaryDark} />}
             onPress={() => router.push('/impact')}
           />
@@ -155,11 +155,7 @@ export default function HomeScreen() {
                 onPress={() => void requestLocation()}
               />
             )}
-            {locationError && (
-              <Text accessibilityRole="alert" style={styles.description}>
-                {locationError}
-              </Text>
-            )}
+            {locationError && <PortalFeedback error={locationError} />}
           </View>
         )}
         <Pressable
@@ -170,9 +166,7 @@ export default function HomeScreen() {
           <ImpactPlant />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={styles.impactTitle}>Pequeñas acciones,{'\n'}grandes cambios</Text>
-            <Text style={styles.impactHint}>
-              Tus entregas de RAEE ayudan{'\n'}a un futuro más verde.
-            </Text>
+            <Text style={styles.impactHint}>Tus entregas ayudan a un futuro más verde.</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} />
         </Pressable>
@@ -202,7 +196,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#DCEBE0',
+    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },

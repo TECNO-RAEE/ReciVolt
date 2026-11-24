@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActionButton } from '@/components/ui/ActionButton';
 import {
   CitizenPage,
   InfoNote,
@@ -23,11 +24,11 @@ import { colors, fonts } from '@/theme';
 export default function RewardsScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
   const [tab, setTab] = useState(params.tab === 'canjes' ? 'Mis canjes' : 'Disponibles');
-  const [requestedTab, setRequestedTab] = useState(params.tab);
-  if (params.tab !== requestedTab) {
-    setRequestedTab(params.tab);
-    if (params.tab === 'canjes') setTab('Mis canjes');
-  }
+  useEffect(() => {
+    const nextTab = params.tab === 'canjes' ? 'Mis canjes' : 'Disponibles';
+    const syncTab = setTimeout(() => setTab(nextTab), 0);
+    return () => clearTimeout(syncTab);
+  }, [params.tab]);
   const [category, setCategory] = useState<RewardCategory | 'all'>('all');
   const [search, setSearch] = useState('');
   const [searching, setSearching] = useState(false);
@@ -55,9 +56,20 @@ export default function RewardsScreen() {
   );
   const preview = !loading && !error && available.length === 0;
   const source = preview ? rewardExamples : available;
+  const categoryOptions = useMemo(() => {
+    const entries = Object.entries(rewardCategories) as [RewardCategory, string][];
+    const visible = preview
+      ? entries.filter(([key]) => source.some((r) => r.category === key))
+      : entries;
+    return [['all', 'Todos'], ...visible] as [RewardCategory | 'all', string][];
+  }, [preview, source]);
+  const activeCategory =
+    preview && category !== 'all' && !source.some((r) => r.category === category)
+      ? 'all'
+      : category;
   const filtered = source.filter(
     (r) =>
-      (category === 'all' || r.category === category) &&
+      (activeCategory === 'all' || r.category === activeCategory) &&
       `${r.title} ${r.businessName}`
         .toLocaleLowerCase('es-AR')
         .includes(search.trim().toLocaleLowerCase('es-AR'))
@@ -115,35 +127,47 @@ export default function RewardsScreen() {
       ) : (
         <>
           {searching && (
-            <TextInput
-              autoFocus
-              accessibilityLabel="Buscar por premio o comercio"
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Buscá un premio o comercio"
-              placeholderTextColor={colors.textSecondary}
-              style={styles.search}
-            />
+            <View style={styles.searchBar}>
+              <TextInput
+                autoFocus
+                accessibilityLabel="Buscar por premio o comercio"
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Buscá un premio o comercio"
+                placeholderTextColor={colors.textSecondary}
+                style={styles.searchInput}
+              />
+              {search !== '' && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Borrar búsqueda"
+                  onPress={() => setSearch('')}
+                  style={({ pressed }) => [styles.clearSearch, pressed && { opacity: 0.7 }]}
+                >
+                  <Ionicons name="close" size={20} color={colors.text} />
+                </Pressable>
+              )}
+            </View>
           )}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chips}
           >
-            {(
-              [['all', 'Todos'], ...Object.entries(rewardCategories)] as [
-                RewardCategory | 'all',
-                string,
-              ][]
-            ).map(([key, label]) => (
+            {categoryOptions.map(([key, label]) => (
               <Pressable
                 key={key}
                 accessibilityRole="button"
-                accessibilityState={{ selected: category === key }}
+                accessibilityState={{ selected: activeCategory === key }}
                 onPress={() => setCategory(key)}
-                style={[styles.chip, category === key && styles.selectedChip]}
+                style={[styles.chip, activeCategory === key && styles.selectedChip]}
               >
-                <Text style={[styles.chipText, category === key && { color: '#fff' }]}>
+                <Text
+                  style={[
+                    styles.chipText,
+                    activeCategory === key && { color: colors.textOnPrimary },
+                  ]}
+                >
                   {label}
                 </Text>
               </Pressable>
@@ -165,6 +189,14 @@ export default function RewardsScreen() {
                 <View style={s.card}>
                   <Text style={s.subtitle}>No encontramos premios</Text>
                   <Text style={s.body}>Probá otra categoría o búsqueda.</Text>
+                  <ActionButton
+                    title="Limpiar filtros"
+                    secondary
+                    onPress={() => {
+                      setCategory('all');
+                      setSearch('');
+                    }}
+                  />
                 </View>
               )}
               <View style={styles.list}>
@@ -230,15 +262,30 @@ const styles = StyleSheet.create({
   },
   activeTab: { borderColor: colors.primaryDark },
   tabText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.textSecondary },
-  search: {
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderControl,
     borderRadius: 12,
     minHeight: 48,
-    padding: 12,
+    paddingLeft: 12,
+    paddingRight: 4,
+  },
+  searchInput: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    paddingVertical: 10,
     fontFamily: fonts.regular,
     color: colors.text,
+  },
+  clearSearch: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chips: { gap: 8 },
   chip: {
@@ -246,7 +293,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 24,
     paddingHorizontal: 15,
-    minHeight: 36,
+    minHeight: 44,
     justifyContent: 'center',
     backgroundColor: colors.surfaceSoft,
   },

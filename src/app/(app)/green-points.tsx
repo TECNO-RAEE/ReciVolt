@@ -239,14 +239,17 @@ function GreenPointsExplorer({
             </InfoNote>
           )}
           <Text style={styles.label}>
-            {filtered.length}{' '}
-            {points.some((p) => p.demo)
-              ? filtered.length === 1
-                ? 'punto de ejemplo'
-                : 'puntos de ejemplo'
-              : filtered.length === 1
-                ? 'punto disponible'
-                : 'puntos disponibles'}
+            {filtered.length === 0 && points.length > 0
+              ? '0 resultados'
+              : `${filtered.length} ${
+                  filtered.some((p) => p.demo)
+                    ? filtered.length === 1
+                      ? 'punto de ejemplo'
+                      : 'puntos de ejemplo'
+                    : filtered.length === 1
+                      ? 'punto disponible'
+                      : 'puntos disponibles'
+                }`}
           </Text>
           {filtered.length === 0 ? (
             <>
@@ -326,12 +329,14 @@ const styles = StyleSheet.create({
   filterBadgeText: { fontFamily: fonts.bold, fontSize: 11, color: colors.textOnPrimary },
   pillRow: { flexDirection: 'row', gap: 8 },
   pill: {
+    minHeight: 44,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderControl,
     backgroundColor: colors.surface,
+    justifyContent: 'center',
   },
   pillSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   pillText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.text },

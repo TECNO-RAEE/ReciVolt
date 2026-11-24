@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CitizenBalanceCard } from '@/components/account/CitizenBalanceCard';
 import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
@@ -13,7 +14,7 @@ export default function ProfileScreen() {
   return session ? (
     <Profile />
   ) : (
-    <CitizenPage title="Tu perfil">
+    <CitizenPage title="Perfil">
       <View style={s.card}>
         <Text style={s.subtitle}>Comenzá a sumar impacto</Text>
         <Text style={s.body}>
@@ -62,11 +63,17 @@ function SettingsLink() {
 function Profile() {
   const { profile, logout } = useAuth();
   const action = usePortalAction();
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const menuItems = [
     {
       icon: 'refresh-outline' as const,
       label: 'Mis entregas',
-      onPress: () => router.push({ pathname: '/my-activity', params: { tab: 'Entregas' } }),
+      onPress: () => router.push('/my-raee'),
+    },
+    {
+      icon: 'time-outline' as const,
+      label: 'Mi actividad',
+      onPress: () => router.push('/my-activity'),
     },
     {
       icon: 'gift-outline' as const,
@@ -93,6 +100,7 @@ function Profile() {
   const signOut = () =>
     void action.run(async () => {
       await logout();
+      setConfirmingSignOut(false);
       router.replace('/');
     }, '');
   return (
@@ -123,7 +131,7 @@ function Profile() {
           disabled={action.busy}
           style={styles.menuRow}
           onPress={() => {
-            if (Platform.OS === 'web') signOut();
+            if (Platform.OS === 'web') setConfirmingSignOut(true);
             else
               Alert.alert('Cerrar sesión', '¿Querés cerrar tu sesión?', [
                 { text: 'Cancelar', style: 'cancel' },
@@ -138,7 +146,37 @@ function Profile() {
           <Ionicons name="chevron-forward" size={19} color={colors.textSecondary} />
         </Pressable>
       </View>
-      <PortalFeedback error={action.error} />
+      {!confirmingSignOut && <PortalFeedback error={action.error} />}
+      <Modal
+        transparent
+        visible={confirmingSignOut}
+        animationType="fade"
+        onRequestClose={() => {
+          if (!action.busy) setConfirmingSignOut(false);
+        }}
+      >
+        <View style={styles.backdrop}>
+          <View accessibilityViewIsModal style={styles.modal}>
+            <Ionicons name="log-out-outline" size={32} color={colors.danger} />
+            <Text accessibilityRole="header" style={s.subtitle}>
+              Cerrar sesión
+            </Text>
+            <Text style={s.body}>¿Querés cerrar tu sesión?</Text>
+            <PortalFeedback error={action.error} />
+            <ActionButton
+              title="Cancelar"
+              disabled={action.busy}
+              onPress={() => setConfirmingSignOut(false)}
+            />
+            <ActionButton
+              title="Cerrar sesión"
+              secondary
+              loading={action.busy}
+              onPress={signOut}
+            />
+          </View>
+        </View>
+      </Modal>
     </CitizenPage>
   );
 }
@@ -156,4 +194,19 @@ const styles = StyleSheet.create({
   menuRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
   menuDivider: { borderBottomWidth: 1, borderColor: colors.border },
   logoutText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.danger },
+  backdrop: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modal: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 24,
+    gap: 14,
+  },
 });
