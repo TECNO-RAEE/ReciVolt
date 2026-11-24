@@ -52,7 +52,7 @@ export default function MyRaeeScreen() {
         </>
       )}
       {tab === 'Entregas' && <DeliveryHistory />}
-      {tab === 'Retiros' && <PickupHistory />}
+      {tab === 'Retiros' && <PickupHistory hideEmptyAction />}
     </CitizenPage>
   );
 }

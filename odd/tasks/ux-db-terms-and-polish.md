@@ -43,8 +43,9 @@ Database changes target local Supabase ONLY (`npm run supabase:reset` + `npm run
 | T1 | S1-S2 | delegated + local Supabase (`admin_save_point`, `save_company`, `admin_search_records`) | a5fe6b3 |
 | T2a | S3 (Terms A-F02 + auth/settings/index) | delegated + verified | 14780b3 |
 | T2b | S4 (citizen Sev-2 & advisories) | delegated + verified | 5026f47 |
-| T3 | S5 (company/admin/HIG polish & DESIGN.md) | delegated + verified | final commit on branch |
+| T3 | S5 (company/admin/HIG polish & DESIGN.md) | delegated + verified | 8cc812f |
 
 ## Log
 
 - L1: User invoked `/goal termina con todos los bloques, para las decisiones hace lo que recomiendes` and requested using `apple-design` skill. Local Supabase started cleanly; implementing Blocks 3 & 5 + Apple HIG craft + all Block 2/4 advisories.
+- L2 (2026-11-24): Independent verifier (`odd-verifier`) passed S1, S2, S3, S5 and flagged 1 blocker in S4 (`src/app/new-delivery.tsx` `stepperSectionRow` missing `flexWrap: 'wrap'`) plus leftover unused styles in `new-delivery.tsx` and duplicate empty CTA on `my-raee.tsx` `'Retiros'` tab. Fixed all three, verified `tsc` (0), `lint` (0), `node --test` (89/89).

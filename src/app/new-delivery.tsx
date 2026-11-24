@@ -829,42 +829,12 @@ function DeliveryForm({
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    width: '100%',
-    maxWidth: 600,
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 40,
-    gap: 16,
-  },
   sectionHeader: {
     fontFamily: fonts.semiBold,
     fontSize: 18,
     lineHeight: 24,
     color: colors.text,
     marginBottom: 4,
-  },
-  noticeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: 14,
-  },
-  noticeBannerText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.text,
   },
   searchBox: {
     flexDirection: 'row',
@@ -953,6 +923,7 @@ const styles = StyleSheet.create({
   },
   stepperSectionRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
@@ -1070,24 +1041,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: colors.primary,
-  },
-  infoCallout: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-  },
-  infoCalloutText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.text,
   },
   actionContainer: {
     marginTop: 8,
