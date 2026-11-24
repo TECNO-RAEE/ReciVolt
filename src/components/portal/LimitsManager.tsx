@@ -40,16 +40,19 @@ export function LimitsManager({
   data,
   refresh,
 }: Readonly<{ data: AdminPortalData; refresh: () => Promise<void> }>) {
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const pending = data.limitRequests.filter((r) => r.status === 'SUBMITTED');
   const reviewed = data.limitRequests.filter((r) => r.status !== 'SUBMITTED');
   return (
     <>
+      <PortalFeedback notice={savedNotice} />
       {pending.map((r) => (
         <LimitRequest
           key={r.id}
           request={r}
           currentLimit={data.companies.find((c) => c.id === r.companyId)?.workerLimit}
           refresh={refresh}
+          onReviewed={setSavedNotice}
         />
       ))}
       {pending.length === 0 && (
@@ -100,18 +103,23 @@ function LimitRequest({
   request,
   currentLimit,
   refresh,
+  onReviewed,
 }: Readonly<{
   request: CompanyLimitRequest;
   currentLimit?: number;
   refresh: () => Promise<void>;
+  onReviewed: (message: string | null) => void;
 }>) {
   const action = usePortalAction();
   const [note, setNote] = useState('');
-  const review = (status: 'APPROVED' | 'REJECTED') =>
+  const review = (status: 'APPROVED' | 'REJECTED') => {
+    onReviewed(null);
     void action.run(async () => {
       await portalCommand('review_limit', { id: request.id, status, note: note.trim() });
+      onReviewed('Revisión guardada.');
       await refresh();
-    }, 'Revisión guardada.');
+    }, '');
+  };
   return (
     <View style={[card, { padding: 0, overflow: 'hidden' }]}>
       <OrganizationCard
@@ -120,15 +128,19 @@ function LimitRequest({
       />
       <View style={{ gap: 16, paddingHorizontal: 16, paddingBottom: 16 }}>
         <View style={{ gap: 4 }}>
-          <Text style={s.label}>Cupo autorizado</Text>
+          <Text style={s.label}>Cupo solicitado</Text>
           <Text style={s.body}>
             {request.requestedLimit} cupos{' '}
             <Text style={s.hint}>· al aprobar se autoriza el cupo solicitado</Text>
           </Text>
         </View>
         <View style={{ gap: 4 }}>
+          <Text style={s.label}>Motivo de la organización</Text>
+          <Text style={s.body}>{request.reason}</Text>
+        </View>
+        <View style={{ gap: 4 }}>
           <PortalField
-            label="Motivo"
+            label="Motivo de tu decisión"
             labelStyle={s.label}
             value={note}
             onChangeText={setNote}
@@ -141,8 +153,7 @@ function LimitRequest({
             {note.length}/{noteLimit}
           </Text>
         </View>
-        <Text style={s.hint}>Motivo de la organización: {request.reason}</Text>
-        <PortalFeedback error={action.error} notice={action.notice} />
+        <PortalFeedback error={action.error} />
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <View style={{ flex: 1 }}>
             <ActionButton
