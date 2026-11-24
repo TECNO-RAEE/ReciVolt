@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { PortalLoading } from '@/components/portal/PortalUI';
 import { AdminPage } from '@/components/portal/AdminPage';
@@ -24,14 +24,24 @@ export default function AdminScreen() {
   const [reload, setReload] = useState(0);
   const [pointsList, setPointsList] = useState(true);
   const [addingPoint, setAddingPoint] = useState(0);
+  const backActionRef = useRef<(() => void) | null>(null);
+  const [hasInnerBack, setHasInnerBack] = useState(false);
+  const registerBack = useCallback((handler: (() => void) | null) => {
+    backActionRef.current = handler;
+    setHasInnerBack(Boolean(handler));
+  }, []);
   const { data, loading, error, refresh } = usePortalData(getAdminPortal);
   return (
     <AdminPage
       sections={sections}
       selected={tab}
+      onBack={hasInnerBack ? () => backActionRef.current?.() : undefined}
+      hideBack={!hasInnerBack}
       onSelect={(value) => {
         setTab(value);
         setPointsList(true);
+        backActionRef.current = null;
+        setHasInnerBack(false);
       }}
       refresh={() => {
         setReload((value) => value + 1);
@@ -52,7 +62,9 @@ export default function AdminScreen() {
       <PortalLoading loading={loading && !data} error={error} retry={() => void refresh()} />
       {data && !error && (
         <>
-          {tab === 'Buscador' && <AdminSearch companies={data.companies} refresh={refresh} />}
+          {tab === 'Buscador' && (
+            <AdminSearch companies={data.companies} refresh={refresh} onBackChange={registerBack} />
+          )}
           {tab === 'Puntos verdes' && (
             <AdminPoints
               reload={reload}
@@ -60,9 +72,12 @@ export default function AdminScreen() {
               refresh={refresh}
               addRequest={addingPoint}
               onListChange={setPointsList}
+              onBackChange={registerBack}
             />
           )}
-          {tab === 'Premios' && <AdminRewards reload={reload} companies={data.companies} />}
+          {tab === 'Premios' && (
+            <AdminRewards reload={reload} companies={data.companies} onBackChange={registerBack} />
+          )}
           {tab === 'Límites' && <LimitsManager data={data} refresh={refresh} />}
           {tab === 'Historial de cambios' && (
             <AdminChangelog reload={reload} companies={data.companies} />

@@ -26,12 +26,21 @@ import {
 export function AdminSearch({
   companies,
   refresh,
-}: Readonly<{ companies: PortalCompany[]; refresh: () => Promise<void> }>) {
+  onBackChange,
+}: Readonly<{
+  companies: PortalCompany[];
+  refresh: () => Promise<void>;
+  onBackChange?: (handler: (() => void) | null) => void;
+}>) {
   const [kind, setKind] = useState<AdminKind>('users');
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<AdminRecord | null>(null);
+  useEffect(() => {
+    onBackChange?.(selected ? () => setSelected(null) : null);
+    return () => onBackChange?.(null);
+  }, [selected, onBackChange]);
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuery(draft.trim());

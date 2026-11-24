@@ -20,6 +20,8 @@ import { useScrollReset } from '@/hooks/useScrollReset';
 export function AdminPage({
   title = 'Administración',
   back = '/',
+  onBack,
+  hideBack = false,
   sections,
   selected,
   onSelect,
@@ -29,6 +31,8 @@ export function AdminPage({
 }: Readonly<{
   title?: string;
   back?: Href;
+  onBack?: () => void;
+  hideBack?: boolean;
   sections: readonly string[];
   selected: string;
   onSelect: (section: string) => void;
@@ -48,6 +52,8 @@ export function AdminPage({
       <ScreenHeader
         title={title}
         back={back}
+        onBack={onBack}
+        hideBack={hideBack}
         action={
           <Pressable
             accessibilityRole="button"

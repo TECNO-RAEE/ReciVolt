@@ -13,7 +13,11 @@ import {
   portalStyles as s,
 } from './PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
-import type { ManagedPoint, PortalCompany } from '@/models/Portal';
+import {
+  pointWorkspaceBackTarget,
+  type ManagedPoint,
+  type PortalCompany,
+} from '@/models/Portal';
 import { getActiveRewardCompanyIds } from '@/services/reward.service';
 import {
   getAdminPoints,
@@ -35,12 +39,14 @@ export function AdminPoints({
   refresh,
   addRequest = 0,
   onListChange,
+  onBackChange,
   reload = 0,
 }: Readonly<{
   companies: PortalCompany[];
   refresh: () => Promise<void>;
   addRequest?: number;
   onListChange?: (list: boolean) => void;
+  onBackChange?: (handler: (() => void) | null) => void;
   reload?: number;
 }>) {
   const [selected, setSelected] = useState<PortalCompany | null | undefined>();
@@ -55,6 +61,15 @@ export function AdminPoints({
   }
   const listing = selected === undefined && !creating;
   useEffect(() => onListChange?.(listing), [listing, onListChange]);
+  useEffect(() => {
+    if (selected !== undefined) return;
+    onBackChange?.(creating ? () => setCreating(false) : null);
+    return () => onBackChange?.(null);
+  }, [selected, creating, onBackChange]);
+  const closeWorkspace = useCallback(() => {
+    setSelected(undefined);
+    setPointId(undefined);
+  }, []);
   const result = usePortalData(loadOrganizations);
   const { refresh: reloadOrganizations } = result;
   // Pull-to-refresh reloads the list without resetting an open editor.
@@ -67,11 +82,8 @@ export function AdminPoints({
         company={selected}
         pointId={pointId}
         newPoint={creating}
-        back={() => {
-          setSelected(undefined);
-          setCreating(false);
-          setPointId(undefined);
-        }}
+        onBackChange={onBackChange}
+        back={closeWorkspace}
         saved={async () => {
           await refresh();
           await result.refresh();
@@ -171,12 +183,14 @@ function PointWorkspace({
   company,
   pointId,
   newPoint,
+  onBackChange,
   back,
   saved,
 }: Readonly<{
   company: PortalCompany | null;
   pointId?: string;
   newPoint: boolean;
+  onBackChange?: (handler: (() => void) | null) => void;
   back: () => void;
   saved: () => Promise<void>;
 }>) {
@@ -191,6 +205,20 @@ function PointWorkspace({
   const [companyName, setCompanyName] = useState('');
   const [search, setSearch] = useState('');
   const currentPoint = pointId ? data?.points.find((p) => p.id === pointId) : editing;
+  const handleBack = useCallback(() => {
+    const target = pointWorkspaceBackTarget({
+      hasCompany: Boolean(company),
+      hasPointId: Boolean(pointId),
+      newPoint,
+      isEditingPoint: currentPoint !== undefined,
+    });
+    if (target === 'points_list') setEditing(undefined);
+    else back();
+  }, [company, pointId, newPoint, currentPoint, back]);
+  useEffect(() => {
+    onBackChange?.(handleBack);
+    return () => onBackChange?.(null);
+  }, [handleBack, onBackChange]);
   return (
     <View style={s.stack}>
       {editing === undefined && !pointId && (
@@ -212,7 +240,7 @@ function PointWorkspace({
             <CompanyPointEditor
               data={data}
               point={currentPoint}
-              onCancel={() => (company && !pointId ? setEditing(undefined) : back())}
+              onCancel={handleBack}
               onSaved={saved}
               savePoint={async (input) => {
                 if (!company && !companyName.trim())

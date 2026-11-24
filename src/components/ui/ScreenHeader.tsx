@@ -9,24 +9,30 @@ export function ScreenHeader({
   title,
   back = '/home',
   onBack,
+  hideBack = false,
   action,
 }: Readonly<{
   title: string;
   back?: Href;
   onBack?: () => void;
+  hideBack?: boolean;
   action?: ReactNode;
 }>) {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <View testID="screen-header" style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Volver"
-          style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.6 }]}
-          onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace(back)))}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
+        {hideBack ? (
+          <View style={styles.iconButton} />
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
+            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.6 }]}
+            onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace(back)))}
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </Pressable>
+        )}
         <Text accessibilityRole="header" style={styles.title} numberOfLines={2}>
           {title}
         </Text>

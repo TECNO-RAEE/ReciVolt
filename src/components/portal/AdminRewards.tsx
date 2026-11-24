@@ -24,13 +24,22 @@ import { colors } from '@/theme';
 export function AdminRewards({
   companies,
   reload = 0,
-}: Readonly<{ companies: PortalCompany[]; reload?: number }>) {
+  onBackChange,
+}: Readonly<{
+  companies: PortalCompany[];
+  reload?: number;
+  onBackChange?: (handler: (() => void) | null) => void;
+}>) {
   const loader = useCallback(() => getRewards(undefined, true), []);
   const { data, loading, error, refresh } = usePortalData(loader);
   useEffect(() => {
     if (reload) void refresh();
   }, [reload, refresh]);
   const [selected, setSelected] = useState<Reward | 'new' | null>(null);
+  useEffect(() => {
+    onBackChange?.(selected ? () => setSelected(null) : null);
+    return () => onBackChange?.(null);
+  }, [selected, onBackChange]);
   const [search, setSearch] = useState('');
   const rows = data?.filter((r) => matchesAdminSearch(search, r.id, r.title));
   if (selected)
@@ -43,6 +52,7 @@ export function AdminRewards({
           setSelected(null);
           void refresh();
         }}
+        cancel={() => setSelected(null)}
       />
     );
   return (
