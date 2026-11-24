@@ -1,15 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
+import { RewardThumbnail } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { brand } from '@/config/brand';
 import { usePortalData } from '@/hooks/usePortalData';
 import { matchesAdminSearch } from '@/models/AdminSearch';
-import { pointsLabel, type Reward } from '@/models/Reward';
+import { pointsLabel } from '@/models/Reward';
 import { getRewards } from '@/services/reward.service';
-import { colors } from '@/theme';
 import {
   PortalBadge,
   PortalField,
@@ -17,48 +15,6 @@ import {
   PortalLoading,
   portalStyles as s,
 } from './PortalUI';
-
-function RewardThumb({ reward }: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'> }>) {
-  const [failed, setFailed] = useState(false);
-  if (!reward.imageUrl || failed) {
-    return (
-      <View
-        accessibilityRole="image"
-        accessibilityLabel={`Sin foto para ${reward.title}`}
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: colors.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Ionicons name="gift-outline" size={26} color={colors.primaryDark} />
-      </View>
-    );
-  }
-  return (
-    <View
-      style={{
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        overflow: 'hidden',
-        backgroundColor: colors.primarySoft,
-      }}
-    >
-      <Image
-        source={{ uri: reward.imageUrl }}
-        style={{ width: 56, height: 56 }}
-        contentFit="cover"
-        transition={150}
-        accessibilityLabel={reward.title}
-        onError={() => setFailed(true)}
-      />
-    </View>
-  );
-}
 
 export function CompanyRewards({ companyId }: Readonly<{ companyId: string }>) {
   const loader = useCallback(() => getRewards(companyId, true), [companyId]);
@@ -93,7 +49,7 @@ export function CompanyRewards({ companyId }: Readonly<{ companyId: string }>) {
         return (
           <PortalListItem
             key={r.id}
-            leading={<RewardThumb key={`thumb:${r.imageUrl ?? ''}`} reward={r} />}
+            leading={<RewardThumbnail reward={r} size={56} />}
             title={r.title}
             badge={
               <PortalBadge

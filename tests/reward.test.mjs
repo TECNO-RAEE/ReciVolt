@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { pointsLabel, rewardAvailable, rewardQr } from '../src/models/Reward.ts';
+import {
+  pointsLabel,
+  rewardAvailable,
+  rewardCategories,
+  rewardCategoryFallbackImage,
+  rewardEffectiveImageUrl,
+  rewardQr,
+  rewardUnsplashPhotoUrl,
+} from '../src/models/Reward.ts';
 
 const reward = {
   active: true,
@@ -24,4 +32,25 @@ test('un premio agotado, inactivo o fuera de vigencia no está disponible', () =
 });
 test('el QR del canje conserva el formato que lee el escáner', () => {
   assert.equal(rewardQr('RV-1234'), 'TECNO-RAEE:REWARD:RV-1234');
+});
+test('cada categoría de premio tiene una foto HTTPS predeterminada cuando falta imageUrl', () => {
+  for (const category of Object.keys(rewardCategories)) {
+    const url = rewardCategoryFallbackImage(category);
+    assert.match(url, /^https:\/\/images\.unsplash\.com\/photo-/);
+  }
+  assert.equal(rewardCategoryFallbackImage(null), rewardCategoryFallbackImage('other'));
+  assert.equal(
+    rewardEffectiveImageUrl({ imageUrl: null, category: 'food' }),
+    rewardCategoryFallbackImage('food')
+  );
+  assert.equal(
+    rewardEffectiveImageUrl({ imageUrl: '   ', category: 'wellness' }),
+    rewardCategoryFallbackImage('wellness')
+  );
+  assert.equal(
+    rewardEffectiveImageUrl({ imageUrl: 'https://cdn.example.com/premio.jpg', category: 'food' }),
+    'https://cdn.example.com/premio.jpg'
+  );
+  assert.equal(rewardEffectiveImageUrl({ imageUrl: null, category: 'food' }, false), null);
+  assert.match(rewardUnsplashPhotoUrl('photo-test'), /^https:\/\/images\.unsplash\.com\/photo-test\?/);
 });

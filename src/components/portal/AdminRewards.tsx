@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { InfoNote, RewardPhoto } from '@/components/rewards/RewardsUI';
+import { InfoNote, RewardPhoto, RewardThumbnail } from '@/components/rewards/RewardsUI';
 import {
   PortalChoice,
   PortalField,
@@ -21,48 +20,6 @@ import { pointsLabel, rewardCategories, type Reward, type RewardCategory } from 
 import { getRewards, saveReward } from '@/services/reward.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import { colors } from '@/theme';
-
-function RewardThumbnail({ reward }: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'> }>) {
-  const [failed, setFailed] = useState(false);
-  if (!reward.imageUrl || failed) {
-    return (
-      <View
-        accessibilityRole="image"
-        accessibilityLabel={`Sin foto para ${reward.title}`}
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 32,
-          backgroundColor: colors.primarySoft,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Ionicons name="gift-outline" size={26} color={colors.primaryDark} />
-      </View>
-    );
-  }
-  return (
-    <View
-      style={{
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        overflow: 'hidden',
-        backgroundColor: colors.primarySoft,
-      }}
-    >
-      <Image
-        source={{ uri: reward.imageUrl }}
-        style={{ width: 64, height: 64 }}
-        contentFit="cover"
-        transition={150}
-        accessibilityLabel={reward.title}
-        onError={() => setFailed(true)}
-      />
-    </View>
-  );
-}
 
 export function AdminRewards({
   companies,
@@ -264,18 +221,26 @@ export function RewardEditor({
         editable={!action.busy}
       />
       <PortalField
-        label="Foto del premio (enlace https)"
+        label="Foto del premio (enlace https, opcional)"
         value={imageUrl}
         onChangeText={setImageUrl}
         placeholder="https://…"
         keyboardType="url"
         editable={!action.busy}
       />
-      {/^https:\/\/\S{3,}/.test(trimmedImageUrl) && (
+      <Text style={s.hint}>
+        Si lo dejás vacío, se mostrará una foto predeterminada según la categoría.
+      </Text>
+      {(!trimmedImageUrl || /^https:\/\/\S{3,}/.test(trimmedImageUrl)) && (
         <View style={{ borderRadius: 12, overflow: 'hidden' }}>
           <RewardPhoto
-            reward={{ title: title.trim() || 'Vista previa del premio', imageUrl: trimmedImageUrl }}
+            reward={{
+              title: title.trim() || 'Vista previa del premio',
+              imageUrl: trimmedImageUrl || null,
+              category,
+            }}
             height={160}
+            fallbackOnError={!trimmedImageUrl}
           />
         </View>
       )}

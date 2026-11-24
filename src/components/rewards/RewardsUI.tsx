@@ -7,7 +7,13 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { colors, fonts } from '@/theme';
-import { pointsLabel, type Reward } from '@/models/Reward';
+import {
+  pointsLabel,
+  rewardCategoryFallbackImage,
+  rewardEffectiveImageUrl,
+  type Reward,
+  type RewardCategory,
+} from '@/models/Reward';
 import { PointsCoin } from '@/components/ui/EcoArtwork';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
@@ -128,54 +134,117 @@ export function PointsCard({
     </Pressable>
   );
 }
+type RewardPhotoSubject = Pick<Reward, 'imageUrl' | 'title'> & {
+  category?: RewardCategory | null;
+};
+
 export function RewardPhoto({
   reward,
   height = 104,
-}: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'>; height?: number }>) {
+  fallbackOnError = true,
+}: Readonly<{ reward: RewardPhotoSubject; height?: number; fallbackOnError?: boolean }>) {
+  const primaryUri = rewardEffectiveImageUrl(reward, true);
+  const fallbackUri = fallbackOnError ? rewardCategoryFallbackImage(reward.category) : null;
   return (
-    <RewardPhotoSource key={`photo:${reward.imageUrl ?? ''}`} reward={reward} height={height} />
+    <RewardPhotoSource
+      key={`photo:${primaryUri ?? ''}:${fallbackUri ?? ''}`}
+      title={reward.title}
+      primaryUri={primaryUri}
+      fallbackUri={fallbackUri}
+      height={height}
+    />
+  );
+}
+
+export function RewardThumbnail({
+  reward,
+  size = 64,
+}: Readonly<{ reward: RewardPhotoSubject; size?: number }>) {
+  const primaryUri = rewardEffectiveImageUrl(reward, true);
+  const fallbackUri = rewardCategoryFallbackImage(reward.category);
+  return (
+    <RewardPhotoSource
+      key={`thumb:${primaryUri ?? ''}:${fallbackUri}`}
+      title={reward.title}
+      primaryUri={primaryUri}
+      fallbackUri={fallbackUri}
+      size={size}
+      compact
+    />
   );
 }
 
 function RewardPhotoSource({
-  reward,
+  title,
+  primaryUri,
+  fallbackUri,
   height,
-}: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'>; height: number }>) {
+  size,
+  compact = false,
+}: Readonly<{
+  title: string;
+  primaryUri: string | null;
+  fallbackUri: string | null;
+  height?: number;
+  size?: number;
+  compact?: boolean;
+}>) {
+  const [activeUri, setActiveUri] = useState<string | null>(primaryUri);
   const [failed, setFailed] = useState(false);
-  const [loading, setLoading] = useState(Boolean(reward.imageUrl));
+  const [loading, setLoading] = useState(Boolean(primaryUri));
 
-  if (!reward.imageUrl || failed) {
+  const frameStyle = size
+    ? {
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        overflow: 'hidden' as const,
+        backgroundColor: colors.primarySoft,
+      }
+    : { height, width: '100%' as const, backgroundColor: colors.primarySoft };
+
+  if (!activeUri || failed) {
     return (
       <View
         accessibilityRole="image"
-        accessibilityLabel={`Foto no disponible para ${reward.title}`}
-        style={[styles.photoFallback, { height, width: '100%' }]}
+        accessibilityLabel={`Foto no disponible para ${title}`}
+        style={[
+          styles.photoFallback,
+          size
+            ? { width: size, height: size, borderRadius: size / 2 }
+            : { height, width: '100%' },
+        ]}
       >
-        <Ionicons name="gift-outline" size={36} color={colors.primaryDark} />
-        <Text style={styles.photoFallbackText}>Foto no disponible</Text>
+        <Ionicons name="gift-outline" size={compact ? 26 : 36} color={colors.primaryDark} />
+        {!compact && <Text style={styles.photoFallbackText}>Foto no disponible</Text>}
       </View>
     );
   }
 
   return (
-    <View style={{ height, width: '100%', backgroundColor: colors.primarySoft }}>
+    <View style={frameStyle}>
       <Image
-        source={{ uri: reward.imageUrl }}
-        style={StyleSheet.absoluteFill}
+        source={{ uri: activeUri }}
+        style={size ? { width: size, height: size } : StyleSheet.absoluteFill}
         contentFit="cover"
         transition={150}
-        accessibilityLabel={reward.title}
+        accessibilityLabel={title}
         onLoad={() => setLoading(false)}
         onError={() => {
+          if (fallbackUri && activeUri !== fallbackUri) {
+            setActiveUri(fallbackUri);
+            setLoading(true);
+            return;
+          }
           setLoading(false);
           setFailed(true);
         }}
       />
-      {loading && (
+      {!compact && loading && (
         <View
           pointerEvents="none"
           accessibilityRole="progressbar"
-          accessibilityLabel={`Cargando foto de ${reward.title}`}
+          accessibilityLabel={`Cargando foto de ${title}`}
           style={styles.photoLoading}
         >
           <ActivityIndicator size="small" color={colors.primaryDark} />
