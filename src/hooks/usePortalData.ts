@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-function errorMessage(error: unknown, fallback: string) {
-  return error &&
-    typeof error === 'object' &&
-    'message' in error &&
-    typeof error.message === 'string'
-    ? error.message
-    : fallback;
-}
+import { humanizePortalError } from '@/models/PortalError';
 
 export function usePortalData<T>(loader: () => Promise<T>) {
   const [result, setResult] = useState<{
@@ -15,7 +7,7 @@ export function usePortalData<T>(loader: () => Promise<T>) {
     data: T | null;
     error: string | null;
   } | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshingLoader, setRefreshingLoader] = useState<(() => Promise<T>) | null>(null);
   const generation = useRef(0);
   const load = useCallback(() => {
     const current = ++generation.current;
@@ -26,16 +18,18 @@ export function usePortalData<T>(loader: () => Promise<T>) {
           if (current === generation.current) setResult({ loader, data, error: null });
         },
         (e: unknown) => {
-          if (current === generation.current)
-            setResult({
+          if (current === generation.current) {
+            const message = humanizePortalError(e, 'No pudimos cargar los datos.');
+            setResult((previous) => ({
               loader,
-              data: null,
-              error: errorMessage(e, 'No pudimos cargar los datos.'),
-            });
+              data: previous?.loader === loader ? previous.data : null,
+              error: message,
+            }));
+          }
         }
       )
       .finally(() => {
-        if (current === generation.current) setRefreshing(false);
+        if (current === generation.current) setRefreshingLoader(null);
       });
   }, [loader]);
   const invalidate = useCallback(() => {
@@ -46,13 +40,16 @@ export function usePortalData<T>(loader: () => Promise<T>) {
     return invalidate;
   }, [load, invalidate]);
   const refresh = useCallback(async () => {
-    setRefreshing(true);
+    setRefreshingLoader(() => loader);
     await load();
-  }, [load]);
+  }, [load, loader]);
   const current = result?.loader === loader ? result : null;
+  const hasData = current?.data != null;
+  const reloading = refreshingLoader === loader;
   return {
     data: current?.data ?? null,
-    loading: !current || refreshing,
+    loading: !current || (reloading && !hasData),
+    refreshing: reloading && hasData,
     error: current?.error ?? null,
     refresh,
   };
@@ -70,9 +67,9 @@ export function usePortalAction() {
     setNotice(null);
     try {
       await action();
-      setNotice(success);
+      setNotice(success || null);
     } catch (e) {
-      setError(errorMessage(e, 'No pudimos guardar los cambios.'));
+      setError(humanizePortalError(e, 'No pudimos guardar los cambios.'));
     } finally {
       lock.current = false;
       setBusy(false);

@@ -30,7 +30,7 @@ export default function AdminScreen() {
     backActionRef.current = handler;
     setHasInnerBack(Boolean(handler));
   }, []);
-  const { data, loading, error, refresh } = usePortalData(getAdminPortal);
+  const { data, loading, refreshing, error, refresh } = usePortalData(getAdminPortal);
   return (
     <AdminPage
       sections={sections}
@@ -47,6 +47,9 @@ export default function AdminScreen() {
         setReload((value) => value + 1);
         return refresh();
       }}
+      refreshing={refreshing}
+      error={error}
+      hasData={Boolean(data)}
       footer={
         tab === 'Puntos verdes' &&
         pointsList &&
@@ -59,8 +62,8 @@ export default function AdminScreen() {
         )
       }
     >
-      <PortalLoading loading={loading && !data} error={error} retry={() => void refresh()} />
-      {data && !error && (
+      {!data && <PortalLoading loading={loading} error={error} retry={() => void refresh()} />}
+      {data && (
         <>
           {tab === 'Buscador' && (
             <AdminSearch companies={data.companies} refresh={refresh} onBackChange={registerBack} />

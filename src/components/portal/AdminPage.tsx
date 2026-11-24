@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { PortalNav, portalStyles } from './PortalUI';
+import { PortalFeedback, PortalNav, portalStyles } from './PortalUI';
 import { colors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
@@ -26,6 +26,9 @@ export function AdminPage({
   selected,
   onSelect,
   refresh,
+  refreshing: refreshingProp = false,
+  error,
+  hasData,
   footer,
   children,
 }: Readonly<{
@@ -37,15 +40,19 @@ export function AdminPage({
   selected: string;
   onSelect: (section: string) => void;
   refresh: () => Promise<void>;
+  refreshing?: boolean;
+  error?: string | null;
+  hasData?: boolean;
   footer?: ReactNode;
   children: ReactNode;
 }>) {
   const scroll = useScrollReset();
-  const [refreshing, setRefreshing] = useState(false);
+  const [localRefreshing, setLocalRefreshing] = useState(false);
+  const refreshing = refreshingProp || localRefreshing;
   const reload = () => {
     if (refreshing) return;
-    setRefreshing(true);
-    void refresh().finally(() => setRefreshing(false));
+    setLocalRefreshing(true);
+    void refresh().finally(() => setLocalRefreshing(false));
   };
   return (
     <View style={styles.page}>
@@ -100,6 +107,7 @@ export function AdminPage({
         }
         contentContainerStyle={styles.content}
       >
+        {error && hasData !== false && <PortalFeedback error={error} />}
         {children}
       </ScrollView>
       {footer && (

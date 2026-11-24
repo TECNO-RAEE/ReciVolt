@@ -8,6 +8,7 @@ import { getCompanyPortal } from '@/services/portal.service';
 type CompanyPortal = {
   data: CompanyPortalData | null;
   loading: boolean;
+  refreshing: boolean;
   error: string | null;
   refresh: () => Promise<void>;
   owner: boolean;
