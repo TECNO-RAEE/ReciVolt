@@ -26,7 +26,11 @@ export const colors = {
   textSecondary: '#53676D',
   textOnPrimary: '#FFFFFF',
 
+  // Navigation
+  navInactive: '#53676D',
+
   // Borders
   border: '#E2EBE6',
+  borderControl: '#748591',
   borderPrimary: '#246440',
 } as const;

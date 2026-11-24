@@ -21,8 +21,9 @@ colors:
   textSecondary: '#53676D'
   textOnPrimary: '#FFFFFF'
   border: '#E2EBE6'
+  borderControl: '#748591'
   borderPrimary: '#246440'
-  navInactive: '#748591'
+  navInactive: '#53676D'
 typography:
   greeting:
     fontFamily: Roboto
@@ -178,7 +179,7 @@ Este documento es obligatorio para agentes, desarrolladores, diseñadores y cual
 
 Las decisiones explícitas más recientes del usuario tienen prioridad. Para el resto, esta guía rige el diseño; el mockup original sirve como referencia visual y no revierte cambios posteriores de navegación o contenido. Las recomendaciones genéricas de herramientas o skills se adaptan a esta identidad.
 
-Los valores del frontmatter son la referencia documentada. Su implementación está en [colors.ts](src/theme/colors.ts), [typography.ts](src/theme/typography.ts) y los componentes compartidos indicados más abajo. `navInactive` documenta un valor observado en la navegación; todavía no es una propiedad del objeto `colors`. Las escalas de tamaño, radio y espaciado documentan estilos existentes, no un módulo de tokens ya implementado. Las medidas se expresan en unidades de layout de React Native; `px` permite exportarlas a herramientas web.
+Los valores del frontmatter son la referencia documentada. Su implementación está en [colors.ts](src/theme/colors.ts), [typography.ts](src/theme/typography.ts) y los componentes compartidos indicados más abajo. `navInactive` y `borderControl` forman parte de `colors` para cumplir contraste AA en pestañas inactivas y bordes de controles. Las escalas de tamaño, radio y espaciado documentan estilos existentes, no un módulo de tokens ya implementado. Las medidas se expresan en unidades de layout de React Native; `px` permite exportarlas a herramientas web.
 
 Si código y guía difieren, identificar la desviación y corregirla dentro del alcance del trabajo. No convertir un estilo aislado en una nueva regla ni cambiar la identidad global de manera incidental. Cuando se apruebe un cambio del sistema, actualizar componente, tema, esta guía y su representación en `.impeccable/design.json` juntos. Los ejemplos de ese archivo son muestras estáticas para documentación, no componentes de producción.
 
@@ -204,7 +205,7 @@ Usar los nombres semánticos del tema mediante `@/theme`. Las ilustraciones y el
 | Superficies claras | `background`, `surface`, `tabBarBackground`, `border` | Fondo de pantalla, tarjetas, navegación y separación de contenido.                          |
 | Tinta y gris       | `text`, `textSecondary`, `brandDark`                  | Títulos, contenido principal, ayudas y metadatos.                                           |
 | Estado crítico     | `danger`, `dangerBackground`                          | Errores y acciones destructivas con texto que explique su efecto.                           |
-| Apoyos existentes  | `avatarBackground`, `navInactive`, `overlay`         | Avatar sin foto, navegación inactiva y capa modal translúcida.                             |
+| Apoyos existentes  | `avatarBackground`, `navInactive`, `borderControl`, `overlay` | Avatar sin foto, navegación inactiva, bordes de controles y capa modal translúcida. |
 
 **The Color con significado Rule.** El verde identifica acciones y selección; el rojo identifica problemas o consecuencias destructivas. Un estado siempre lleva texto o icono comprensible además del color.
 
