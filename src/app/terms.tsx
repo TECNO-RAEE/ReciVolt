@@ -13,7 +13,7 @@ export default function TermsScreen() {
     <CitizenPage title="Términos de uso" back="/settings">
       <View style={[s.card, { alignItems: 'center', paddingVertical: 28 }]}>
         <Ionicons name="document-text-outline" size={42} color={colors.primaryDark} />
-        <Text style={s.subtitle}>
+        <Text accessibilityRole="header" style={s.subtitle}>
           {termsUrl ? 'Contrato de uso de la app' : 'Todavía no hay términos publicados'}
         </Text>
         <Text style={[s.body, { textAlign: 'center' }]}>
@@ -35,7 +35,7 @@ export default function TermsScreen() {
         />
       )}
       {error && (
-        <Text accessibilityRole="alert" style={s.body}>
+        <Text accessibilityRole="alert" style={[s.body, { color: colors.danger }]}>
           {error}
         </Text>
       )}
