@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { darkColors, getColors, lightColors } from '../src/theme/palette.ts';
+import {
+  darkColors,
+  getColors,
+  lightColors,
+  parseThemePreference,
+  resolveColorScheme,
+} from '../src/theme/palette.ts';
 
 function hexToRgb(hex) {
   const clean = hex.replace('#', '');
@@ -32,6 +38,19 @@ function contrastRatio(fg, bg) {
   const [hi, lo] = l1 > l2 ? [l1, l2] : [l2, l1];
   return (hi + 0.05) / (lo + 0.05);
 }
+
+test('resolveColorScheme y parseThemePreference aplican la preferencia elegida en configuraciones', () => {
+  assert.equal(parseThemePreference(null), 'system');
+  assert.equal(parseThemePreference('invalid'), 'system');
+  assert.equal(parseThemePreference('dark'), 'dark');
+  assert.equal(parseThemePreference('light'), 'light');
+
+  assert.equal(resolveColorScheme('system', 'dark'), 'dark');
+  assert.equal(resolveColorScheme('system', 'light'), 'light');
+  assert.equal(resolveColorScheme('system', null), 'light');
+  assert.equal(resolveColorScheme('dark', 'light'), 'dark');
+  assert.equal(resolveColorScheme('light', 'dark'), 'light');
+});
 
 test('lightColors y darkColors exponen exactamente los mismos tokens semánticos', () => {
   assert.deepEqual(Object.keys(lightColors).sort(), Object.keys(darkColors).sort());

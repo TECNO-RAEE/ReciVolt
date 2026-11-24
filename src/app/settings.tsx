@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
@@ -10,12 +10,46 @@ import { brand } from '@/config/brand';
 import { usePortalAction } from '@/hooks/usePortalData';
 import { roleHome } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
-import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  useColors,
+  useThemePreference,
+  useThemedStyles,
+  type ThemeColors,
+  type ThemePreference,
+} from '@/theme';
+
+const APPEARANCE_OPTIONS: readonly {
+  value: ThemePreference;
+  label: string;
+  description: string;
+  icon: ComponentProps<typeof Ionicons>['name'];
+}[] = [
+  {
+    value: 'system',
+    label: 'Automático',
+    description: 'Sigue la apariencia del dispositivo',
+    icon: 'phone-portrait-outline',
+  },
+  {
+    value: 'light',
+    label: 'Claro',
+    description: 'Fondo claro en toda la aplicación',
+    icon: 'sunny-outline',
+  },
+  {
+    value: 'dark',
+    label: 'Oscuro',
+    description: 'Reduce el brillo con contraste adaptado',
+    icon: 'moon-outline',
+  },
+];
 
 export default function SettingsScreen() {
   const colors = useColors();
   const s = useRewardStyles();
   const styles = useThemedStyles(makeStyles);
+  const { preference, setPreference } = useThemePreference();
   const { session, profile, role, guest, logout } = useAuth();
   const action = usePortalAction();
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
@@ -72,6 +106,54 @@ export default function SettingsScreen() {
               <ActionButton title="Crear cuenta" secondary onPress={() => router.push('/register')} />
             </>
           )}
+        </View>
+        <Text accessibilityRole="header" style={s.subtitle}>
+          Apariencia
+        </Text>
+        <View style={s.card}>
+          <Text style={s.body}>Elegí el tema visual o seguí la configuración de tu dispositivo.</Text>
+          <View accessibilityRole="radiogroup" accessibilityLabel="Apariencia" style={styles.optionList}>
+            {APPEARANCE_OPTIONS.map((option) => {
+              const selected = preference === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  aria-checked={selected}
+                  accessibilityLabel={`${option.label}. ${option.description}`}
+                  onPress={() => setPreference(option.value)}
+                  style={({ pressed }) => [
+                    styles.appearanceOption,
+                    selected && styles.appearanceOptionSelected,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Ionicons
+                    name={option.icon}
+                    size={22}
+                    color={selected ? colors.primaryDark : colors.textSecondary}
+                  />
+                  <View style={styles.appearanceText}>
+                    <Text
+                      style={[
+                        styles.appearanceLabel,
+                        selected && { color: colors.primaryDark },
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                    <Text style={s.body}>{option.description}</Text>
+                  </View>
+                  <Ionicons
+                    name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={22}
+                    color={selected ? colors.primary : colors.borderControl}
+                  />
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
         <Text accessibilityRole="header" style={s.subtitle}>
           Información legal
@@ -152,6 +234,25 @@ const makeStyles = (colors: ThemeColors) =>
     row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 84 },
     pressed: { opacity: 0.75 },
     about: { alignItems: 'center', gap: 4, paddingVertical: 16 },
+    optionList: { gap: 10 },
+    appearanceOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      minHeight: 56,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceSoft,
+    },
+    appearanceOptionSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primarySoft,
+    },
+    appearanceText: { flex: 1, minWidth: 0, gap: 2 },
+    appearanceLabel: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
     backdrop: {
       flex: 1,
       backgroundColor: colors.overlay,

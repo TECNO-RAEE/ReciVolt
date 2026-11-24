@@ -1,4 +1,17 @@
 export type ColorScheme = 'light' | 'dark';
+export type ThemePreference = 'system' | ColorScheme;
+
+export function parseThemePreference(raw: string | null | undefined): ThemePreference {
+  return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'system';
+}
+
+export function resolveColorScheme(
+  preference: ThemePreference,
+  systemScheme?: ColorScheme | 'unspecified' | null
+): ColorScheme {
+  if (preference === 'light' || preference === 'dark') return preference;
+  return systemScheme === 'dark' ? 'dark' : 'light';
+}
 
 export const lightColors = {
   // Brand

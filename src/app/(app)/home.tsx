@@ -15,12 +15,14 @@ import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, useColors, useThemePreference, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export default function HomeScreen() {
   const colors = useColors();
+  const { scheme, setPreference } = useThemePreference();
+  const isDark = scheme === 'dark';
   const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { profile, session } = useAuth();
@@ -70,11 +72,15 @@ export default function HomeScreen() {
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Abrir perfil"
-            onPress={() => router.push('/profile')}
-            style={styles.avatar}
+            aria-pressed={isDark}
+            accessibilityLabel={
+              isDark ? 'Modo oscuro. Cambiar a modo claro' : 'Modo claro. Cambiar a modo oscuro'
+            }
+            accessibilityHint="Cambia entre apariencia clara y oscura"
+            onPress={() => setPreference(isDark ? 'light' : 'dark')}
+            style={({ pressed }) => [styles.themeToggle, pressed && styles.themeTogglePressed]}
           >
-            <Ionicons name="person" size={20} color={colors.primaryDark} />
+            <Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={colors.primaryDark} />
           </Pressable>
         </View>
         <View style={styles.intro}>
@@ -195,7 +201,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     wordmark: { flexDirection: 'row', alignItems: 'center', gap: 9 },
     brand: { fontFamily: fonts.bold, color: colors.text, fontSize: 25, letterSpacing: -0.7 },
-    avatar: {
+    themeToggle: {
       width: 44,
       height: 44,
       borderRadius: 22,
@@ -203,6 +209,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
+    themeTogglePressed: { opacity: 0.7 },
     intro: { flexDirection: 'row', minHeight: 106, paddingTop: 12, justifyContent: 'space-between' },
     ecology: { position: 'absolute', right: -20, bottom: -24, opacity: 0.8 },
     greeting: { fontFamily: fonts.bold, fontSize: 27, color: colors.text, letterSpacing: -0.6 },

@@ -254,7 +254,7 @@ El autor y quien revisa usan la checklist final de esta guía. Una desviación d
 
 ## Colors
 
-Usar los tokens semánticos dinámicos de `@/theme` (`useColors()`, `useThemedStyles()`, `usePortalStyles()`, `useRewardStyles()`). La app sigue automáticamente la apariencia clara u oscura del sistema (`userInterfaceStyle: "automatic"`, sin interruptor manual dentro de la app, siguiendo Apple HIG Dark Mode). Las ilustraciones adaptan sus superficies y trazos en modo oscuro; el marco de códigos QR conserva `qrBackground` (`#FFFFFF`) para garantizar lectura óptica confiable sin deslumbramiento en el resto de la pantalla.
+Usar los tokens semánticos dinámicos de `@/theme` (`useColors()`, `useThemedStyles()`, `useThemePreference()`, `usePortalStyles()`, `useRewardStyles()`). La app sigue por defecto la apariencia clara u oscura del sistema (`userInterfaceStyle: "automatic"`) y permite elegir manualmente `Automático`, `Claro` u `Oscuro` desde `Configuraciones`, o alternar entre `Claro` y `Oscuro` desde el botón superior derecho de `Inicio` (`sol` en modo claro, `luna` en modo oscuro) (decisión explícita del usuario). Las ilustraciones adaptan sus superficies y trazos en modo oscuro; el marco de códigos QR conserva `qrBackground` (`#FFFFFF`) para garantizar lectura óptica confiable sin deslumbramiento en el resto de la pantalla.
 
 | Familia | Tokens | Uso |
 | --- | --- | --- |
@@ -342,7 +342,7 @@ Las curvas transmiten cercanía y ayudan a distinguir controles, tarjetas y figu
 | Acceso rápido de Inicio               | `rounded.quick-access`                               |
 | Resumen de puntos                     | `rounded.points`                                     |
 | Categoría                             | `rounded.chip`                                       |
-| Avatar y moneda                       | Círculo; no usar esta forma para todas las acciones. |
+| Botón de apariencia y moneda          | Círculo; no usar esta forma para todas las acciones. |
 
 Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del texto. Hojas y planeta usan las formas de `EcoArtwork`; no sustituirlas por emojis o ilustraciones de otro estilo.
 
@@ -367,7 +367,7 @@ Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del
 
 ### Header y navegación
 
-`ScreenHeader` tiene altura mínima (72), controles de volver y acción con ancho (44), y título de hasta dos líneas. El espacio derecho se conserva aunque no tenga acción, para mantener el título centrado. Inicio usa su hoja, nombre de marca y acceso al perfil.
+`ScreenHeader` tiene altura mínima (72), controles de volver y acción con ancho (44), y título de hasta dos líneas. El espacio derecho se conserva aunque no tenga acción, para mantener el título centrado. Inicio usa su hoja, nombre de marca y el botón circular de apariencia (sol en modo claro, luna en modo oscuro); el acceso a Perfil permanece en la barra de navegación inferior.
 
 La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en ese orden. Sección activa en verde con icono lleno; inactiva con icono de contorno. “Mis entregas” se encuentra en Perfil; el acceso rápido de Inicio puede llevar allí. La sección del mapa se llama “Puntos verdes”. El mapa ocupa el bloque de Inicio que antes mostraba premios destacados. Las capturas antiguas con otra navegación no son referencia de estructura.
 

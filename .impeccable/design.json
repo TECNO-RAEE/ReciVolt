@@ -12,6 +12,7 @@
       "completion": "Revisar contra DESIGN.md, corregir las desviaciones introducidas y registrar evidencia y pendientes antes de considerar terminada una contribución de interfaz.",
       "evidence": "Capturas de las pantallas afectadas en móvil y escritorio, estados comprobados y limitaciones reales. Para cambios sin efecto visual, indicar que no aplica y explicar el motivo.",
       "enforcement": "Revisión del autor y del revisor; no configura un bloqueo automático de GitHub.",
+      "appearancePreference": "Decisión explícita del 24/11/2026: por defecto sigue la apariencia del sistema (Automático), permite cambiar entre Automático, Claro y Oscuro desde Configuraciones y alternar rápido entre Claro y Oscuro desde la esquina superior derecha de Inicio (sol en modo claro, luna en modo oscuro).",
       "approvedPendingNavigation": "Decisión del 26/10/2026 pendiente de implementación: Inicio · Puntos verdes · Premios · Marketplace · Perfil. Dispositivos reacondicionados en catálogo de Empresa, vista previa de hasta cuatro productos en el punto verde y catálogo global de Marketplace. La muestra HTML conserva la navegación implementada hasta realizar ese cambio."
     },
     "colorMeta": {

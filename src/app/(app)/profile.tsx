@@ -29,6 +29,7 @@ export default function ProfileScreen() {
       <View style={s.card}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Mis entregas"
           onPress={() => router.push('/my-raee')}
           style={styles.menuRow}
         >
@@ -38,6 +39,7 @@ export default function ProfileScreen() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Qué recibimos"
           onPress={() => router.push('/device-categories')}
           style={styles.menuRow}
         >
@@ -57,6 +59,7 @@ function SettingsLink() {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel="Configuraciones"
       onPress={() => router.push('/settings')}
       style={styles.menuRow}
     >
@@ -127,6 +130,7 @@ function Profile() {
           <Pressable
             key={label}
             accessibilityRole="button"
+            accessibilityLabel={label}
             onPress={onPress}
             style={[styles.menuRow, styles.menuDivider]}
           >
@@ -137,6 +141,7 @@ function Profile() {
         ))}
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={action.busy ? 'Cerrando sesión' : 'Cerrar sesión'}
           disabled={action.busy}
           style={styles.menuRow}
           onPress={() => {
