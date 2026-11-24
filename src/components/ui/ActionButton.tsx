@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function ActionButton({
   title,
@@ -19,6 +19,8 @@ export function ActionButton({
   disabled?: boolean;
   icon?: ReactNode;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const spinnerColor = destructive
     ? secondary
       ? colors.danger
@@ -61,32 +63,33 @@ export function ActionButton({
     </Pressable>
   );
 }
-const styles = StyleSheet.create({
-  button: {
-    minHeight: 50,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  withIcon: { flexDirection: 'row', gap: 12 },
-  secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary },
-  destructive: { backgroundColor: colors.danger },
-  destructiveSecondary: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.danger,
-  },
-  text: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textOnPrimary,
-    textAlign: 'center',
-  },
-  secondaryText: { color: colors.primary },
-  destructiveText: { color: colors.textOnPrimary },
-  destructiveSecondaryText: { color: colors.danger },
-  pressed: { opacity: 0.7 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    button: {
+      minHeight: 50,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 16,
+      backgroundColor: colors.primaryAction,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    withIcon: { flexDirection: 'row', gap: 12 },
+    secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary },
+    destructive: { backgroundColor: colors.dangerAction },
+    destructiveSecondary: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.danger,
+    },
+    text: {
+      fontFamily: fonts.semiBold,
+      fontSize: 16,
+      color: colors.textOnPrimary,
+      textAlign: 'center',
+    },
+    secondaryText: { color: colors.primary },
+    destructiveText: { color: colors.textOnPrimary },
+    destructiveSecondaryText: { color: colors.danger },
+    pressed: { opacity: 0.7 },
+  });

@@ -9,7 +9,7 @@ import {
   PointsBadge,
   RewardPhoto,
   RewardsBalance,
-  rewardStyles as s,
+  useRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { RewardCard, RewardsSkeleton } from '@/components/rewards/RewardCard';
 import { PortalLink, PortalLoading } from '@/components/portal/PortalUI';
@@ -21,9 +21,12 @@ import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { getRewards, getRedemptions } from '@/services/reward.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function RewardsScreen() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ tab?: string }>();
   const [tab, setTab] = useState(params.tab === 'canjes' ? 'Mis canjes' : 'Disponibles');
   useEffect(() => {
@@ -220,6 +223,9 @@ export default function RewardsScreen() {
   );
 }
 function MyRedemptions() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const [page, setPage] = useState(0);
   const loader = useCallback(() => getRedemptions(page), [page]);
   const { data, loading, error, refresh } = usePortalData(loader);
@@ -293,88 +299,89 @@ function MyRedemptions() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  searchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: colors.border },
-  tab: {
-    flex: 1,
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderColor: 'transparent',
-  },
-  activeTab: { borderColor: colors.primaryDark },
-  tabText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.textSecondary },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderControl,
-    borderRadius: 12,
-    minHeight: 48,
-    paddingLeft: 12,
-    paddingRight: 4,
-  },
-  searchInput: {
-    flex: 1,
-    minWidth: 0,
-    minHeight: 44,
-    paddingVertical: 10,
-    fontFamily: fonts.regular,
-    color: colors.text,
-  },
-  clearSearch: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chips: { gap: 8 },
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 24,
-    paddingHorizontal: 15,
-    minHeight: 44,
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceSoft,
-  },
-  selectedChip: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
-  chipText: { fontFamily: fonts.regular, fontSize: 12, color: colors.text },
-  list: { gap: 12 },
-  redemptionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    padding: 8,
-    paddingRight: 12,
-    borderRadius: 15,
-    backgroundColor: colors.surface,
-    boxShadow: '0 3px 12px rgba(22,65,39,0.06)',
-  },
-  redemptionPhoto: { width: 112, borderRadius: 12, overflow: 'hidden' },
-  redemptionBody: { flex: 1, minWidth: 0, gap: 6 },
-  redemptionTitle: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, color: colors.text },
-  redemptionBusiness: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
-  redemptionBadges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  statusPillReserved: {
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: colors.borderPrimary,
-  },
-  statusPillDelivered: { backgroundColor: colors.primary },
-  statusPillText: { fontFamily: fonts.semiBold, fontSize: 12 },
-  statusPillTextReserved: { color: colors.primaryDark },
-  statusPillTextDelivered: { color: colors.textOnPrimary },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    searchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: colors.border },
+    tab: {
+      flex: 1,
+      minHeight: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 12,
+      borderBottomWidth: 2,
+      borderColor: 'transparent',
+    },
+    activeTab: { borderColor: colors.primaryDark },
+    tabText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.textSecondary },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderControl,
+      borderRadius: 12,
+      minHeight: 48,
+      paddingLeft: 12,
+      paddingRight: 4,
+    },
+    searchInput: {
+      flex: 1,
+      minWidth: 0,
+      minHeight: 44,
+      paddingVertical: 10,
+      fontFamily: fonts.regular,
+      color: colors.text,
+    },
+    clearSearch: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    chips: { gap: 8 },
+    chip: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 24,
+      paddingHorizontal: 15,
+      minHeight: 44,
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceSoft,
+    },
+    selectedChip: { backgroundColor: colors.primaryAction, borderColor: colors.primaryAction },
+    chipText: { fontFamily: fonts.regular, fontSize: 12, color: colors.text },
+    list: { gap: 12 },
+    redemptionCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+      padding: 8,
+      paddingRight: 12,
+      borderRadius: 15,
+      backgroundColor: colors.surface,
+      boxShadow: '0 3px 12px rgba(22,65,39,0.06)',
+    },
+    redemptionPhoto: { width: 112, borderRadius: 12, overflow: 'hidden' },
+    redemptionBody: { flex: 1, minWidth: 0, gap: 6 },
+    redemptionTitle: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, color: colors.text },
+    redemptionBusiness: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
+    redemptionBadges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+    statusPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 10,
+    },
+    statusPillReserved: {
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.borderPrimary,
+    },
+    statusPillDelivered: { backgroundColor: colors.primaryAction },
+    statusPillText: { fontFamily: fonts.semiBold, fontSize: 12 },
+    statusPillTextReserved: { color: colors.primaryDark },
+    statusPillTextDelivered: { color: colors.textOnPrimary },
+  });

@@ -22,7 +22,7 @@ import {
 import { canRequestPickup } from '@/models/Pickup';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 const PREVIEW_CATEGORY_LIMIT = 4;
@@ -39,6 +39,8 @@ function formatPointTimeZone(timeZone: string): string {
 }
 
 export default function PointDetailScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { guest } = useAuth();
@@ -309,56 +311,57 @@ export default function PointDetailScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: {
-    width: '100%',
-    maxWidth: 720,
-    alignSelf: 'center',
-    padding: 24,
-    gap: 16,
-    paddingBottom: 40,
-  },
-  contentWithFooter: { paddingBottom: 24 },
-  photoHeader: {
-    height: 180,
-    borderRadius: 18,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  heading: { gap: 8 },
-  title: { fontFamily: fonts.bold, fontSize: 28, color: colors.primary },
-  company: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text },
-  text: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.text },
-  status: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 16 },
-  statusClosed: { color: colors.danger },
-  statusUnknown: { color: colors.textSecondary },
-  sectionTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.text, marginTop: 8 },
-  policyList: { marginTop: 12, gap: 10 },
-  policyRow: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  categoryText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.text,
-  },
-  caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.brandDark },
-  schedule: {
-    flexDirection: 'row',
-    gap: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingBottom: 12,
-  },
-  day: { width: 100, fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
-  hours: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.text },
-  footerOuter: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  footer: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: {
+      width: '100%',
+      maxWidth: 720,
+      alignSelf: 'center',
+      padding: 24,
+      gap: 16,
+      paddingBottom: 40,
+    },
+    contentWithFooter: { paddingBottom: 24 },
+    photoHeader: {
+      height: 180,
+      borderRadius: 18,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    heading: { gap: 8 },
+    title: { fontFamily: fonts.bold, fontSize: 28, color: colors.primary },
+    company: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text },
+    text: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.text },
+    status: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 16 },
+    statusClosed: { color: colors.danger },
+    statusUnknown: { color: colors.textSecondary },
+    sectionTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.text, marginTop: 8 },
+    policyList: { marginTop: 12, gap: 10 },
+    policyRow: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    categoryText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.text,
+    },
+    caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.brandDark },
+    schedule: {
+      flexDirection: 'row',
+      gap: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingBottom: 12,
+    },
+    day: { width: 100, fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
+    hours: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.text },
+    footerOuter: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    footer: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16 },
+  });

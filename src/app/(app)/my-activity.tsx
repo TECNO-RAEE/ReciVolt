@@ -13,7 +13,7 @@ import { AccountRequired } from '@/components/auth/AccountRequired';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { useRewardStyles } from '@/components/rewards/RewardsUI';
 import {
   activityFilters,
   filterActivityEntries,
@@ -28,7 +28,7 @@ import {
   type ActivityEntry,
   type ActivityPageCursor,
 } from '@/services/activity.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const initialCursor = (): ActivityPageCursor => ({ deliveries: 0, pickups: 0, redemptions: 0 });
 
@@ -38,6 +38,9 @@ export default function MyActivityScreen() {
 }
 
 function MyActivity() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ tab?: string }>();
   const requestedFilter = resolveActivityFilter(params.tab);
   const [filter, setFilter] = useState<ActivityFilter>(requestedFilter);
@@ -240,6 +243,9 @@ function ActivitySeparator() {
 }
 
 function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <Pressable
@@ -282,33 +288,76 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
   );
 }
 
-const styles = StyleSheet.create({
-  listHeader: { paddingBottom: 16 },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  filter: { minHeight: 44, minWidth: 72, paddingHorizontal: 14, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  selectedFilter: { backgroundColor: colors.primary, borderColor: colors.primary },
-  filterText: { color: colors.textSecondary, fontFamily: fonts.semiBold, fontSize: 14 },
-  selectedFilterText: { color: colors.textOnPrimary },
-  row: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16, backgroundColor: colors.surface, boxShadow: '0 4px 16px rgba(22,65,39,0.05)' },
-  eventIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  description: { flex: 1, gap: 3 },
-  source: { fontFamily: fonts.semiBold, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
-  entryTitle: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 22, color: colors.text },
-  date: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
-  amountBlock: { alignItems: 'flex-end', minWidth: 56 },
-  amount: { fontFamily: fonts.bold, fontSize: 18 },
-  listFooter: { gap: 12, paddingTop: 16 },
-  emptyRetirements: { minHeight: 190, padding: 20, gap: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  truckIcon: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  loadMoreButton: {
-    minHeight: 44,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadMoreText: { color: colors.primaryDark, fontFamily: fonts.semiBold, fontSize: 14 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    listHeader: { paddingBottom: 16 },
+    filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    filter: {
+      minHeight: 44,
+      minWidth: 72,
+      paddingHorizontal: 14,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    selectedFilter: { backgroundColor: colors.primaryAction, borderColor: colors.primaryAction },
+    filterText: { color: colors.textSecondary, fontFamily: fonts.semiBold, fontSize: 14 },
+    selectedFilterText: { color: colors.textOnPrimary },
+    row: {
+      minHeight: 96,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      padding: 14,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      boxShadow: '0 4px 16px rgba(22,65,39,0.05)',
+    },
+    eventIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    description: { flex: 1, gap: 3 },
+    source: { fontFamily: fonts.semiBold, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+    entryTitle: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 22, color: colors.text },
+    date: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+    amountBlock: { alignItems: 'flex-end', minWidth: 56 },
+    amount: { fontFamily: fonts.bold, fontSize: 18 },
+    listFooter: { gap: 12, paddingTop: 16 },
+    emptyRetirements: {
+      minHeight: 190,
+      padding: 20,
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    truckIcon: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadMoreButton: {
+      minHeight: 44,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadMoreText: { color: colors.primaryDark, fontFamily: fonts.semiBold, fontSize: 14 },
+  });

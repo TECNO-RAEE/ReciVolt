@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { PortalFeedback, PortalNav, portalStyles } from './PortalUI';
-import { colors } from '@/theme';
+import { PortalFeedback, PortalNav, usePortalStyles } from './PortalUI';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export function AdminPage({
@@ -46,6 +46,8 @@ export function AdminPage({
   footer?: ReactNode;
   children: ReactNode;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const [localRefreshing, setLocalRefreshing] = useState(false);
   const refreshing = refreshingProp || localRefreshing;
@@ -128,6 +130,9 @@ export function AdminEmpty({
   description: string;
   icon?: ComponentProps<typeof Ionicons>['name'];
 }>) {
+  const colors = useColors();
+  const portalStyles = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.empty}>
       <Ionicons name={icon} color={colors.textSecondary} size={44} />
@@ -136,28 +141,29 @@ export function AdminEmpty({
     </View>
   );
 }
-const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.background },
-  frame: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 16 },
-  navRow: { flexDirection: 'row', alignItems: 'stretch' },
-  nav: { flex: 1, minWidth: 0 },
-  navAction: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  iconButton: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center' },
-  content: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    padding: 16,
-    paddingBottom: 32,
-    gap: 16,
-  },
-  footer: { backgroundColor: colors.background },
-  footerContent: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  empty: { gap: 12, paddingVertical: 24, alignItems: 'center' },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    page: { flex: 1, backgroundColor: colors.background },
+    frame: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 16 },
+    navRow: { flexDirection: 'row', alignItems: 'stretch' },
+    nav: { flex: 1, minWidth: 0 },
+    navAction: { borderBottomWidth: 1, borderBottomColor: colors.border },
+    iconButton: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center' },
+    content: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      padding: 16,
+      paddingBottom: 32,
+      gap: 16,
+    },
+    footer: { backgroundColor: colors.background },
+    footerContent: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    empty: { gap: 12, paddingVertical: 24, alignItems: 'center' },
+  });

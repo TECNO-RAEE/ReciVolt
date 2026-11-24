@@ -336,7 +336,80 @@
           "oklch(83.57% 0.0341 233.19)",
           "oklch(95.00% 0.0341 233.19)"
         ]
-      }
+      },
+      "primaryAction": {
+        "displayName": "Fondo de acción principal",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.0884 155.53)",
+          "oklch(49.29% 0.0884 155.53)"
+        ]
+      },
+      "dangerAction": {
+        "displayName": "Fondo de acción destructiva",
+        "role": "danger",
+        "tonalRamp": [
+          "oklch(25.00% 0.1450 25.00)",
+          "oklch(50.00% 0.1450 25.00)"
+        ]
+      },
+      "warning": { "displayName": "Estado pendiente (texto)", "role": "warning" },
+      "warningSecondary": { "displayName": "Estado pendiente secundario", "role": "warning" },
+      "warningSoft": { "displayName": "Fondo de estado pendiente", "role": "warning" },
+      "warningSurface": { "displayName": "Ícono de estado pendiente", "role": "warning" },
+      "warningBorder": { "displayName": "Borde de estado pendiente", "role": "warning" },
+      "info": { "displayName": "Estado en camino (texto)", "role": "info" },
+      "infoSecondary": { "displayName": "Estado en camino secundario", "role": "info" },
+      "infoSoft": { "displayName": "Fondo de estado en camino", "role": "info" },
+      "infoSurface": { "displayName": "Ícono de estado en camino", "role": "info" },
+      "infoBorder": { "displayName": "Borde de estado en camino", "role": "info" },
+      "successBorder": { "displayName": "Borde de estado confirmado", "role": "primary" },
+      "successIconBackground": { "displayName": "Ícono de estado confirmado", "role": "primary" },
+      "skeletonHighlight": { "displayName": "Superficie de skeleton", "role": "neutral" },
+      "qrBackground": { "displayName": "Zona silenciosa de código QR", "role": "neutral" },
+      "cardBorderSubtle": { "displayName": "Borde sutil de tarjeta", "role": "neutral" }
+    },
+    "darkColors": {
+      "primary": "#5CD08C",
+      "primaryAction": "#256D46",
+      "primaryDark": "#8CE4AF",
+      "primarySoft": "#193426",
+      "surfaceSoft": "#1D3027",
+      "accent": "#5CD08C",
+      "brandDark": "#E4F2EA",
+      "impactValue": "#6EE09B",
+      "impactWeight": "#82E4A8",
+      "danger": "#FF8A80",
+      "dangerAction": "#B9261E",
+      "dangerBackground": "rgba(255, 92, 82, 0.18)",
+      "overlay": "rgba(4, 10, 7, 0.72)",
+      "warning": "#F6D06B",
+      "warningSecondary": "#E8BA46",
+      "warningSoft": "#2D2512",
+      "warningSurface": "#3D3116",
+      "warningBorder": "#5C491F",
+      "info": "#86CCFA",
+      "infoSecondary": "#74BEF0",
+      "infoSoft": "#132635",
+      "infoSurface": "#1A354A",
+      "infoBorder": "#284D6B",
+      "successBorder": "#2D543D",
+      "successIconBackground": "#214231",
+      "background": "#0C1511",
+      "surface": "#15231C",
+      "tabBarBackground": "#121F19",
+      "impactBackground": "#193426",
+      "avatarBackground": "#263B30",
+      "skeletonHighlight": "#284435",
+      "qrBackground": "#FFFFFF",
+      "text": "#EDF5F0",
+      "textSecondary": "#A7BBB1",
+      "textOnPrimary": "#FFFFFF",
+      "navInactive": "#9BB0A5",
+      "border": "#263A30",
+      "borderControl": "#6E877A",
+      "borderPrimary": "#5CD08C",
+      "cardBorderSubtle": "#2D4739"
     },
     "typographyMeta": {
       "screen-title": {

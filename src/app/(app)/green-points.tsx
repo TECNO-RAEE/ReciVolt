@@ -17,13 +17,15 @@ import { SearchBar } from '@/components/discovery/SearchBar';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 function ViewToggle({
   label,
   selected,
   onPress,
 }: Readonly<{ label: string; selected: boolean; onPress: () => void }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -49,6 +51,8 @@ function GreenPointsExplorer({
   initialSearch,
   initialCategory,
 }: Readonly<{ initialSearch: string; initialCategory: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const listRef = useRef<FlatList<GreenPoint>>(null);
   const {
     points,
@@ -306,121 +310,122 @@ function GreenPointsExplorer({
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  toolbar: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    paddingHorizontal: 24,
-    paddingBottom: 12,
-    gap: 12,
-  },
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  searchSlot: { flex: 1 },
-  filterButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 4,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterBadgeText: { fontFamily: fonts.bold, fontSize: 11, color: colors.textOnPrimary },
-  pillRow: { flexDirection: 'row', gap: 8 },
-  pill: {
-    minHeight: 44,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: colors.borderControl,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-  },
-  pillSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  pillText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.text },
-  stateContent: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    paddingHorizontal: 24,
-  },
-  mapArea: { flex: 1 },
-  locateButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
-  },
-  mapNotices: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    right: 68,
-    gap: 8,
-  },
-  mapNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingLeft: 12,
-    paddingRight: 6,
-    boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
-  },
-  mapNoticeText: { flex: 1, fontFamily: fonts.regular, fontSize: 13, color: colors.text },
-  dismissNoticeBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  floatingCard: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
-  },
-  emptyFloating: {
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    padding: 16,
-    gap: 12,
-    boxShadow: '0 7px 20px rgba(22,65,39,0.10)',
-  },
-  listContent: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    padding: 24,
-    paddingTop: 0,
-    gap: 16,
-    paddingBottom: 32,
-  },
-  listHeader: { gap: 12 },
-  listEmpty: { gap: 12 },
-  label: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    toolbar: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      paddingHorizontal: 24,
+      paddingBottom: 12,
+      gap: 12,
+    },
+    searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    searchSlot: { flex: 1 },
+    filterButton: {
+      width: 50,
+      height: 50,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    filterBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 4,
+      backgroundColor: colors.primaryAction,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    filterBadgeText: { fontFamily: fonts.bold, fontSize: 11, color: colors.textOnPrimary },
+    pillRow: { flexDirection: 'row', gap: 8 },
+    pill: {
+      minHeight: 44,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.borderControl,
+      backgroundColor: colors.surface,
+      justifyContent: 'center',
+    },
+    pillSelected: { backgroundColor: colors.primaryAction, borderColor: colors.primaryAction },
+    pillText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.text },
+    stateContent: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      paddingHorizontal: 24,
+    },
+    mapArea: { flex: 1 },
+    locateButton: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
+    },
+    mapNotices: {
+      position: 'absolute',
+      top: 16,
+      left: 16,
+      right: 68,
+      gap: 8,
+    },
+    mapNotice: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingVertical: 8,
+      paddingLeft: 12,
+      paddingRight: 6,
+      boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
+    },
+    mapNoticeText: { flex: 1, fontFamily: fonts.regular, fontSize: 13, color: colors.text },
+    dismissNoticeBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    floatingCard: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      bottom: 16,
+    },
+    emptyFloating: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      padding: 16,
+      gap: 12,
+      boxShadow: '0 7px 20px rgba(22,65,39,0.10)',
+    },
+    listContent: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      padding: 24,
+      paddingTop: 0,
+      gap: 16,
+      paddingBottom: 32,
+    },
+    listHeader: { gap: 12 },
+    listEmpty: { gap: 12 },
+    label: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
+  });

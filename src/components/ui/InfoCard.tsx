@@ -7,7 +7,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export type InfoCardIcon =
   | {
@@ -44,7 +44,24 @@ export function InfoCard({
   variant = 'default',
   style,
 }: InfoCardProps) {
-  const variantStyle = variantStyles[variant];
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const variantStyle =
+    variant === 'highlight'
+      ? {
+          card: { backgroundColor: colors.primarySoft, borderColor: colors.border },
+          iconBg: colors.surface,
+          iconColor: colors.primaryDark,
+          title: { color: colors.primaryDark },
+          subtitle: { color: colors.textSecondary },
+        }
+      : {
+          card: { backgroundColor: colors.surface, borderColor: colors.border },
+          iconBg: colors.primarySoft,
+          iconColor: colors.primaryDark,
+          title: { color: colors.text },
+          subtitle: { color: colors.textSecondary },
+        };
 
   const hasTitle = title !== undefined && title !== null && title !== '';
   const hasSubtitle = subtitle !== undefined && subtitle !== null && subtitle !== '';
@@ -67,7 +84,7 @@ export function InfoCard({
     <View style={[styles.card, variantStyle.card, style]}>
       {(icon != null || hasTitle || hasSubtitle || right != null) && (
         <View style={styles.headerRow}>
-          {renderIcon(icon, variantStyle.iconBg, variantStyle.iconColor)}
+          {renderIcon(icon, variantStyle.iconBg, variantStyle.iconColor, styles.iconCircle)}
 
           {(hasTitle || hasSubtitle) ? (
             <View style={styles.textCol}>
@@ -95,6 +112,7 @@ export function InfoCard({
 }
 
 export function CodePill({ code }: Readonly<{ code: string }>) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.codePill}>
       <Text style={styles.codePillText}>{code}</Text>
@@ -105,7 +123,8 @@ export function CodePill({ code }: Readonly<{ code: string }>) {
 function renderIcon(
   icon: InfoCardIcon | React.ReactNode,
   fallbackBg: string,
-  fallbackColor: string
+  fallbackColor: string,
+  iconCircleStyle: ViewStyle
 ) {
   if (!icon) return null;
 
@@ -118,7 +137,7 @@ function renderIcon(
   const color = iconConfig.color ?? fallbackColor;
 
   return (
-    <View style={[styles.iconCircle, { backgroundColor: bg }]}>
+    <View style={[iconCircleStyle, { backgroundColor: bg }]}>
       {iconConfig.type === 'material' ? (
         <MaterialCommunityIcons
           name={iconConfig.name}
@@ -136,80 +155,58 @@ function renderIcon(
   );
 }
 
-const variantStyles = {
-  default: {
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
     card: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 16,
+      padding: 16,
     },
-    iconBg: colors.primarySoft,
-    iconColor: colors.primaryDark,
-    title: { color: colors.text },
-    subtitle: { color: colors.textSecondary },
-  },
-  highlight: {
-    card: {
-      backgroundColor: colors.primarySoft,
-      borderColor: colors.border,
+    headerRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: 12,
     },
-    iconBg: colors.surface,
-    iconColor: colors.primaryDark,
-    title: { color: colors.primaryDark },
-    subtitle: { color: colors.textSecondary },
-  },
-};
-
-const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Wraps below the icon when the card is too narrow (large text or zoom).
-  textCol: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 140,
-    minWidth: 0,
-    gap: 2,
-  },
-  title: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  codePill: {
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    flexShrink: 1,
-  },
-  codePillText: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: colors.text,
-    letterSpacing: 0.5,
-    flexWrap: 'wrap',
-  },
-});
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // Wraps below the icon when the card is too narrow (large text or zoom).
+    textCol: {
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 140,
+      minWidth: 0,
+      gap: 2,
+    },
+    title: {
+      fontFamily: fonts.semiBold,
+      fontSize: 16,
+      lineHeight: 22,
+    },
+    subtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    codePill: {
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      flexShrink: 1,
+    },
+    codePillText: {
+      fontFamily: fonts.bold,
+      fontSize: 12,
+      color: colors.text,
+      letterSpacing: 0.5,
+      flexWrap: 'wrap',
+    },
+  });

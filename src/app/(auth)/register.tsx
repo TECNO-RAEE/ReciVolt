@@ -18,7 +18,7 @@ import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { brand } from '@/config/brand';
 import { termsUrl } from '@/config/legal';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { register } from '@/services/auth.service';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
 import { useAuth } from '@/providers/AuthProvider';
@@ -79,6 +79,8 @@ function getRegisterErrorMessage(error: unknown) {
 }
 
 export default function CreateAccountScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ intent?: string }>();
   const intent = parseAuthIntent(params.intent);
   const registrationIntent = intent === 'invitations' ? intent : null;
@@ -320,66 +322,67 @@ export default function CreateAccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
-  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
-  hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
-  subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  field: { width: '100%', gap: 6 },
-  hint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textSecondary,
-  },
-  termsBlock: { gap: 4 },
-  termsRow: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 4,
-  },
-  termsText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 21,
-    color: colors.text,
-  },
-  termsLinkButton: {
-    minHeight: 44,
-    alignSelf: 'flex-start',
-    justifyContent: 'center',
-    paddingLeft: 36,
-  },
-  inlineLink: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.primaryDark,
-    textDecorationLine: 'underline',
-  },
-  textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
-  textLinkLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.primaryDark,
-    textDecorationLine: 'underline',
-  },
-  pointLink: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.primaryDark,
-    textDecorationLine: 'underline',
-  },
-  pressed: { opacity: 0.75 },
-  disabled: { opacity: 0.6 },
-  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
+    screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
+    hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
+    subtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    field: { width: '100%', gap: 6 },
+    hint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.textSecondary,
+    },
+    termsBlock: { gap: 4 },
+    termsRow: {
+      minHeight: 44,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 4,
+    },
+    termsText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 21,
+      color: colors.text,
+    },
+    termsLinkButton: {
+      minHeight: 44,
+      alignSelf: 'flex-start',
+      justifyContent: 'center',
+      paddingLeft: 36,
+    },
+    inlineLink: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.primaryDark,
+      textDecorationLine: 'underline',
+    },
+    textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
+    textLinkLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.primaryDark,
+      textDecorationLine: 'underline',
+    },
+    pointLink: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.primaryDark,
+      textDecorationLine: 'underline',
+    },
+    pressed: { opacity: 0.75 },
+    disabled: { opacity: 0.6 },
+    error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
+  });

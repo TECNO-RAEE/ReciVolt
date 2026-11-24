@@ -3,7 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { CitizenPage, InfoNote, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, InfoNote, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import {
   buildContactMailBody,
@@ -12,7 +12,7 @@ import {
   resolveContactTopic,
   type ContactTopicKey,
 } from '@/config/contact';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const topicKeys = ['support', 'point', 'reward'] as const;
 
@@ -32,6 +32,9 @@ export default function ContactScreen() {
 }
 
 function ContactContent({ initialReason }: Readonly<{ initialReason: ContactTopicKey }>) {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const [reason, setReason] = useState<ContactTopicKey>(initialReason);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -195,40 +198,41 @@ function ContactContent({ initialReason }: Readonly<{ initialReason: ContactTopi
     </CitizenPage>
   );
 }
-const styles = StyleSheet.create({
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minHeight: 68,
-    padding: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  selected: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
-  copyButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copiedText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: colors.primaryDark,
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.danger,
-  },
-  noticeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.primaryDark,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      minHeight: 68,
+      padding: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    selected: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+    copyButton: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    copiedText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 12,
+      color: colors.primaryDark,
+    },
+    errorText: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.danger,
+    },
+    noticeText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.primaryDark,
+    },
+  });

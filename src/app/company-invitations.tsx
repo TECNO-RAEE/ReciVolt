@@ -10,7 +10,7 @@ import {
   PortalField,
   PortalFeedback,
   PortalLoading,
-  portalStyles as s,
+  usePortalStyles,
 } from '@/components/portal/PortalUI';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { roleHome } from '@/models/Access';
@@ -21,6 +21,7 @@ import { getMyInvitations, portalCommand } from '@/services/portal.service';
 
 export default function CompanyInvitationsScreen() {
   useAuthFlowArrival();
+  const s = usePortalStyles();
   const { session, role, postponeInvitations } = useAuth();
   const url = Linking.useURL();
   const [emailInvite, setEmailInvite] = useState(false);
@@ -84,6 +85,7 @@ export default function CompanyInvitationsScreen() {
   );
 }
 function Invitations({ needsPassword }: Readonly<{ needsPassword: boolean }>) {
+  const s = usePortalStyles();
   const { data, loading, error, refresh } = usePortalData(getMyInvitations);
   const { session, role, retryAccess, postponeInvitations, logout } = useAuth();
   const action = usePortalAction();

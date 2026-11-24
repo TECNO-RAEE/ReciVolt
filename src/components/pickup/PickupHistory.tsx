@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
-import { PortalLink, PortalLoading, portalStyles as s } from '@/components/portal/PortalUI';
+import { PortalLink, PortalLoading, usePortalStyles } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalData } from '@/hooks/usePortalData';
 import { formatPickupDate, pickupStatusNames } from '@/models/Pickup';
@@ -11,6 +11,7 @@ export function PickupHistory({
   companyId = null,
   hideEmptyAction = false,
 }: Readonly<{ companyId?: string | null; hideEmptyAction?: boolean }>) {
+  const s = usePortalStyles();
   const [page, setPage] = useState(0);
   const loader = useCallback(() => getPickupHistory(companyId, page), [companyId, page]);
   const { data, loading, error, refresh } = usePortalData(loader);

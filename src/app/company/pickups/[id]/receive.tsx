@@ -7,7 +7,7 @@ import {
   PortalFeedback,
   PortalLink,
   PortalLoading,
-  portalStyles as s,
+  usePortalStyles,
 } from '@/components/portal/PortalUI';
 import {
   PickupCitizenCard,
@@ -18,7 +18,7 @@ import {
 } from '@/components/pickup/PickupOps';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import {
   canCoordinatePickup,
   canMarkPickupInTransit,
@@ -36,6 +36,9 @@ function initialQuantities(items: PickupItem[]): Record<string, number> {
 }
 
 function ReceiveContent({ pickupId }: Readonly<{ pickupId: string }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   const loader = useCallback(() => pickupCommand('get', { id: pickupId }), [pickupId]);
   const { data: pickup, loading, error, refresh } = usePortalData(loader);
   const transit = usePortalAction();
@@ -133,7 +136,7 @@ function ReceiveContent({ pickupId }: Readonly<{ pickupId: string }>) {
       {isZeroUnits && (
         <View style={styles.zeroWarningBox}>
           <Ionicons name="alert-circle-outline" size={20} color={colors.danger} />
-          <Text style={styles.zeroWarningText}>
+          <Text style={[s.body, styles.zeroWarningText]}>
             El total recibido es 0 unidades. Si confirmás así, el retiro se cerrará como recibido y
             se acreditarán 0 puntos al ciudadano.
           </Text>
@@ -200,20 +203,20 @@ export default function ReceivePickupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  zeroWarningBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerBackground,
-  },
-  zeroWarningText: {
-    ...s.body,
-    flex: 1,
-    color: colors.danger,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    zeroWarningBox: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      backgroundColor: colors.dangerBackground,
+    },
+    zeroWarningText: {
+      flex: 1,
+      color: colors.danger,
+    },
+  });

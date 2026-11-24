@@ -2,10 +2,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from 'react-native';
 import { CompanyPage } from '@/components/portal/CompanyPage';
 import { CompanyPointEditor } from '@/components/portal/CompanyPointEditor';
-import { portalStyles as s } from '@/components/portal/PortalUI';
+import { usePortalStyles } from '@/components/portal/PortalUI';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
 
 export default function CompanyGreenPointScreen() {
+  const s = usePortalStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { refresh } = useCompanyPortal();
   return (

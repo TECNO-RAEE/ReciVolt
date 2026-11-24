@@ -13,7 +13,7 @@ import {
 import { getCompanyPortal, portalCommand } from '@/services/portal.service';
 import { getReward } from '@/services/reward.service';
 import type { CompanyPortalData, PortalCompany } from '@/models/Portal';
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 import { CompanyPointEditor } from './CompanyPointEditor';
 import { RewardEditor } from './AdminRewards';
 import {
@@ -24,7 +24,7 @@ import {
   PortalListItem,
   PortalLoading,
   PortalNav,
-  portalStyles as s,
+  usePortalStyles,
 } from './PortalUI';
 
 const kindIcons = {
@@ -50,6 +50,7 @@ export function AdminSearch({
   refresh: () => Promise<void>;
   onBackChange?: (handler: (() => void) | null) => void;
 }>) {
+  const s = usePortalStyles();
   const [kind, setKind] = useState<AdminKind>('users');
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
@@ -194,6 +195,7 @@ function UserEditor({
   close,
   cancel,
 }: Readonly<{ record: AdminRecord; close: () => Promise<void>; cancel: () => void }>) {
+  const s = usePortalStyles();
   const [name, setName] = useState(record.name);
   const action = usePortalAction();
   return (
@@ -236,6 +238,7 @@ function SearchReward({
   close: () => Promise<void>;
   cancel: () => void;
 }>) {
+  const s = usePortalStyles();
   const loader = useCallback(() => getReward(record.id), [record.id]);
   const { data, loading, error, refresh } = usePortalData(loader);
   return (
@@ -259,6 +262,7 @@ function CompanyRecordEditor({
   close,
   cancel,
 }: Readonly<{ record: AdminRecord; close: () => Promise<void>; cancel: () => void }>) {
+  const s = usePortalStyles();
   const loader = useCallback(() => getCompanyPortal(record.company_id!), [record.company_id]);
   const { data, loading, error, refresh } = usePortalData(loader);
   const point = data?.points.find((p) => p.id === record.id);
@@ -294,6 +298,8 @@ function CompanyFields({
   close: () => Promise<void>;
   cancel: () => void;
 }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
   const [name, setName] = useState(data.company.name);
   const [fields, setFields] = useState(
     data.details ?? { phone: '', address: '', website: '', description: '' }

@@ -17,7 +17,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { humanizePortalError } from '@/models/PortalError';
-import { colors, fonts } from '@/theme';
+import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
 
 function getAuthErrorCode(error: unknown) {
   if (typeof error === 'object' && error !== null && 'code' in error) {
@@ -53,6 +53,7 @@ function getNewPasswordErrorMessage(error: unknown) {
 }
 
 export default function NewPasswordScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { completePasswordRecovery, cancelPasswordRecovery } = useAuth();
   const confirmPasswordRef = useRef<TextInputInstance>(null);
   const [busy, setBusy] = useState<'save' | 'cancel' | null>(null);
@@ -194,25 +195,26 @@ export default function NewPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
-  container: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
-  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 18 },
-  hero: { alignItems: 'center', gap: 8, marginBottom: 4 },
-  description: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-    color: colors.textSecondary,
-  },
-  passwordField: { width: '100%', gap: 6 },
-  confirmPasswordField: { width: '100%' },
-  hint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textSecondary,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
+    screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 18 },
+    hero: { alignItems: 'center', gap: 8, marginBottom: 4 },
+    description: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+      color: colors.textSecondary,
+    },
+    passwordField: { width: '100%', gap: 6 },
+    confirmPasswordField: { width: '100%' },
+    hint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.textSecondary,
+    },
+  });

@@ -3,9 +3,16 @@ import { Text, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { LEAFLET_CSS, LEAFLET_JS } from './leafletSource';
 import type { PointsMapProps } from './PointsMap.types';
-import { colors, fonts } from '@/theme';
+import { fonts, useColorSchemeName, useColors } from '@/theme';
 
 const DEFAULT_CENTER: [number, number] = [-34.6037, -58.3816];
+
+// Keep map pins legible over bright OpenStreetMap tiles in both light and dark appearances.
+const MAP_PIN_COLORS = {
+  normal: '#256D46',
+  selected: '#14452B',
+  me: '#10282C',
+} as const;
 
 // JSON embebido en un <script>: se escapa "<" para que ningún nombre cierre la etiqueta.
 const toScriptJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
@@ -15,7 +22,12 @@ function buildHtml({
   location,
   preview,
   selectedId,
-}: Pick<PointsMapProps, 'points' | 'location' | 'preview' | 'selectedId'>) {
+  background,
+  dark,
+}: Pick<PointsMapProps, 'points' | 'location' | 'preview' | 'selectedId'> & {
+  background: string;
+  dark: boolean;
+}) {
   const data = toScriptJson({
     points: points.map((point) => ({
       id: point.id,
@@ -27,12 +39,13 @@ function buildHtml({
     preview: Boolean(preview),
     selectedId: selectedId ?? null,
     center: DEFAULT_CENTER,
-    colors: { normal: colors.primary, selected: colors.primaryDark, me: colors.brandDark },
+    colors: MAP_PIN_COLORS,
   });
+  const darkTileCss = dark ? '.leaflet-tile-pane{filter:brightness(0.86) contrast(1.06);}' : '';
   return `<!doctype html><html><head>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>${LEAFLET_CSS}</style>
-<style>html,body,#map{height:100%;margin:0;background:#E8EEEA}</style>
+<style>html,body,#map{height:100%;margin:0;background:${background}}${darkTileCss}</style>
 </head><body><div id="map"></div>
 <script>${LEAFLET_JS}</script>
 <script>
@@ -80,7 +93,13 @@ function buildHtml({
   });
   if (data.location) {
     bounds.push(data.location);
-    L.circleMarker(data.location, { radius: 6, color: data.colors.me, fillOpacity: 1 }).addTo(map);
+    L.circleMarker(data.location, {
+      radius: 6,
+      color: '#ffffff',
+      weight: 2,
+      fillColor: data.colors.me,
+      fillOpacity: 1
+    }).addTo(map);
   }
   if (bounds.length) map.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
   else map.setView(data.center, 11);
@@ -103,19 +122,31 @@ export function OsmPointsMap({
   selectedId = null,
   onSelect,
 }: PointsMapProps) {
+  const colors = useColors();
+  const dark = useColorSchemeName() === 'dark';
   const webview = useRef<WebView<object>>(null);
   const [error, setError] = useState(false);
   const pointsRef = useRef(points);
   const onSelectRef = useRef(onSelect);
+  const selectedIdRef = useRef(selectedId);
   useEffect(() => {
     pointsRef.current = points;
     onSelectRef.current = onSelect;
+    selectedIdRef.current = selectedId;
   });
   // El HTML no depende de selectedId: la selección se aplica por inyección para no recargar el mapa.
   const [initialSelectedId] = useState(selectedId);
   const html = useMemo(
-    () => buildHtml({ points, location, preview, selectedId: initialSelectedId }),
-    [points, location, preview, initialSelectedId]
+    () =>
+      buildHtml({
+        points,
+        location,
+        preview,
+        selectedId: initialSelectedId,
+        background: colors.surfaceSoft,
+        dark,
+      }),
+    [points, location, preview, initialSelectedId, colors.surfaceSoft, dark]
   );
   useEffect(() => {
     webview.current?.injectJavaScript(
@@ -142,8 +173,13 @@ export function OsmPointsMap({
         accessibilityLabel="Mapa de puntos verdes"
         style={
           fill
-            ? { flex: 1, overflow: 'hidden' }
-            : { height: preview ? 230 : 380, overflow: 'hidden', borderRadius: 8 }
+            ? { flex: 1, overflow: 'hidden', backgroundColor: colors.surfaceSoft }
+            : {
+                height: preview ? 230 : 380,
+                overflow: 'hidden',
+                borderRadius: 8,
+                backgroundColor: colors.surfaceSoft,
+              }
         }
       >
         <WebView<object>
@@ -152,6 +188,11 @@ export function OsmPointsMap({
           originWhitelist={['*']}
           javaScriptEnabled
           nestedScrollEnabled
+          onLoadEnd={() => {
+            webview.current?.injectJavaScript(
+              `window.setSelected && window.setSelected(${JSON.stringify(selectedIdRef.current)}); true;`
+            );
+          }}
           onMessage={onMessage}
           onError={() => setError(true)}
           onHttpError={() => setError(true)}

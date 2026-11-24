@@ -13,9 +13,10 @@ import {
 import { activeMemberships } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 
 export default function CompanyScreen() {
+  const colors = useColors();
   const { company, access, selectCompany } = useAuth();
   const { data, loading, refreshing, error, refresh, owner } = useCompanyPortal();
   const memberships = activeMemberships(access);

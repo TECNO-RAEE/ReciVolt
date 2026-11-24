@@ -15,11 +15,13 @@ import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export default function HomeScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { profile, session } = useAuth();
   const wallet = useWallet();
@@ -174,71 +176,72 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: {
-    width: '100%',
-    maxWidth: 720,
-    alignSelf: 'center',
-    padding: 20,
-    gap: 16,
-    paddingBottom: 28,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  wordmark: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  brand: { fontFamily: fonts.bold, color: colors.text, fontSize: 25, letterSpacing: -0.7 },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  intro: { flexDirection: 'row', minHeight: 106, paddingTop: 12, justifyContent: 'space-between' },
-  ecology: { position: 'absolute', right: -20, bottom: -24, opacity: 0.8 },
-  greeting: { fontFamily: fonts.bold, fontSize: 27, color: colors.text, letterSpacing: -0.6 },
-  description: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    marginTop: 6,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: -10,
-  },
-  sectionTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
-  quickGrid: { flexDirection: 'row', gap: 10 },
-  mapCard: {
-    backgroundColor: colors.surface,
-    padding: 8,
-    borderRadius: 18,
-    gap: 10,
-    overflow: 'hidden',
-    boxShadow: '0 5px 18px rgba(31,75,48,0.07)',
-  },
-  impact: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.primarySoft,
-    borderRadius: 18,
-    padding: 16,
-  },
-  impactTitle: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 20, color: colors.text },
-  impactHint: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.textSecondary,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: {
+      width: '100%',
+      maxWidth: 720,
+      alignSelf: 'center',
+      padding: 20,
+      gap: 16,
+      paddingBottom: 28,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 8,
+    },
+    wordmark: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+    brand: { fontFamily: fonts.bold, color: colors.text, fontSize: 25, letterSpacing: -0.7 },
+    avatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    intro: { flexDirection: 'row', minHeight: 106, paddingTop: 12, justifyContent: 'space-between' },
+    ecology: { position: 'absolute', right: -20, bottom: -24, opacity: 0.8 },
+    greeting: { fontFamily: fonts.bold, fontSize: 27, color: colors.text, letterSpacing: -0.6 },
+    description: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      marginTop: 6,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: -10,
+    },
+    sectionTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
+    quickGrid: { flexDirection: 'row', gap: 10 },
+    mapCard: {
+      backgroundColor: colors.surface,
+      padding: 8,
+      borderRadius: 18,
+      gap: 10,
+      overflow: 'hidden',
+      boxShadow: '0 5px 18px rgba(31,75,48,0.07)',
+    },
+    impact: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.primarySoft,
+      borderRadius: 18,
+      padding: 16,
+    },
+    impactTitle: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 20, color: colors.text },
+    impactHint: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.textSecondary,
+    },
+  });

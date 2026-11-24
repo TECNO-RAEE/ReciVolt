@@ -3,7 +3,7 @@ import { CameraView } from 'expo-camera';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ScannerLookupViewProps = {
   readonly camera: boolean;
@@ -36,6 +36,8 @@ export function ScannerLookupView({
   error,
   notice,
 }: ScannerLookupViewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <>
       {/* Cámara con marco y esquinas de visor de escáner */}
@@ -142,156 +144,157 @@ export function ScannerLookupView({
   );
 }
 
-const styles = StyleSheet.create({
-  viewfinderCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    padding: 16,
-    alignItems: 'center',
-  },
-  cameraBox: {
-    width: '100%',
-    height: 280,
-    backgroundColor: colors.surfaceSoft,
-    borderRadius: 16,
-    overflow: 'hidden',
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-    gap: 8,
-  },
-  qrArtworkCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  cameraInstructions: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  cameraHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 260,
-  },
-  cameraBtnWrap: {
-    marginTop: 8,
-  },
-  cornerTopLeft: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    width: 32,
-    height: 32,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: colors.accent,
-    borderTopLeftRadius: 8,
-  },
-  cornerTopRight: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
-    borderColor: colors.accent,
-    borderTopRightRadius: 8,
-  },
-  cornerBottomLeft: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    width: 32,
-    height: 32,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: colors.accent,
-    borderBottomLeftRadius: 8,
-  },
-  cornerBottomRight: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
-    borderColor: colors.accent,
-    borderBottomRightRadius: 8,
-  },
-  closeCameraWrap: {
-    width: '100%',
-    marginTop: 12,
-  },
-  orRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  orText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  manualEntryCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-  },
-  fieldLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.text,
-  },
-  inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderControl,
-    borderRadius: 12,
-    paddingLeft: 12,
-    minHeight: 48,
-    gap: 10,
-  },
-  manualInput: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.text,
-    paddingVertical: 10,
-  },
-  clearBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    viewfinderCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 16,
+      alignItems: 'center',
+    },
+    cameraBox: {
+      width: '100%',
+      height: 280,
+      backgroundColor: colors.surfaceSoft,
+      borderRadius: 16,
+      overflow: 'hidden',
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cameraPlaceholder: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20,
+      gap: 8,
+    },
+    qrArtworkCircle: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 6,
+    },
+    cameraInstructions: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    cameraHint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      maxWidth: 260,
+    },
+    cameraBtnWrap: {
+      marginTop: 8,
+    },
+    cornerTopLeft: {
+      position: 'absolute',
+      top: 16,
+      left: 16,
+      width: 32,
+      height: 32,
+      borderTopWidth: 4,
+      borderLeftWidth: 4,
+      borderColor: colors.accent,
+      borderTopLeftRadius: 8,
+    },
+    cornerTopRight: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      width: 32,
+      height: 32,
+      borderTopWidth: 4,
+      borderRightWidth: 4,
+      borderColor: colors.accent,
+      borderTopRightRadius: 8,
+    },
+    cornerBottomLeft: {
+      position: 'absolute',
+      bottom: 16,
+      left: 16,
+      width: 32,
+      height: 32,
+      borderBottomWidth: 4,
+      borderLeftWidth: 4,
+      borderColor: colors.accent,
+      borderBottomLeftRadius: 8,
+    },
+    cornerBottomRight: {
+      position: 'absolute',
+      bottom: 16,
+      right: 16,
+      width: 32,
+      height: 32,
+      borderBottomWidth: 4,
+      borderRightWidth: 4,
+      borderColor: colors.accent,
+      borderBottomRightRadius: 8,
+    },
+    closeCameraWrap: {
+      width: '100%',
+      marginTop: 12,
+    },
+    orRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 12,
+    },
+    orLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.border,
+    },
+    orText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    manualEntryCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 16,
+      gap: 12,
+    },
+    fieldLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.text,
+    },
+    inputBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderControl,
+      borderRadius: 12,
+      paddingLeft: 12,
+      minHeight: 48,
+      gap: 10,
+    },
+    manualInput: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.text,
+      paddingVertical: 10,
+    },
+    clearBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
 import type { Redemption } from '@/models/Reward';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type RedemptionConfirmationViewProps = {
   readonly redemption: Redemption;
@@ -26,6 +26,8 @@ export function RedemptionConfirmationView({
   onRefresh,
   onReset,
 }: RedemptionConfirmationViewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const isRedemptionReserved = redemption.status === 'RESERVED';
 
   const statusBadge = (
@@ -129,64 +131,65 @@ export function RedemptionConfirmationView({
   );
 }
 
-const styles = StyleSheet.create({
-  statusBadge: {
-    backgroundColor: colors.primarySoft,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusBadgeText: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: colors.primaryDark,
-  },
-  operatorNoticeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-  operatorNoticeText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.textSecondary,
-  },
-  actionCol: {
-    gap: 12,
-    marginTop: 8,
-  },
-  refreshLinkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    minHeight: 44,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  refreshLinkText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.danger,
-    textAlign: 'center',
-  },
-  noticeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.primaryDark,
-    textAlign: 'center',
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    statusBadge: {
+      backgroundColor: colors.primarySoft,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    statusBadgeText: {
+      fontFamily: fonts.bold,
+      fontSize: 12,
+      color: colors.primaryDark,
+    },
+    operatorNoticeCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+    },
+    operatorNoticeText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.textSecondary,
+    },
+    actionCol: {
+      gap: 12,
+      marginTop: 8,
+    },
+    refreshLinkBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      minHeight: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    },
+    refreshLinkText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    errorText: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.danger,
+      textAlign: 'center',
+    },
+    noticeText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.primaryDark,
+      textAlign: 'center',
+    },
+  });

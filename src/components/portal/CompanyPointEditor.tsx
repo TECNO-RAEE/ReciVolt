@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import {
   PortalChoice,
@@ -9,8 +9,8 @@ import {
   PortalFeedback,
   PortalLink,
   PortalSelect,
-  portalFieldStyle,
-  portalStyles as s,
+  usePortalFieldStyle,
+  usePortalStyles,
 } from './PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData, ManagedPoint } from '@/models/Portal';
@@ -30,7 +30,7 @@ import { savePoint as defaultSavePoint, type PointSaveInput } from '@/services/p
 import { AddressField } from './AddressField';
 import { LocationPicker } from './LocationPicker';
 import { joinPointAddress, splitPointAddress } from '@/models/PointAddress';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const supportedTimeZones: { value: string; label: string }[] = [
   { value: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires (GMT-3)' },
@@ -55,6 +55,9 @@ export function CompanyPointEditor({
   isAdmin?: boolean;
   savePoint?: (input: PointSaveInput) => Promise<unknown>;
 }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   const { role } = useAuth();
   const isAdmin = isAdminProp ?? role === 'platform_admin';
   const initialAddress = splitPointAddress(point?.address ?? '');
@@ -276,7 +279,7 @@ export function CompanyPointEditor({
       {intakeGroups.map((group) => (
         <View key={group.key} style={{ gap: 8 }}>
           <Text style={s.hint}>{group.title}</Text>
-          <View style={intakeCard}>
+          <View style={styles.intakeCard}>
             {group.categories.map((c, i) => (
               <View
                 key={c.id}
@@ -475,6 +478,9 @@ function ScheduleGrid({
   onChange: (ranges: ScheduleRange[]) => void;
   disabled: boolean;
 }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const portalFieldStyle = usePortalFieldStyle();
   const set = (i: number, key: keyof ScheduleRange, value: string) =>
     onChange(ranges.map((r, j) => (i === j ? { ...r, [key]: formatTimeInput(value) } : r)));
   const input = (i: number, key: keyof ScheduleRange, label: string) => (
@@ -483,7 +489,7 @@ function ScheduleGrid({
       value={ranges[i][key]}
       onChangeText={(value) => set(i, key, value)}
       placeholder="--:--"
-      placeholderTextColor={s.hint.color}
+      placeholderTextColor={colors.textSecondary}
       keyboardType="number-pad"
       maxLength={5}
       editable={!disabled}
@@ -509,9 +515,12 @@ const intakeOptions: { value: DeviceIntakeMode | ''; label: string }[] = [
   { value: 'pickup', label: 'Requiere coordinar retiro' },
   { value: 'not_accepted', label: 'No se recibe' },
 ];
-const intakeCard = {
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  backgroundColor: colors.surface,
-} as const;
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    intakeCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+    },
+  });

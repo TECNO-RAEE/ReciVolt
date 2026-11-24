@@ -10,7 +10,7 @@ import { AdminPoints } from '@/components/portal/AdminPoints';
 import { LimitsManager } from '@/components/portal/LimitsManager';
 import { usePortalData } from '@/hooks/usePortalData';
 import { getAdminPortal } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 
 const sections = [
   'Puntos verdes',
@@ -20,6 +20,7 @@ const sections = [
   'Historial de cambios',
 ] as const;
 export default function AdminScreen() {
+  const colors = useColors();
   const [tab, setTab] = useState<string>('Puntos verdes');
   const [reload, setReload] = useState(0);
   const [pointsList, setPointsList] = useState(true);

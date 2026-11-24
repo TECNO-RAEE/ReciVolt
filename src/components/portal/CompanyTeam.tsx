@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
@@ -10,34 +10,19 @@ import type { CompanyPortalData } from '@/models/Portal';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
 import { portalCommand, sendCompanyInvitation } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import {
   OrganizationCard,
   PortalFeedback,
   PortalField,
   PortalLink,
-  portalStyles as s,
+  usePortalStyles,
 } from './PortalUI';
 
-const formCard = {
-  gap: 16,
-  padding: 16,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  backgroundColor: colors.surface,
-} as const;
-
-const dangerBox = {
-  gap: 12,
-  padding: 14,
-  borderRadius: 12,
-  borderWidth: 1,
-  borderColor: colors.danger,
-  backgroundColor: colors.dangerBackground,
-} as const;
-
 export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   const { user, profile } = useAuth();
   const { refresh } = useCompanyPortal();
   const [name, setName] = useState(''),
@@ -95,7 +80,7 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
                 }
               />
             ) : confirmingDisableId === m.id ? (
-              <View style={[dangerBox, { marginTop: 12 }]}>
+              <View style={[styles.dangerBox, { marginTop: 12 }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                   <Ionicons name="alert-circle-outline" size={20} color={colors.danger} />
                   <Text style={[s.body, { flex: 1, minWidth: 0, color: colors.danger }]}>
@@ -162,7 +147,7 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
       <Text accessibilityRole="header" style={s.heading}>
         Invitar nuevo miembro
       </Text>
-      <View style={formCard}>
+      <View style={styles.formCard}>
         <PortalField
           label="Nombre"
           labelStyle={s.label}
@@ -284,3 +269,23 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
     </>
   );
 }
+
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    formCard: {
+      gap: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+    },
+    dangerBox: {
+      gap: 12,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      backgroundColor: colors.dangerBackground,
+    },
+  });

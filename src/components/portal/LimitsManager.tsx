@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { AdminPortalData, CompanyLimitRequest } from '@/models/Portal';
 import { portalCommand } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { AdminEmpty } from './AdminPage';
 import {
   OrganizationCard,
@@ -13,7 +13,7 @@ import {
   PortalFeedback,
   PortalField,
   PortalListItem,
-  portalStyles as s,
+  usePortalStyles,
 } from './PortalUI';
 
 const noteLimit = 200;
@@ -27,19 +27,14 @@ const roles = [
   ['Responsable', 'administra su organización, sus puntos y su equipo.'],
   ['Trabajador', 'recibe entregas y valida premios en el local.'],
 ] as const;
-const card = {
-  gap: 16,
-  padding: 16,
-  borderRadius: 16,
-  borderWidth: 1,
-  borderColor: colors.border,
-  backgroundColor: colors.surface,
-} as const;
 
 export function LimitsManager({
   data,
   refresh,
 }: Readonly<{ data: AdminPortalData; refresh: () => Promise<void> }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const pending = data.limitRequests.filter((r) => r.status === 'SUBMITTED');
   const reviewed = data.limitRequests.filter((r) => r.status !== 'SUBMITTED');
@@ -56,7 +51,7 @@ export function LimitsManager({
         />
       ))}
       {pending.length === 0 && (
-        <View style={card}>
+        <View style={styles.card}>
           <AdminEmpty
             icon="document-text-outline"
             title="Sin solicitudes pendientes"
@@ -83,7 +78,7 @@ export function LimitsManager({
           ))}
         </>
       )}
-      <View style={[card, { backgroundColor: colors.surfaceSoft }]}>
+      <View style={[styles.card, { backgroundColor: colors.surfaceSoft }]}>
         <Text accessibilityRole="header" style={s.label}>
           Roles del equipo
         </Text>
@@ -110,6 +105,8 @@ function LimitRequest({
   refresh: () => Promise<void>;
   onReviewed: (message: string | null) => void;
 }>) {
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   const action = usePortalAction();
   const [note, setNote] = useState('');
   const review = (status: 'APPROVED' | 'REJECTED') => {
@@ -121,7 +118,7 @@ function LimitRequest({
     }, '');
   };
   return (
-    <View style={[card, { padding: 0, overflow: 'hidden' }]}>
+    <View style={[styles.card, { padding: 0, overflow: 'hidden' }]}>
       <OrganizationCard
         name={request.companyName}
         role={`Solicita ampliar su equipo${currentLimit != null ? ` · hoy ${currentLimit} cupos` : ''}`}
@@ -181,6 +178,8 @@ function LimitRequest({
   );
 }
 function StatusLegend() {
+  const colors = useColors();
+  const s = usePortalStyles();
   return (
     <View
       style={{
@@ -213,3 +212,15 @@ function StatusLegend() {
     </View>
   );
 }
+
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      gap: 16,
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+  });

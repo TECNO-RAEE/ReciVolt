@@ -7,7 +7,7 @@ import {
   type Coordinates,
   type GreenPoint,
 } from '@/models/GreenPoint';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 /**
  * Tarjeta flotante sobre el mapa de Puntos verdes: resume cuántos puntos hay en el
@@ -30,6 +30,8 @@ export function PointCardPreview({
   onViewAll: () => void;
   onOpenPoint: () => void;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const status = point ? openingStatus(point, now) : 'unknown';
   return (
     <View style={styles.card}>
@@ -83,38 +85,39 @@ export function PointCardPreview({
     </View>
   );
 }
-const styles = StyleSheet.create({
-  card: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    overflow: 'hidden',
-    boxShadow: '0 7px 20px rgba(22,65,39,0.10)',
-  },
-  summaryRow: {
-    minHeight: 50,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  summary: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
-  link: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  linkText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.primary },
-  preview: {
-    minHeight: 72,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  previewText: { flex: 1, gap: 2 },
-  name: { fontFamily: fonts.bold, fontSize: 16, color: colors.text },
-  address: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
-  status: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.textSecondary },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      overflow: 'hidden',
+      boxShadow: '0 7px 20px rgba(22,65,39,0.10)',
+    },
+    summaryRow: {
+      minHeight: 50,
+      paddingHorizontal: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    summary: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
+    link: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    linkText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.primary },
+    preview: {
+      minHeight: 72,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    previewText: { flex: 1, gap: 2 },
+    name: { fontFamily: fonts.bold, fontSize: 16, color: colors.text },
+    address: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
+    status: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.textSecondary },
+  });

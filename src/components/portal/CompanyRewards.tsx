@@ -13,10 +13,11 @@ import {
   PortalField,
   PortalListItem,
   PortalLoading,
-  portalStyles as s,
+  usePortalStyles,
 } from './PortalUI';
 
 export function CompanyRewards({ companyId }: Readonly<{ companyId: string }>) {
+  const s = usePortalStyles();
   const loader = useCallback(() => getRewards(companyId, true), [companyId]);
   const { data, loading, error, refresh } = usePortalData(loader);
   const [search, setSearch] = useState('');

@@ -13,13 +13,13 @@ import {
   InfoNote,
   RewardPhoto,
   StatusBanner,
-  rewardStyles as s,
+  useRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import { pointsLabel, rewardQr, type Redemption } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { rewardCommand } from '@/services/reward.service';
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 
 export default function RedemptionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,6 +31,7 @@ export default function RedemptionScreen() {
   );
 }
 function RedemptionDetail({ id }: Readonly<{ id: string }>) {
+  const s = useRewardStyles();
   const loader = useCallback(() => rewardCommand('get', { id }), [id]);
   const { data, loading, error, refresh } = usePortalData(loader);
   useFocusEffect(
@@ -60,6 +61,8 @@ function RedemptionDetail({ id }: Readonly<{ id: string }>) {
   );
 }
 function Reserved({ data }: Readonly<{ data: Redemption }>) {
+  const colors = useColors();
+  const s = useRewardStyles();
   const { width } = useWindowDimensions();
   return (
     <>
@@ -69,12 +72,24 @@ function Reserved({ data }: Readonly<{ data: Redemption }>) {
         message="Mostrá este código en el local para validar tu canje."
       />
       <View style={[s.card, { alignItems: 'center' }]}>
-        <View accessibilityRole="image" accessibilityLabel="Código QR del canje">
+        <View
+          accessibilityRole="image"
+          accessibilityLabel="Código QR del canje"
+          style={{
+            padding: 14,
+            backgroundColor: colors.qrBackground,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
           <QRCode
             value={rewardQr(data.code)}
             size={Math.max(120, Math.min(180, width - 112))}
             quietZone={12}
             ecl="M"
+            color="#102530"
+            backgroundColor={colors.qrBackground}
           />
         </View>
         <CopyableCode code={data.code} />
@@ -105,6 +120,8 @@ function Reserved({ data }: Readonly<{ data: Redemption }>) {
   );
 }
 function Delivered({ data }: Readonly<{ data: Redemption }>) {
+  const colors = useColors();
+  const s = useRewardStyles();
   return (
     <>
       <StatusBanner tone="success" title="Premio entregado" message="¡Disfrutá tu beneficio!" />

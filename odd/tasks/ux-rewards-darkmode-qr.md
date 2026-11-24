@@ -26,9 +26,9 @@ Test runner: `npx tsc --noEmit && npm run lint && node --test tests/*.test.mjs`.
 
 | ID | Specs | Route | Commit |
 |---|---|---|---|
-| T1 | S1 (Missing reward photos + unified thumbnail) | inline | done (committed after 90/90 unit + tsc + lint) |
-| T2 | S2 (Theme infrastructure + HIG dark tokens + DESIGN.md/design.json + shared UI) | inline | pending |
-| T3 | S2 (Migrate screen/component `@/theme` consumers to `useColors()`) | delegated parallel writers (disjoint surfaces) | pending |
+| T1 | S1 (Missing reward photos + unified thumbnail) | inline | 0a7d37c |
+| T2 | S2 (Theme infrastructure + HIG dark tokens + DESIGN.md/design.json + shared UI) | inline | committed with T3 |
+| T3 | S2 (Migrate screen/component `@/theme` consumers to `useColors()`) | delegated parallel writers (disjoint surfaces) | done (verified seam tsc/lint/tests) |
 | T4 | S3 (QR confirmation watcher, silent polling, ScanSuccessModal) | inline | pending |
 
 ## Log

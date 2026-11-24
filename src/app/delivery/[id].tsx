@@ -21,13 +21,15 @@ import { getCategoryVisual } from '@/models/DeviceCategory';
 import { pointsLabel } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { deliveryCommand, getDeliveryPhotoUrl } from '@/services/delivery.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 function quantityUnitLabel(count: number) {
   return count === 1 ? 'unidad' : 'unidades';
 }
 
 export default function DeliveryDetailScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const loader = useCallback(() => deliveryCommand('get', { id }), [id]);
@@ -215,7 +217,14 @@ export default function DeliveryDetailScreen() {
           {/* Card: Código QR y código manual */}
           <View style={[styles.card, styles.qrCard]}>
             <View accessibilityLabel="Código QR de la entrega" style={styles.qrWrapper}>
-              <QRCode value={deliveryQr(data.code)} size={200} quietZone={12} ecl="M" />
+              <QRCode
+                value={deliveryQr(data.code)}
+                size={200}
+                quietZone={12}
+                ecl="M"
+                color="#102530"
+                backgroundColor={colors.qrBackground}
+              />
             </View>
 
             <Text style={styles.manualCodeLabel}>Código manual</Text>
@@ -395,6 +404,8 @@ export default function DeliveryDetailScreen() {
 }
 
 function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const loader = useCallback(() => getDeliveryPhotoUrl(path), [path]);
   const { data, loading } = usePortalData(loader);
 
@@ -420,258 +431,259 @@ function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
   );
 }
 
-const styles = StyleSheet.create({
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 16,
-  },
-  loadingText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.danger,
-    textAlign: 'center',
-    paddingHorizontal: 12,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  cardTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 22,
-    color: colors.text,
-  },
-  cardSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  sectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  pendingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 14,
-  },
-  pendingIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pendingTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 15,
-    color: colors.primaryDark,
-  },
-  pendingSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  qrCard: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-  },
-  qrWrapper: {
-    padding: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  manualCodeLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 18,
-    marginBottom: 8,
-  },
-  warningBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: 14,
-  },
-  warningIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  warningTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: colors.text,
-  },
-  warningSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  notesBlock: {
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: 4,
-  },
-  notesLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  notesText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.text,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 180,
-    borderRadius: 12,
-  },
-  confirmedHero: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    gap: 8,
-  },
-  checkCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmedTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    lineHeight: 30,
-    color: colors.text,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  confirmedSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 320,
-  },
-  pointsAccreditedCard: {
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.border,
-  },
-  pointsAccreditedTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.primaryDark,
-  },
-  pointsAccreditedSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  actionButtonsCol: {
-    gap: 12,
-    marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalAlertCard: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalAlertIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.dangerBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalAlertTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-  },
-  modalAlertMsg: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  modalAlertActions: {
-    gap: 8,
-    marginTop: 12,
-    width: '100%',
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    centerContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      gap: 16,
+    },
+    loadingText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    errorText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.danger,
+      textAlign: 'center',
+      paddingHorizontal: 12,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 16,
+    },
+    cardRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardTextCol: {
+      flex: 1,
+      gap: 2,
+    },
+    cardTitle: {
+      fontFamily: fonts.semiBold,
+      fontSize: 16,
+      lineHeight: 22,
+      color: colors.text,
+    },
+    cardSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    sectionTitle: {
+      fontFamily: fonts.semiBold,
+      fontSize: 15,
+      color: colors.text,
+      marginBottom: 4,
+    },
+    pendingBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 14,
+    },
+    pendingIconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pendingTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 15,
+      color: colors.primaryDark,
+    },
+    pendingSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    qrCard: {
+      alignItems: 'center',
+      paddingVertical: 24,
+      paddingHorizontal: 20,
+    },
+    qrWrapper: {
+      padding: 14,
+      backgroundColor: colors.qrBackground,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    manualCodeLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 18,
+      marginBottom: 8,
+    },
+    warningBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      padding: 14,
+    },
+    warningIconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    warningTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 14,
+      color: colors.text,
+    },
+    warningSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    notesBlock: {
+      marginTop: 12,
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      gap: 4,
+    },
+    notesLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    notesText: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.text,
+    },
+    photoPreview: {
+      width: '100%',
+      height: 180,
+      borderRadius: 12,
+    },
+    confirmedHero: {
+      alignItems: 'center',
+      paddingVertical: 16,
+      gap: 8,
+    },
+    checkCircle: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: colors.primaryAction,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    confirmedTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 24,
+      lineHeight: 30,
+      color: colors.text,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    confirmedSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      maxWidth: 320,
+    },
+    pointsAccreditedCard: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.border,
+    },
+    pointsAccreditedTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      lineHeight: 24,
+      color: colors.primaryDark,
+    },
+    pointsAccreditedSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    actionButtonsCol: {
+      gap: 12,
+      marginTop: 8,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modalAlertCard: {
+      width: '100%',
+      maxWidth: 380,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 24,
+      alignItems: 'center',
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalAlertIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.dangerBackground,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalAlertTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      color: colors.text,
+    },
+    modalAlertMsg: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    modalAlertActions: {
+      gap: 8,
+      marginTop: 12,
+      width: '100%',
+    },
+  });

@@ -6,7 +6,7 @@ import { SearchBar } from '@/components/discovery/SearchBar';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CitizenPage, InfoNote } from '@/components/rewards/RewardsUI';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const normalize = (value: string) =>
   value
@@ -16,6 +16,8 @@ const normalize = (value: string) =>
     .trim();
 
 export default function DeviceUnacceptedScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { pointId } = useLocalSearchParams<{ pointId?: string }>();
   const { points } = useDiscovery();
   const [search, setSearch] = useState('');
@@ -112,47 +114,48 @@ export default function DeviceUnacceptedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  subtitle: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text },
-  body: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.text },
-  warning: {
-    backgroundColor: colors.dangerBackground,
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  warningTitle: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 22,
-    color: colors.text,
-  },
-  rejectedIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: colors.dangerBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  row: {
-    minHeight: 68,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  caution: {
-    padding: 16,
-    borderRadius: 14,
-    backgroundColor: colors.dangerBackground,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    subtitle: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text },
+    body: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.text },
+    warning: {
+      backgroundColor: colors.dangerBackground,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    warningTitle: {
+      flex: 1,
+      fontFamily: fonts.semiBold,
+      fontSize: 16,
+      lineHeight: 22,
+      color: colors.text,
+    },
+    rejectedIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: colors.dangerBackground,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    row: {
+      minHeight: 68,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    caution: {
+      padding: 16,
+      borderRadius: 14,
+      backgroundColor: colors.dangerBackground,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+  });

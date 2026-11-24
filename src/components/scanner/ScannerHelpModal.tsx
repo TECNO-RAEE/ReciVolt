@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ScannerHelpModalProps = {
   readonly visible: boolean;
@@ -17,6 +17,8 @@ type ScannerHelpModalProps = {
 };
 
 export function ScannerHelpModal({ visible, onClose }: ScannerHelpModalProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Modal
       visible={visible}
@@ -95,87 +97,88 @@ export function ScannerHelpModal({ visible, onClose }: ScannerHelpModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  helpModalCard: {
-    width: '100%',
-    maxWidth: 480,
-    maxHeight: '85%',
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
-    gap: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.brandDark,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-  },
-  modalHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  helpModalTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-  },
-  modalCloseBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  helpModalScroll: {
-    maxHeight: 340,
-  },
-  helpItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 16,
-  },
-  helpStepBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  helpStepBadgeText: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: colors.primaryDark,
-  },
-  cardTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  helpItemTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.text,
-    marginBottom: 2,
-  },
-  helpItemBody: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20,
+    },
+    helpModalCard: {
+      width: '100%',
+      maxWidth: 480,
+      maxHeight: '85%',
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 20,
+      gap: 16,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.14,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 3,
+        },
+      }),
+    },
+    modalHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    helpModalTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      color: colors.text,
+    },
+    modalCloseBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    helpModalScroll: {
+      maxHeight: 340,
+    },
+    helpItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+      marginBottom: 16,
+    },
+    helpStepBadge: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 2,
+    },
+    helpStepBadgeText: {
+      fontFamily: fonts.bold,
+      fontSize: 14,
+      color: colors.primaryDark,
+    },
+    cardTextCol: {
+      flex: 1,
+      gap: 2,
+    },
+    helpItemTitle: {
+      fontFamily: fonts.semiBold,
+      fontSize: 15,
+      color: colors.text,
+      marginBottom: 2,
+    },
+    helpItemBody: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+  });

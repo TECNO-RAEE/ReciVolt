@@ -7,13 +7,13 @@ import {
   PortalBadge,
   PortalField,
   PortalLink,
-  portalStyles as s,
+  usePortalStyles,
 } from '@/components/portal/PortalUI';
 import { InfoCard } from '@/components/ui/InfoCard';
 import { brand } from '@/config/brand';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import type { CompanyPortalData } from '@/models/Portal';
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 
 export default function CompanyPointsScreen() {
   return (
@@ -23,6 +23,8 @@ export default function CompanyPointsScreen() {
   );
 }
 function CompanyPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
   const [search, setSearch] = useState('');
   const filtered = data.points.filter((p) => matchesAdminSearch(search, p.name, p.id));
   return (

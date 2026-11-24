@@ -3,16 +3,19 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { brand } from '@/config/brand';
 import { usePortalAction } from '@/hooks/usePortalData';
 import { roleHome } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function SettingsScreen() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const { session, profile, role, guest, logout } = useAuth();
   const action = usePortalAction();
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
@@ -144,23 +147,24 @@ export default function SettingsScreen() {
     </>
   );
 }
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 84 },
-  pressed: { opacity: 0.75 },
-  about: { alignItems: 'center', gap: 4, paddingVertical: 16 },
-  backdrop: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modal: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    gap: 14,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 84 },
+    pressed: { opacity: 0.75 },
+    about: { alignItems: 'center', gap: 4, paddingVertical: 16 },
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modal: {
+      width: '100%',
+      maxWidth: 400,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 24,
+      gap: 14,
+    },
+  });

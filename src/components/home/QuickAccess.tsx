@@ -1,4 +1,4 @@
-import { colors, fonts } from '@/theme';
+import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -9,6 +9,7 @@ type QuickAccessProps = {
 };
 
 export function QuickAccess({ title, icon, onPress }: Readonly<QuickAccessProps>) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -22,34 +23,35 @@ export function QuickAccess({ title, icon, onPress }: Readonly<QuickAccessProps>
   );
 }
 
-const styles = StyleSheet.create({
-  quickAccess: {
-    flex: 1,
-    minHeight: 80,
-    gap: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 3,
-    paddingVertical: 12,
-    backgroundColor: colors.surface,
-    borderRadius: 19,
-    boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
-  },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    quickAccess: {
+      flex: 1,
+      minHeight: 80,
+      gap: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 3,
+      paddingVertical: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 19,
+      boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
+    },
 
-  quickIcon: {
-    width: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    quickIcon: {
+      width: 29,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  quickText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 11,
-    textAlign: 'center',
-    color: colors.text,
-  },
+    quickText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 11,
+      textAlign: 'center',
+      color: colors.text,
+    },
 
-  pressed: {
-    opacity: 0.65,
-  },
-});
+    pressed: {
+      opacity: 0.65,
+    },
+  });

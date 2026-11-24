@@ -13,7 +13,7 @@ import {
   type Delivery,
 } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { DeliveryPhotoPreview } from './DeliveryPhotoPreview';
 
 type DeliveryConfirmationViewProps = {
@@ -41,6 +41,8 @@ export function DeliveryConfirmationView({
   onRefresh,
   onReset,
 }: DeliveryConfirmationViewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const status = effectiveDeliveryStatus(delivery);
   const isPending = status === 'PENDING_RECEPTION';
 
@@ -229,100 +231,101 @@ export function DeliveryConfirmationView({
   );
 }
 
-const styles = StyleSheet.create({
-  fieldSection: {
-    gap: 10,
-  },
-  sectionHeader: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.text,
-    marginLeft: 2,
-  },
-  sectionHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginLeft: 2,
-    marginBottom: 2,
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 12,
-  },
-  stepperSectionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  stepperLabel: {
-    flexShrink: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.text,
-  },
-  itemSubtotalText: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 8,
-    textAlign: 'right',
-  },
-  zeroUnitsAlertCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: 14,
-    padding: 14,
-  },
-  zeroUnitsAlertText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.danger,
-  },
-  notesCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-  },
-  notesLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  notesContent: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.text,
-  },
-  actionCol: {
-    gap: 12,
-    marginTop: 8,
-  },
-  refreshLinkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    minHeight: 44,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  refreshLinkText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    fieldSection: {
+      gap: 10,
+    },
+    sectionHeader: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.text,
+      marginLeft: 2,
+    },
+    sectionHint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginLeft: 2,
+      marginBottom: 2,
+    },
+    cardDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 12,
+    },
+    stepperSectionRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    stepperLabel: {
+      flexShrink: 1,
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.text,
+    },
+    itemSubtotalText: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 8,
+      textAlign: 'right',
+    },
+    zeroUnitsAlertCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: 14,
+      padding: 14,
+    },
+    zeroUnitsAlertText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.danger,
+    },
+    notesCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 16,
+    },
+    notesLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 4,
+    },
+    notesContent: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.text,
+    },
+    actionCol: {
+      gap: 12,
+      marginTop: 8,
+    },
+    refreshLinkBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      minHeight: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    },
+    refreshLinkText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+  });

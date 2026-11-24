@@ -7,7 +7,7 @@ import {
   PortalFeedback,
   PortalField,
   PortalLink,
-  portalStyles as s,
+  usePortalStyles,
 } from '@/components/portal/PortalUI';
 import { brand } from '@/config/brand';
 import { usePortalAction } from '@/hooks/usePortalData';
@@ -23,6 +23,7 @@ export default function CompanyProfileScreen() {
   );
 }
 function CompanyProfile({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const s = usePortalStyles();
   const { refresh } = useCompanyPortal();
   const [name, setName] = useState(data.company.name),
     [phone, setPhone] = useState(data.details?.phone ?? ''),

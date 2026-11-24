@@ -4,7 +4,7 @@ import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalData } from '@/hooks/usePortalData';
 import { getDeliveryPhotoUrl } from '@/services/delivery.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type DeliveryPhotoPreviewProps = {
   readonly path: string;
@@ -15,6 +15,8 @@ export function DeliveryPhotoPreview({ path }: DeliveryPhotoPreviewProps) {
 }
 
 function DeliveryPhotoPreviewContent({ path }: DeliveryPhotoPreviewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const loader = useCallback(() => getDeliveryPhotoUrl(path), [path]);
   const { data, loading, refreshing, error, refresh } = usePortalData(loader);
   const [imageFailed, setImageFailed] = useState(false);
@@ -51,32 +53,33 @@ function DeliveryPhotoPreviewContent({ path }: DeliveryPhotoPreviewProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-  },
-  notesLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  photoLoadingBox: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  errorBox: {
-    gap: 10,
-    marginTop: 6,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    marginTop: 6,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 16,
+    },
+    notesLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 4,
+    },
+    photoLoadingBox: {
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    errorBox: {
+      gap: 10,
+      marginTop: 6,
+    },
+    photoPreview: {
+      width: '100%',
+      height: 200,
+      borderRadius: 12,
+      marginTop: 6,
+    },
+  });

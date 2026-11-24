@@ -2,11 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import type { Map, Marker } from 'leaflet';
 import type { LocationPickerProps } from './LocationPicker.types';
-import { colors } from '@/theme';
-import { portalStyles as s } from './PortalUI';
+import { useColors, useColorSchemeName } from '@/theme';
+import { usePortalStyles } from './PortalUI';
 import '../discovery/leaflet.web.css';
 
+const MAP_MARKER_COLOR = '#256D46';
+
 export function LocationPicker({ value, onChange, disabled = false }: LocationPickerProps) {
+  const colors = useColors();
+  const scheme = useColorSchemeName();
+  const s = usePortalStyles();
   const element = useRef<HTMLDivElement>(null);
   const map = useRef<Map | null>(null);
   const marker = useRef<Marker | null>(null);
@@ -73,7 +78,7 @@ export function LocationPicker({ value, onChange, disabled = false }: LocationPi
       else {
         const icon = L.divIcon({
           className: '',
-          html: `<svg width="28" height="36" viewBox="0 0 28 36" aria-hidden="true"><path fill="${colors.primary}" stroke="white" stroke-width="2" d="M14 35S1 22 1 14a13 13 0 0 1 26 0c0 8-13 21-13 21Z"/><circle cx="14" cy="14" r="4" fill="white"/></svg>`,
+          html: `<svg width="28" height="36" viewBox="0 0 28 36" aria-hidden="true"><path fill="${MAP_MARKER_COLOR}" stroke="white" stroke-width="2" d="M14 35S1 22 1 14a13 13 0 0 1 26 0c0 8-13 21-13 21Z"/><circle cx="14" cy="14" r="4" fill="white"/></svg>`,
           iconSize: [28, 36],
           iconAnchor: [14, 36],
         });
@@ -96,6 +101,14 @@ export function LocationPicker({ value, onChange, disabled = false }: LocationPi
       cancelled = true;
     };
   }, [ready, value, disabled]);
+  useEffect(() => {
+    const tilePane =
+      map.current?.getPane('tilePane') ??
+      (element.current?.querySelector('.leaflet-tile-pane') as HTMLElement | null);
+    if (tilePane) {
+      tilePane.style.filter = scheme === 'dark' ? 'brightness(0.82) contrast(1.04)' : '';
+    }
+  }, [ready, scheme]);
   return (
     <View style={{ gap: 8 }}>
       <div
@@ -108,6 +121,7 @@ export function LocationPicker({ value, onChange, disabled = false }: LocationPi
           overflow: 'hidden',
           zIndex: 0,
           opacity: disabled ? 0.65 : 1,
+          backgroundColor: colors.surfaceSoft,
         }}
       />
       {error && (

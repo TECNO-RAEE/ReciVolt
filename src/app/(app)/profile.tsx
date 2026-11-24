@@ -4,12 +4,15 @@ import { useState } from 'react';
 import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CitizenBalanceCard } from '@/components/account/CitizenBalanceCard';
-import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 export default function ProfileScreen() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
   return session ? (
     <Profile />
@@ -48,6 +51,9 @@ export default function ProfileScreen() {
   );
 }
 function SettingsLink() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -61,6 +67,9 @@ function SettingsLink() {
   );
 }
 function Profile() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const { profile, logout } = useAuth();
   const action = usePortalAction();
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
@@ -180,33 +189,34 @@ function Profile() {
     </CitizenPage>
   );
 }
-const styles = StyleSheet.create({
-  identity: { alignItems: 'center', gap: 8, paddingVertical: 12 },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  menuRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  menuDivider: { borderBottomWidth: 1, borderColor: colors.border },
-  logoutText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.danger },
-  backdrop: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modal: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    gap: 14,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    identity: { alignItems: 'center', gap: 8, paddingVertical: 12 },
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    menuRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
+    menuDivider: { borderBottomWidth: 1, borderColor: colors.border },
+    logoutText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.danger },
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modal: {
+      width: '100%',
+      maxWidth: 400,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 24,
+      gap: 14,
+    },
+  });

@@ -9,7 +9,7 @@ import {
   PortalLink,
   PortalLoading,
   PortalPage,
-  portalStyles as s,
+  usePortalStyles,
 } from './PortalUI';
 
 // Inner company screen: shared header, load/error states and the owner-only guard.
@@ -26,6 +26,7 @@ export function CompanyPage({
   action?: ReactNode;
   children: (data: CompanyPortalData) => ReactNode;
 }>) {
+  const s = usePortalStyles();
   const portal = useCompanyPortal();
   const { data, loading, error, refresh, owner } = portal;
   const [pullRefreshing, setPullRefreshing] = useState(false);

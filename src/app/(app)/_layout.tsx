@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
 
 import type { ColorValue } from 'react-native';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors } from '@/theme';
 
 type TabIconName = 'home' | 'map' | 'gift' | 'person';
 
@@ -23,6 +23,7 @@ function tabIcon(name: TabIconName) {
 }
 
 export default function AppLayout() {
+  const colors = useColors();
   return (
     <Tabs
       screenOptions={{

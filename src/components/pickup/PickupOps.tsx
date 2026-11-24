@@ -1,32 +1,40 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { portalStyles as s } from '@/components/portal/PortalUI';
+import { usePortalStyles } from '@/components/portal/PortalUI';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { InfoCard, CodePill } from '@/components/ui/InfoCard';
 import { NumericStepper } from '@/components/ui/NumericStepper';
 import type { Pickup, PickupItem, PickupStatus } from '@/models/Pickup';
 import { getPickupTimeline, pickupStatusNames } from '@/models/Pickup';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { PickupTimeline } from './PickupTimeline';
 
-export const pickupCard = {
-  gap: 12,
-  padding: 16,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  backgroundColor: colors.surface,
-} as const;
-
-const badgePalette: Record<PickupStatus, { backgroundColor: string; color: string }> = {
-  REQUESTED: { backgroundColor: colors.surfaceSoft, color: colors.text },
-  COORDINATED: { backgroundColor: colors.primarySoft, color: colors.primaryDark },
-  IN_TRANSIT: { backgroundColor: colors.primarySoft, color: colors.primaryDark },
-  COMPLETED: { backgroundColor: colors.primary, color: colors.textOnPrimary },
-  CANCELLED: { backgroundColor: colors.dangerBackground, color: colors.danger },
-};
+export function usePickupCardStyle() {
+  const colors = useColors();
+  return useMemo(
+    () => ({
+      gap: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+    }),
+    [colors]
+  );
+}
 
 export function PickupStatusBadge({ status }: Readonly<{ status: PickupStatus }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const badgePalette: Record<PickupStatus, { backgroundColor: string; color: string }> = {
+    REQUESTED: { backgroundColor: colors.surfaceSoft, color: colors.text },
+    COORDINATED: { backgroundColor: colors.primarySoft, color: colors.primaryDark },
+    IN_TRANSIT: { backgroundColor: colors.primarySoft, color: colors.primaryDark },
+    COMPLETED: { backgroundColor: colors.primaryAction, color: colors.textOnPrimary },
+    CANCELLED: { backgroundColor: colors.dangerBackground, color: colors.danger },
+  };
   const palette = badgePalette[status];
   return (
     <View
@@ -40,6 +48,9 @@ export function PickupStatusBadge({ status }: Readonly<{ status: PickupStatus }>
 
 // Citizen, contact and pickup address. Shared by the coordination and reception screens.
 export function PickupCitizenCard({ pickup }: Readonly<{ pickup: Pickup }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   return (
     <InfoCard
       icon={{ name: 'person-outline' }}
@@ -79,9 +90,12 @@ export function PickupMaterialCard({
   quantities?: Record<string, number>;
   onChangeQuantity?: (categoryId: string, quantity: number) => void;
 }>) {
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
+  const cardStyle = usePickupCardStyle();
   const editable = quantities != null && onChangeQuantity != null;
   return (
-    <View style={pickupCard}>
+    <View style={cardStyle}>
       <Text accessibilityRole="header" style={s.heading}>
         Material a retirar
       </Text>
@@ -126,6 +140,7 @@ export function PickupPointsEstimateCard({ points }: Readonly<{ points: number }
 
 // Read-only closing view for pickups that no longer accept operations.
 export function PickupReadOnlySummary({ pickup }: Readonly<{ pickup: Pickup }>) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <>
       <View style={styles.statusRow}>
@@ -154,41 +169,42 @@ export function PickupTariffNote() {
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  badgeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  dataRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  codeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  materialRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minHeight: 44,
-  },
-  quantity: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: colors.text,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    badge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    badgeText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 12,
+      lineHeight: 16,
+    },
+    dataRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    codeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    materialRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      minHeight: 44,
+    },
+    quantity: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: colors.text,
+    },
+    statusRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+  });

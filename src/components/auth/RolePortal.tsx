@@ -4,9 +4,10 @@ import { Logo } from '@/components/auth/Logo';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { activeMemberships, canManageCompany } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function RolePortal({ admin = false }: Readonly<{ admin?: boolean }>) {
+  const styles = useThemedStyles(makeStyles);
   const { profile, role, company, access, selectCompany, logout } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const memberships = activeMemberships(access);
@@ -57,20 +58,21 @@ export function RolePortal({ admin = false }: Readonly<{ admin?: boolean }>) {
     </ScrollView>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: {
-    flexGrow: 1,
-    width: '100%',
-    maxWidth: 680,
-    alignSelf: 'center',
-    padding: 24,
-    paddingTop: 64,
-    gap: 24,
-  },
-  title: { fontFamily: fonts.bold, fontSize: 28, color: colors.brandDark },
-  subtitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.text },
-  description: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.text },
-  section: { gap: 16, paddingVertical: 24, borderTopWidth: 1, borderTopColor: colors.border },
-  error: { fontFamily: fonts.regular, color: colors.danger },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: {
+      flexGrow: 1,
+      width: '100%',
+      maxWidth: 680,
+      alignSelf: 'center',
+      padding: 24,
+      paddingTop: 64,
+      gap: 24,
+    },
+    title: { fontFamily: fonts.bold, fontSize: 28, color: colors.brandDark },
+    subtitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.text },
+    description: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.text },
+    section: { gap: 16, paddingVertical: 24, borderTopWidth: 1, borderTopColor: colors.border },
+    error: { fontFamily: fonts.regular, color: colors.danger },
+  });

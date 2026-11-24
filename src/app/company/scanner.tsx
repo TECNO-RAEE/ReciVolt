@@ -23,9 +23,11 @@ import { useAuth } from '@/providers/AuthProvider';
 import { deliveryCommand } from '@/services/delivery.service';
 import { getPickupByCode } from '@/services/pickup.service';
 import { rewardCommand } from '@/services/reward.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function ScannerScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { company } = useAuth();
   const { code: rawInitialCode } = useLocalSearchParams<{ code?: string | string[] }>();
   const initialCode = Array.isArray(rawInitialCode) ? rawInitialCode[0] : rawInitialCode;
@@ -66,6 +68,8 @@ function Scanner({
   companyName,
   initialCode,
 }: Readonly<{ companyId: string; companyName: string; initialCode?: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [permission, requestPermission] = useCameraPermissions();
   const [camera, setCamera] = useState(false);
   const scanLock = useRef(false);
@@ -304,48 +308,49 @@ function Scanner({
   );
 }
 
-const styles = StyleSheet.create({
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 14,
-  },
-  emptyIconCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: colors.surfaceSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 320,
-    marginBottom: 10,
-  },
-  headerHelpBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resolvingBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    gap: 12,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    centerContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      gap: 14,
+    },
+    emptyIconCircle: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: colors.surfaceSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    emptyTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    emptySubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      maxWidth: 320,
+      marginBottom: 10,
+    },
+    headerHelpBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    resolvingBox: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 48,
+      gap: 12,
+    },
+  });

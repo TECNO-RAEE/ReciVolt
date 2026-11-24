@@ -6,15 +6,17 @@ import { DeliveryBalance } from '@/components/delivery/DeliveryBalance';
 import { DeliveryHistory } from '@/components/delivery/DeliveryHistory';
 import { PickupHistory } from '@/components/pickup/PickupHistory';
 import { PortalNav } from '@/components/portal/PortalUI';
-import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors } from '@/theme';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 const tabs = ['Todos', 'Entregas', 'Retiros'] as const;
 type Tab = (typeof tabs)[number];
 
 export default function MyRaeeScreen() {
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
   const [tab, setTab] = useState<Tab>('Todos');
   if (!session) return <AccountRequired title="Entregas" back="/profile" />;
@@ -57,8 +59,9 @@ export default function MyRaeeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  actions: { gap: 10 },
-  section: { gap: 12 },
-  sectionDivider: { paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    actions: { gap: 10 },
+    section: { gap: 12 },
+    sectionDivider: { paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  });

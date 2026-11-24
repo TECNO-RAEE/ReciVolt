@@ -9,17 +9,17 @@ import {
   PortalLink,
   PortalLoading,
   PortalSelect,
-  portalStyles as s,
+  usePortalStyles,
 } from '@/components/portal/PortalUI';
 import {
   PickupCitizenCard,
   PickupMaterialCard,
   PickupReadOnlySummary,
-  pickupCard,
+  usePickupCardStyle,
 } from '@/components/pickup/PickupOps';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import {
   canEditPickupSchedule,
   canReceivePickup,
@@ -30,6 +30,10 @@ import {
 import { pickupCommand } from '@/services/pickup.service';
 
 function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
+  const pickupCard = usePickupCardStyle();
   const loader = useCallback(() => pickupCommand('get', { id: pickupId }), [pickupId]);
   const { data: pickup, loading, error, refresh } = usePortalData(loader);
   const action = usePortalAction();
@@ -161,7 +165,7 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
           <View style={styles.dangerBox}>
             <View style={styles.dangerRow}>
               <Ionicons name="alert-circle-outline" size={20} color={colors.danger} />
-              <Text style={styles.dangerText}>
+              <Text style={[s.body, styles.dangerText]}>
                 Si cancelás este retiro, la solicitud pasará a estado Cancelado y no podrá volver a
                 coordinarse ni recibirse.
               </Text>
@@ -198,23 +202,23 @@ export default function CoordinatePickupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  dangerBox: {
-    gap: 12,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerBackground,
-  },
-  dangerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  dangerText: {
-    ...s.body,
-    flex: 1,
-    color: colors.danger,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    dangerBox: {
+      gap: 12,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      backgroundColor: colors.dangerBackground,
+    },
+    dangerRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+    },
+    dangerText: {
+      flex: 1,
+      color: colors.danger,
+    },
+  });

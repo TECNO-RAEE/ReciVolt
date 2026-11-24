@@ -17,7 +17,7 @@ import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { sendRecoveryCode, verifyRecoveryCode } from '@/services/auth.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -93,6 +93,8 @@ function getVerifyCodeErrorMessage(error: unknown) {
 }
 
 export default function ForgotPasswordScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ email?: string }>();
   const paramEmail = typeof params.email === 'string' ? params.email.trim() : '';
   const [emailDraft, setEmailDraft] = useState<string | null>(null);
@@ -290,6 +292,7 @@ export default function ForgotPasswordScreen() {
                     autoFocus
                     autoComplete="one-time-code"
                     textContentType="oneTimeCode"
+                    placeholderTextColor={colors.textSecondary}
                     style={styles.hiddenOtpInput}
                     value={code}
                     onChangeText={handleCodeChange}
@@ -349,51 +352,52 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
-  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
-  pressed: { opacity: 0.75 },
-  disabled: { opacity: 0.6 },
-  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
+    screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
+    pressed: { opacity: 0.75 },
+    disabled: { opacity: 0.6 },
+    error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
 
-  hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 26,
-    lineHeight: 34,
-    textAlign: 'center',
-    color: colors.text,
-  },
-  description: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-    color: colors.textSecondary,
-  },
-  row: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
-  textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
-  textLinkLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.primaryDark,
-    textDecorationLine: 'underline',
-  },
-  emailContainer: { width: '100%' },
-  otpContainer: { width: '100%', height: 52, flexDirection: 'row', gap: 4 },
-  otpBox: {
-    flex: 1,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderControl,
-    borderRadius: 10,
-  },
-  otpBoxFocused: { borderColor: colors.primary, borderWidth: 2 },
-  otpDigit: { fontFamily: fonts.regular, fontSize: 18, color: colors.text },
-  hiddenOtpInput: { position: 'absolute', width: '100%', height: '100%', opacity: 0 },
-  notice: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 21, color: colors.primary },
-});
+    hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
+    title: {
+      fontFamily: fonts.bold,
+      fontSize: 26,
+      lineHeight: 34,
+      textAlign: 'center',
+      color: colors.text,
+    },
+    description: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+      color: colors.textSecondary,
+    },
+    row: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
+    textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
+    textLinkLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.primaryDark,
+      textDecorationLine: 'underline',
+    },
+    emailContainer: { width: '100%' },
+    otpContainer: { width: '100%', height: 52, flexDirection: 'row', gap: 4 },
+    otpBox: {
+      flex: 1,
+      height: 52,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderControl,
+      borderRadius: 10,
+    },
+    otpBoxFocused: { borderColor: colors.primary, borderWidth: 2 },
+    otpDigit: { fontFamily: fonts.regular, fontSize: 18, color: colors.text },
+    hiddenOtpInput: { position: 'absolute', width: '100%', height: '100%', opacity: 0 },
+    notice: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 21, color: colors.primary },
+  });

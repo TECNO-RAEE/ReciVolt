@@ -7,19 +7,21 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { PortalFeedback, PortalLoading } from '@/components/portal/PortalUI';
 import {
   CitizenPage,
-  rewardStyles as s,
+  useRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { CitizenBalanceCard } from '@/components/account/CitizenBalanceCard';
 import { usePortalData } from '@/hooks/usePortalData';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { getPointsHistory } from '@/services/reward.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors } from '@/theme';
 export default function MyPointsScreen() {
   const { session } = useAuth();
   return session ? <MyPoints key={session.user.id} /> : <AccountRequired title="Mis puntos" />;
 }
 function MyPoints() {
+  const colors = useColors();
+  const s = useRewardStyles();
   const wallet = useWallet();
   const history = usePortalData(getPointsHistory);
   const { refresh: refreshHistory } = history;

@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ProfileImpactCardProps = {
   recycledCount: number;
@@ -12,6 +12,8 @@ export function ProfileImpactCard({
   recycledCount,
   recoveredWeight,
 }: Readonly<ProfileImpactCardProps>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Mi impacto</Text>
@@ -43,64 +45,65 @@ export function ProfileImpactCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    height: 144,
-    marginTop: 25,
-    paddingHorizontal: 15,
-    paddingTop: 4,
-    backgroundColor: colors.impactBackground,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-  },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      height: 144,
+      marginTop: 25,
+      paddingHorizontal: 15,
+      paddingTop: 4,
+      backgroundColor: colors.impactBackground,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+    },
 
-  title: {
-    marginLeft: 40,
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
-  },
+    title: {
+      marginLeft: 40,
+      fontFamily: 'Inter',
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+    },
 
-  content: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+    content: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
 
-  stat: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+    stat: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
 
-  count: {
-    fontFamily: 'Inter',
-    fontSize: 32,
-    fontWeight: '600',
-    color: colors.impactValue,
-  },
+    count: {
+      fontFamily: 'Inter',
+      fontSize: 32,
+      fontWeight: '600',
+      color: colors.impactValue,
+    },
 
-  weight: {
-    fontFamily: 'Inter',
-    fontSize: 24,
-    fontWeight: '600',
-    color: colors.impactWeight,
-  },
+    weight: {
+      fontFamily: 'Inter',
+      fontSize: 24,
+      fontWeight: '600',
+      color: colors.impactWeight,
+    },
 
-  label: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
+    label: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+    },
 
-  separator: {
-    width: 1,
-    height: 71,
-    marginHorizontal: 10,
-    backgroundColor: colors.text,
-  },
-});
+    separator: {
+      width: 1,
+      height: 71,
+      marginHorizontal: 10,
+      backgroundColor: colors.text,
+    },
+  });

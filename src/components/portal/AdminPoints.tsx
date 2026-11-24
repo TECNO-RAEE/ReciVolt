@@ -11,7 +11,7 @@ import {
   PortalLink,
   PortalListItem,
   PortalLoading,
-  portalStyles as s,
+  usePortalStyles,
 } from './PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import {
@@ -55,6 +55,7 @@ export function AdminPoints({
   onBackChange?: (handler: (() => void) | null) => void;
   reload?: number;
 }>) {
+  const s = usePortalStyles();
   const [selected, setSelected] = useState<PortalCompany | null | undefined>();
   const [search, setSearch] = useState('');
   const [pointId, setPointId] = useState<string>();
@@ -227,6 +228,7 @@ function PointWorkspace({
   exitCreating: () => void;
   saved: () => Promise<void>;
 }>) {
+  const s = usePortalStyles();
   const loader = useCallback(
     () => (company ? getCompanyPortal(company.id) : getNewPointData()),
     [company]
