@@ -15,28 +15,54 @@ import QRCode from 'react-native-qrcode-svg';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { CitizenPage, CopyableCode } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { ScanSuccessModal } from '@/components/ui/ScanSuccessModal';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
+import { useStatusPolling } from '@/hooks/useStatusPolling';
 import { deliveryQr, deliveryStatusNames, effectiveDeliveryStatus } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
 import { pointsLabel } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
+import { useWallet } from '@/providers/WalletProvider';
 import { deliveryCommand, getDeliveryPhotoUrl } from '@/services/delivery.service';
 import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+
+const PENDING_DELIVERY_STATUSES = ['PENDING_RECEPTION'] as const;
+const CONFIRMED_DELIVERY_STATUSES = ['CONFIRMED'] as const;
 
 function quantityUnitLabel(count: number) {
   return count === 1 ? 'unidad' : 'unidades';
 }
 
 export default function DeliveryDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <DeliveryDetail key={id ?? 'missing'} id={id} />;
+}
+
+function DeliveryDetail({ id }: Readonly<{ id: string }>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
+  const { refresh: refreshWallet } = useWallet();
   const loader = useCallback(() => deliveryCommand('get', { id }), [id]);
-  const { data, loading, error, refresh } = usePortalData(loader);
+  const { data, loading, error, refresh, silentRefresh } = usePortalData(loader);
   const action = usePortalAction();
 
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [scanSuccessVisible, setScanSuccessVisible] = useState(false);
+
+  const currentStatus = session && data ? effectiveDeliveryStatus(data) : null;
+  useStatusPolling({
+    resetKey: id,
+    status: currentStatus,
+    pendingStatuses: PENDING_DELIVERY_STATUSES,
+    confirmedStatuses: CONFIRMED_DELIVERY_STATUSES,
+    poll: silentRefresh,
+    onConfirmed: () => {
+      setCancelModalVisible(false);
+      setScanSuccessVisible(true);
+      void refreshWallet();
+    },
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -98,88 +124,109 @@ export default function DeliveryDetailScreen() {
   // VIEW 1: Confirmed reception
   if (status === 'CONFIRMED') {
     return (
-      <CitizenPage title="Detalle de entrega" back="/my-raee">
-        {/* Hero de confirmación */}
-        <View style={styles.confirmedHero}>
-          <View style={styles.checkCircle}>
-            <Ionicons name="checkmark" size={38} color={colors.textOnPrimary} />
-          </View>
-          <Text style={styles.confirmedTitle}>Entrega confirmada</Text>
-          <Text style={styles.confirmedSubtitle}>
-            ¡Gracias por ser parte de un mundo más limpio y responsable!
-          </Text>
-        </View>
-
-        {/* Card: Organización receptora */}
-        <View style={styles.card}>
-          <View style={styles.cardRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="business" size={22} color={colors.primaryDark} />
+      <>
+        <CitizenPage title="Detalle de entrega" back="/my-raee">
+          {/* Hero de confirmación */}
+          <View style={styles.confirmedHero}>
+            <View style={styles.checkCircle}>
+              <Ionicons name="checkmark" size={38} color={colors.textOnPrimary} />
             </View>
-            <View style={styles.cardTextCol}>
-              <Text style={styles.cardTitle}>{data.pointName}</Text>
-              <Text style={styles.cardSubtitle}>{data.companyName}</Text>
-            </View>
+            <Text style={styles.confirmedTitle}>Entrega confirmada</Text>
+            <Text style={styles.confirmedSubtitle}>
+              ¡Gracias por ser parte de un mundo más limpio y responsable!
+            </Text>
           </View>
-        </View>
 
-        {/* Card: Dispositivos recibidos */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Dispositivos recibidos</Text>
-          {data.items.map((item, index) => {
-            const visual = getCategoryVisual({ name: item.categoryName });
-            const count = item.confirmedQuantity ?? item.declaredQuantity;
-            const actionLabel =
-              item.confirmedQuantity !== null
-                ? count === 1
-                  ? 'recibida'
-                  : 'recibidas'
-                : count === 1
-                  ? 'declarada'
-                  : 'declaradas';
-            return (
-              <View key={`${item.categoryId}-${index}`} style={[styles.cardRow, { marginTop: 10 }]}>
-                <View style={styles.iconCircle}>
-                  <MaterialCommunityIcons name={visual.icon} size={22} color={colors.primaryDark} />
-                </View>
-                <View style={styles.cardTextCol}>
-                  <Text style={styles.cardTitle}>{item.categoryName}</Text>
-                  <Text style={styles.cardSubtitle}>
-                    {count} {quantityUnitLabel(count)} {actionLabel}
-                  </Text>
-                </View>
+          {/* Card: Organización receptora */}
+          <View style={styles.card}>
+            <View style={styles.cardRow}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="business" size={22} color={colors.primaryDark} />
               </View>
-            );
-          })}
-        </View>
-
-        {/* Card: Puntos acreditados */}
-        <View style={[styles.card, styles.pointsAccreditedCard]}>
-          <View style={styles.cardRow}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.surface }]}>
-              <Ionicons name="gift-outline" size={24} color={colors.primaryDark} />
-            </View>
-            <View style={styles.cardTextCol}>
-              <Text style={styles.pointsAccreditedTitle}>
-                {pointsLabel(data.points)} {data.points === 1 ? 'acreditado' : 'acreditados'}
-              </Text>
-              <Text style={styles.pointsAccreditedSubtitle}>
-                Tu saldo se puede usar en toda la red de recompensas.
-              </Text>
+              <View style={styles.cardTextCol}>
+                <Text style={styles.cardTitle}>{data.pointName}</Text>
+                <Text style={styles.cardSubtitle}>{data.companyName}</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Botones de acción */}
-        <View style={styles.actionButtonsCol}>
-          <ActionButton title="Ver mis puntos" onPress={() => router.push('/my-points')} />
-          <ActionButton
-            title="Volver al inicio"
-            secondary
-            onPress={() => router.replace('/home')}
-          />
-        </View>
-      </CitizenPage>
+          {/* Card: Dispositivos recibidos */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Dispositivos recibidos</Text>
+            {data.items.map((item, index) => {
+              const visual = getCategoryVisual({ name: item.categoryName });
+              const count = item.confirmedQuantity ?? item.declaredQuantity;
+              const actionLabel =
+                item.confirmedQuantity !== null
+                  ? count === 1
+                    ? 'recibida'
+                    : 'recibidas'
+                  : count === 1
+                    ? 'declarada'
+                    : 'declaradas';
+              return (
+                <View
+                  key={`${item.categoryId}-${index}`}
+                  style={[styles.cardRow, { marginTop: 10 }]}
+                >
+                  <View style={styles.iconCircle}>
+                    <MaterialCommunityIcons
+                      name={visual.icon}
+                      size={22}
+                      color={colors.primaryDark}
+                    />
+                  </View>
+                  <View style={styles.cardTextCol}>
+                    <Text style={styles.cardTitle}>{item.categoryName}</Text>
+                    <Text style={styles.cardSubtitle}>
+                      {count} {quantityUnitLabel(count)} {actionLabel}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Card: Puntos acreditados */}
+          <View style={[styles.card, styles.pointsAccreditedCard]}>
+            <View style={styles.cardRow}>
+              <View style={[styles.iconCircle, { backgroundColor: colors.surface }]}>
+                <Ionicons name="gift-outline" size={24} color={colors.primaryDark} />
+              </View>
+              <View style={styles.cardTextCol}>
+                <Text style={styles.pointsAccreditedTitle}>
+                  {pointsLabel(data.points)} {data.points === 1 ? 'acreditado' : 'acreditados'}
+                </Text>
+                <Text style={styles.pointsAccreditedSubtitle}>
+                  Tu saldo se puede usar en toda la red de recompensas.
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Botones de acción */}
+          <View style={styles.actionButtonsCol}>
+            <ActionButton title="Ver mis puntos" onPress={() => router.push('/my-points')} />
+            <ActionButton
+              title="Volver al inicio"
+              secondary
+              onPress={() => router.replace('/home')}
+            />
+          </View>
+        </CitizenPage>
+
+        <ScanSuccessModal
+          visible={scanSuccessVisible}
+          title="¡Entrega confirmada!"
+          highlight={data.points > 0 ? `+${pointsLabel(data.points)}` : null}
+          message={`${data.pointName} (${data.companyName}) confirmó la recepción física de tus dispositivos${data.points > 0 ? ' y acreditó tus puntos' : ''}.`}
+          onPrimary={() => {
+            setScanSuccessVisible(false);
+            router.replace('/home');
+          }}
+          onDismiss={() => setScanSuccessVisible(false)}
+        />
+      </>
     );
   }
 

@@ -19,9 +19,11 @@ import { AccountRequired } from '@/components/auth/AccountRequired';
 import { PickupTimeline } from '@/components/pickup/PickupTimeline';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoCard } from '@/components/ui/InfoCard';
+import { ScanSuccessModal } from '@/components/ui/ScanSuccessModal';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { useScrollReset } from '@/hooks/useScrollReset';
+import { useStatusPolling } from '@/hooks/useStatusPolling';
 import { getCategoryVisual } from '@/models/DeviceCategory';
 import {
   formatPickupDate,
@@ -29,25 +31,50 @@ import {
   pickupQr,
   pickupStatusNames,
 } from '@/models/Pickup';
+import { pointsLabel } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
+import { useWallet } from '@/providers/WalletProvider';
 import { getPickupPhotoUrl, pickupCommand } from '@/services/pickup.service';
 import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
+const PENDING_PICKUP_STATUSES = ['REQUESTED', 'COORDINATED', 'IN_TRANSIT'] as const;
+const CONFIRMED_PICKUP_STATUSES = ['COMPLETED'] as const;
+
 export default function PickupDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <PickupDetail key={id ?? 'missing'} id={id} />;
+}
+
+function PickupDetail({ id }: Readonly<{ id: string }>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
+  const { refresh: refreshWallet } = useWallet();
   const loader = useCallback(() => pickupCommand('get', { id }), [id]);
-  const { data: pickup, loading, error, refresh } = usePortalData(loader);
+  const { data: pickup, loading, error, refresh, silentRefresh } = usePortalData(loader);
   const action = usePortalAction();
   const scroll = useScrollReset();
 
   const [copied, setCopied] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [scanSuccessVisible, setScanSuccessVisible] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useStatusPolling({
+    resetKey: id,
+    status: session && pickup ? pickup.status : null,
+    pendingStatuses: PENDING_PICKUP_STATUSES,
+    confirmedStatuses: CONFIRMED_PICKUP_STATUSES,
+    poll: silentRefresh,
+    onConfirmed: () => {
+      setDetailsModalVisible(false);
+      setCancelModalVisible(false);
+      setScanSuccessVisible(true);
+      void refreshWallet();
+    },
+  });
 
   useEffect(() => {
     return () => {
@@ -477,6 +504,18 @@ export default function PickupDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <ScanSuccessModal
+        visible={Boolean(scanSuccessVisible && pickup.status === 'COMPLETED')}
+        title="¡Retiro confirmado!"
+        highlight={pickup.points > 0 ? `+${pointsLabel(pickup.points)}` : null}
+        message={`${pickup.pointName ? `${pickup.pointName} (${pickup.companyName})` : pickup.companyName} confirmó la recepción de tu retiro${pickup.points > 0 ? ' y acreditó tus puntos' : ''}.`}
+        onPrimary={() => {
+          setScanSuccessVisible(false);
+          router.replace('/home');
+        }}
+        onDismiss={() => setScanSuccessVisible(false)}
+      />
     </View>
   );
 }

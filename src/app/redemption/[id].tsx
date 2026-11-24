@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { ScanSuccessModal } from '@/components/ui/ScanSuccessModal';
 import { PortalLoading } from '@/components/portal/PortalUI';
 import {
   CitizenPage,
@@ -16,10 +17,14 @@ import {
   useRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { usePortalData } from '@/hooks/usePortalData';
+import { useStatusPolling } from '@/hooks/useStatusPolling';
 import { pointsLabel, rewardQr, type Redemption } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { rewardCommand } from '@/services/reward.service';
 import { useColors } from '@/theme';
+
+const PENDING_REDEMPTION_STATUSES = ['RESERVED'] as const;
+const CONFIRMED_REDEMPTION_STATUSES = ['REDEEMED'] as const;
 
 export default function RedemptionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,31 +38,60 @@ export default function RedemptionScreen() {
 function RedemptionDetail({ id }: Readonly<{ id: string }>) {
   const s = useRewardStyles();
   const loader = useCallback(() => rewardCommand('get', { id }), [id]);
-  const { data, loading, error, refresh } = usePortalData(loader);
+  const { data, loading, error, refresh, silentRefresh } = usePortalData(loader);
+  const [scanSuccessVisible, setScanSuccessVisible] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       void refresh();
     }, [refresh])
   );
+  useStatusPolling({
+    resetKey: id,
+    status: data?.status ?? null,
+    pendingStatuses: PENDING_REDEMPTION_STATUSES,
+    confirmedStatuses: CONFIRMED_REDEMPTION_STATUSES,
+    poll: silentRefresh,
+    onConfirmed: () => setScanSuccessVisible(true),
+  });
+
   const reserved = data?.status === 'RESERVED';
   return (
-    <CitizenPage title={data && !reserved ? 'Detalle del canje' : 'Tu canje'} back="/rewards">
-      {(loading || error) && (
-        <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
-      )}
-      {!loading && !error && !data && (
-        <View style={s.card}>
-          <Text accessibilityRole="header" style={s.subtitle}>
-            No encontramos este canje
-          </Text>
-          <Text style={s.body}>
-            Es posible que el enlace haya vencido o que el canje pertenezca a otra cuenta.
-          </Text>
-          <ActionButton title="Ver premios" onPress={() => router.replace('/rewards')} />
-        </View>
-      )}
-      {data && (reserved ? <Reserved data={data} /> : <Delivered data={data} />)}
-    </CitizenPage>
+    <>
+      <CitizenPage title={data && !reserved ? 'Detalle del canje' : 'Tu canje'} back="/rewards">
+        {(loading || error) && (
+          <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
+        )}
+        {!loading && !error && !data && (
+          <View style={s.card}>
+            <Text accessibilityRole="header" style={s.subtitle}>
+              No encontramos este canje
+            </Text>
+            <Text style={s.body}>
+              Es posible que el enlace haya vencido o que el canje pertenezca a otra cuenta.
+            </Text>
+            <ActionButton title="Ver premios" onPress={() => router.replace('/rewards')} />
+          </View>
+        )}
+        {data && (reserved ? <Reserved data={data} /> : <Delivered data={data} />)}
+      </CitizenPage>
+
+      <ScanSuccessModal
+        visible={Boolean(scanSuccessVisible && data && data.status === 'REDEEMED')}
+        title="¡Canje confirmado!"
+        highlight={data?.reward.title ?? null}
+        message={
+          data
+            ? `${data.reward.businessName} validó la entrega de tu premio.`
+            : 'El comercio validó la entrega de tu premio.'
+        }
+        onPrimary={() => {
+          setScanSuccessVisible(false);
+          router.replace('/home');
+        }}
+        onDismiss={() => setScanSuccessVisible(false)}
+      />
+    </>
   );
 }
 function Reserved({ data }: Readonly<{ data: Redemption }>) {

@@ -43,6 +43,17 @@ export function usePortalData<T>(loader: () => Promise<T>) {
     setRefreshingLoader(() => loader);
     await load();
   }, [load, loader]);
+  const silentRefresh = useCallback(async () => {
+    const current = generation.current;
+    try {
+      const data = await loader();
+      if (current === generation.current) {
+        setResult({ loader, data, error: null });
+      }
+    } catch {
+      // Transient polling errors must not disrupt an active detail screen or QR display.
+    }
+  }, [loader]);
   const current = result?.loader === loader ? result : null;
   const hasData = current?.data != null;
   const reloading = refreshingLoader === loader;
@@ -52,6 +63,7 @@ export function usePortalData<T>(loader: () => Promise<T>) {
     refreshing: reloading && hasData,
     error: current?.error ?? null,
     refresh,
+    silentRefresh,
   };
 }
 export function usePortalAction() {
