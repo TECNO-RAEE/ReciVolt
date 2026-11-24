@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,10 +15,12 @@ import {
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { sendRecoveryCode, verifyRecoveryCode } from '@/services/auth.service';
 import { colors, fonts } from '@/theme';
 
 const OTP_LENGTH = 6;
+const RESEND_COOLDOWN_SECONDS = 30;
 const OTP_SLOTS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'] as const;
 
 function getAuthErrorCode(error: unknown) {
@@ -91,17 +93,50 @@ function getVerifyCodeErrorMessage(error: unknown) {
 }
 
 export default function ForgotPasswordScreen() {
-  const [email, setEmail] = useState('');
+  const params = useLocalSearchParams<{ email?: string }>();
+  const paramEmail = typeof params.email === 'string' ? params.email.trim() : '';
+  const [emailDraft, setEmailDraft] = useState<string | null>(null);
+  const email = emailDraft ?? paramEmail;
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [busy, setBusy] = useState<'send' | 'verify' | null>(null);
+  const [cooldown, setCooldown] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const codeInputRef = useRef<TextInputInstance>(null);
 
-  async function handleSendCode(resend = false) {
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => {
+      setCooldown((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  const handleReturnToEmailStep = useCallback(() => {
     if (busy) return;
+    setCodeSent(false);
+    setCode('');
+    setCooldown(0);
+    setNotice(null);
+    setError(null);
+  }, [busy]);
+
+  const screenOptions = useMemo(
+    () => ({
+      title: 'Recuperar contraseña',
+      header: codeSent
+        ? () => (
+            <ScreenHeader title="Recuperar contraseña" back="/" onBack={handleReturnToEmailStep} />
+          )
+        : () => <ScreenHeader title="Recuperar contraseña" back="/" />,
+    }),
+    [codeSent, handleReturnToEmailStep]
+  );
+
+  async function handleSendCode(resend = false) {
+    if (busy || (resend && cooldown > 0)) return;
     setError(null);
     setNotice(null);
     const normalizedEmail = email.trim().toLowerCase();
@@ -117,6 +152,7 @@ export default function ForgotPasswordScreen() {
 
       setCodeSent(true);
       setCode('');
+      setCooldown(RESEND_COOLDOWN_SECONDS);
       setNotice(
         resend
           ? 'Código reenviado. Revisá tu correo; también la carpeta de spam.'
@@ -137,7 +173,7 @@ export default function ForgotPasswordScreen() {
       return;
     }
 
-    if (code.length !== 6) {
+    if (code.length !== OTP_LENGTH) {
       setError('Ingresá los 6 dígitos del código.');
       return;
     }
@@ -157,146 +193,159 @@ export default function ForgotPasswordScreen() {
     const onlyNumbers = value.replace(/\D/g, '').slice(0, OTP_LENGTH);
 
     setCode(onlyNumbers);
+    setError(null);
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+    <>
+      <Stack.Screen options={screenOptions} />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.screen}>
-          <View style={styles.hero}>
-            <AuthArtwork kind="recovery" />
-            <Text accessibilityRole="header" style={styles.title}>
-              {codeSent ? 'Revisá tu correo' : 'Recuperá tu contraseña'}
-            </Text>
-            <Text style={styles.description}>
-              {codeSent
-                ? `Ingresá el código de 6 dígitos que enviamos a ${email.trim().toLowerCase()}.`
-                : 'Te enviaremos un código a tu correo electrónico para que puedas crear una nueva contraseña.'}
-            </Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.screen}>
+            <View style={styles.hero}>
+              <AuthArtwork kind="recovery" />
+              <Text accessibilityRole="header" style={styles.title}>
+                {codeSent ? 'Revisá tu correo' : 'Recuperá tu contraseña'}
+              </Text>
+              <Text style={styles.description}>
+                {codeSent
+                  ? `Ingresá el código de 6 dígitos que enviamos a ${email.trim().toLowerCase()}.`
+                  : 'Te enviaremos un código a tu correo electrónico para que puedas crear una nueva contraseña.'}
+              </Text>
+            </View>
+
+            {!codeSent ? (
+              <>
+                <View style={styles.emailContainer}>
+                  <AuthTextField
+                    label="Correo electrónico"
+                    iconName="mail-outline"
+                    value={email}
+                    editable={!busy}
+                    onChangeText={(value) => {
+                      setEmailDraft(value);
+                      setNotice(null);
+                      setError(null);
+                    }}
+                    placeholder="nombre@correo.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="email"
+                    onSubmitEditing={() => void handleSendCode()}
+                  />
+                </View>
+                {error && (
+                  <Text accessibilityRole="alert" style={styles.error}>
+                    {error}
+                  </Text>
+                )}
+                <ActionButton
+                  title="Enviar código"
+                  onPress={() => void handleSendCode()}
+                  loading={busy === 'send'}
+                />
+              </>
+            ) : (
+              <>
+                {notice && (
+                  <Text accessibilityLiveRegion="polite" style={styles.notice}>
+                    {notice}
+                  </Text>
+                )}
+                <Pressable
+                  accessible={false}
+                  style={styles.otpContainer}
+                  onPress={() => codeInputRef.current?.focus()}
+                >
+                  {OTP_SLOTS.map((slot, index) => {
+                    const digit = code[index] ?? '';
+                    const focused = index === code.length && code.length < OTP_LENGTH;
+
+                    return (
+                      <View
+                        key={slot}
+                        pointerEvents="none"
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                        style={[styles.otpBox, focused && styles.otpBoxFocused]}
+                      >
+                        <Text style={styles.otpDigit}>{digit}</Text>
+                      </View>
+                    );
+                  })}
+
+                  <TextInput
+                    ref={codeInputRef}
+                    accessibilityLabel="Código de recuperación de 6 dígitos"
+                    accessibilityHint="Ingresá los 6 dígitos que enviamos a tu correo"
+                    editable={!busy}
+                    autoFocus
+                    autoComplete="one-time-code"
+                    textContentType="oneTimeCode"
+                    style={styles.hiddenOtpInput}
+                    value={code}
+                    onChangeText={handleCodeChange}
+                    onSubmitEditing={() => void handleVerifyCode()}
+                    keyboardType="number-pad"
+                    maxLength={OTP_LENGTH}
+                    caretHidden
+                  />
+                </Pressable>
+                {error && (
+                  <Text accessibilityRole="alert" style={styles.error}>
+                    {error}
+                  </Text>
+                )}
+                <ActionButton
+                  title="Verificar código"
+                  onPress={() => void handleVerifyCode()}
+                  loading={busy === 'verify'}
+                  disabled={busy === 'send' || code.length < OTP_LENGTH}
+                />
+                <View style={styles.row}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: Boolean(busy) || cooldown > 0 }}
+                    disabled={Boolean(busy) || cooldown > 0}
+                    style={[styles.textLink, (Boolean(busy) || cooldown > 0) && styles.disabled]}
+                    onPress={() => void handleSendCode(true)}
+                  >
+                    <Text style={styles.textLinkLabel}>
+                      {cooldown > 0 ? `Reenviar código (${cooldown}s)` : 'Reenviar código'}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={Boolean(busy)}
+                    style={[styles.textLink, busy && styles.disabled]}
+                    onPress={handleReturnToEmailStep}
+                  >
+                    <Text style={styles.textLinkLabel}>Cambiar correo</Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            <Pressable
+              accessibilityRole="link"
+              style={styles.textLink}
+              disabled={Boolean(busy)}
+              onPress={() => router.replace('/login')}
+            >
+              <Text style={styles.textLinkLabel}>Volver a ingresar</Text>
+            </Pressable>
           </View>
-
-          {!codeSent ? (
-            <>
-              <View style={styles.emailContainer}>
-                <AuthTextField
-                  label="Correo electrónico"
-                  iconName="mail-outline"
-                  value={email}
-                  editable={!busy}
-                  onChangeText={(value) => {
-                    setEmail(value);
-                    setNotice(null);
-                    setError(null);
-                  }}
-                  placeholder="nombre@correo.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="email"
-                  onSubmitEditing={() => void handleSendCode()}
-                />
-              </View>
-              {error && (
-                <Text accessibilityRole="alert" style={styles.error}>
-                  {error}
-                </Text>
-              )}
-              <ActionButton
-                title="Enviar código"
-                onPress={() => void handleSendCode()}
-                loading={busy === 'send'}
-              />
-            </>
-          ) : (
-            <>
-              {notice && (
-                <Text accessibilityLiveRegion="polite" style={styles.notice}>
-                  {notice}
-                </Text>
-              )}
-              <Pressable style={styles.otpContainer} onPress={() => codeInputRef.current?.focus()}>
-                {OTP_SLOTS.map((slot, index) => {
-                  const digit = code[index] ?? '';
-                  const focused = index === code.length && code.length < OTP_LENGTH;
-
-                  return (
-                    <View key={slot} style={[styles.otpBox, focused && styles.otpBoxFocused]}>
-                      <Text style={styles.otpDigit}>{digit}</Text>
-                    </View>
-                  );
-                })}
-
-                <TextInput
-                  ref={codeInputRef}
-                  accessibilityLabel="Código de recuperación de 6 dígitos"
-                  editable={!busy}
-                  autoFocus
-                  autoComplete="one-time-code"
-                  textContentType="oneTimeCode"
-                  style={styles.hiddenOtpInput}
-                  value={code}
-                  onChangeText={handleCodeChange}
-                  onSubmitEditing={() => void handleVerifyCode()}
-                  keyboardType="number-pad"
-                  maxLength={OTP_LENGTH}
-                  caretHidden
-                />
-              </Pressable>
-              {error && (
-                <Text accessibilityRole="alert" style={styles.error}>
-                  {error}
-                </Text>
-              )}
-              <ActionButton
-                title="Verificar código"
-                onPress={() => void handleVerifyCode()}
-                loading={busy === 'verify'}
-                disabled={busy === 'send'}
-              />
-              <View style={styles.row}>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={Boolean(busy)}
-                  style={[styles.textLink, busy && styles.disabled]}
-                  onPress={() => void handleSendCode(true)}
-                >
-                  <Text style={styles.textLinkLabel}>Reenviar código</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={Boolean(busy)}
-                  style={[styles.textLink, busy && styles.disabled]}
-                  onPress={() => {
-                    setCodeSent(false);
-                    setCode('');
-                    setNotice(null);
-                    setError(null);
-                  }}
-                >
-                  <Text style={styles.textLinkLabel}>Cambiar correo</Text>
-                </Pressable>
-              </View>
-            </>
-          )}
-
-          <Pressable
-            accessibilityRole="link"
-            style={styles.textLink}
-            disabled={Boolean(busy)}
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/login'))}
-          >
-            <Text style={styles.textLinkLabel}>Volver a ingresar</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 }
 
@@ -340,10 +389,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderControl,
     borderRadius: 10,
   },
-  otpBoxFocused: { borderColor: colors.primary },
+  otpBoxFocused: { borderColor: colors.primary, borderWidth: 2 },
   otpDigit: { fontFamily: fonts.regular, fontSize: 18, color: colors.text },
   hiddenOtpInput: { position: 'absolute', width: '100%', height: '100%', opacity: 0 },
   notice: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 21, color: colors.primary },

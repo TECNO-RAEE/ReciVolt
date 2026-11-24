@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
@@ -65,14 +66,16 @@ function getLoginErrorMessage(error: unknown) {
 }
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ intent?: string; confirm?: string }>();
+  const params = useLocalSearchParams<{ intent?: string; confirm?: string; email?: string }>();
   const intent = parseAuthIntent(params.intent);
   const { prepareAuth, continueAsGuest } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [authErrorVisible, setAuthErrorVisible] = useState(false);
   const passwordInputRef = useRef<TextInputInstance>(null);
   const restorePasswordFocusOnDismiss = useRef(false);
-  const [email, setEmail] = useState('');
+  const paramEmail = typeof params.email === 'string' ? params.email.trim() : '';
+  const [emailDraft, setEmailDraft] = useState<string | null>(null);
+  const email = emailDraft ?? paramEmail;
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -143,7 +146,10 @@ export default function LoginScreen() {
               label="Correo electrónico"
               iconName="mail-outline"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(value) => {
+                setEmailDraft(value);
+                setFormError(null);
+              }}
               placeholder="nombre@correo.com"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -159,7 +165,10 @@ export default function LoginScreen() {
               iconName="lock-closed-outline"
               inputRef={passwordInputRef}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(value) => {
+                setPassword(value);
+                setFormError(null);
+              }}
               placeholder="Ingresá tu contraseña"
               passwordToggle
               autoCapitalize="none"
@@ -187,7 +196,9 @@ export default function LoginScreen() {
           <Pressable
             accessibilityRole="link"
             style={styles.textLink}
-            onPress={() => router.push('/forgot-password')}
+            onPress={() =>
+              router.push({ pathname: '/forgot-password', params: { email: email.trim() } })
+            }
             disabled={loading}
           >
             <Text style={styles.textLinkLabel}>Olvidé mi contraseña</Text>
@@ -241,7 +252,7 @@ export default function LoginScreen() {
         <View style={styles.modalOverlay}>
           <View accessibilityViewIsModal accessibilityRole="alert" style={styles.modalCard}>
             <View style={styles.modalIconCircle}>
-              <Text style={styles.modalIcon}>!</Text>
+              <Ionicons name="alert-circle-outline" size={28} color={colors.danger} />
             </View>
             <Text style={styles.modalTitle}>No pudimos iniciar sesión</Text>
             <Text style={styles.modalMessage}>
@@ -255,7 +266,7 @@ export default function LoginScreen() {
                 secondary
                 onPress={() => {
                   closeAuthError(false);
-                  router.push('/forgot-password');
+                  router.push({ pathname: '/forgot-password', params: { email: email.trim() } });
                 }}
               />
             </View>
@@ -310,7 +321,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    backgroundColor: 'rgba(16, 40, 44, 0.55)',
+    backgroundColor: colors.overlay,
   },
   modalCard: {
     width: '100%',
@@ -329,13 +340,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 26,
-    backgroundColor: colors.primarySoft,
-  },
-  modalIcon: {
-    fontFamily: fonts.bold,
-    fontSize: 28,
-    lineHeight: 32,
-    color: colors.primary,
+    backgroundColor: colors.dangerBackground,
   },
   modalTitle: {
     marginBottom: 10,
