@@ -378,6 +378,8 @@ function DeliveryForm({
     }, 'Entrega registrada.');
   };
 
+  const hasCategories = point.categories.length > 0;
+
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Nueva entrega" back="/my-raee" />
@@ -412,224 +414,257 @@ function DeliveryForm({
           </Pressable>
         </View>
 
-        {/* Section: Dispositivos a entregar */}
-        <View style={styles.fieldSection}>
-          <Text style={styles.fieldLabel}>Dispositivos a entregar</Text>
-
-          {items.map((item) => {
-            const cat =
-              point.categories.find((c) => c.id === item.categoryId) || point.categories[0];
-            const visual = cat
-              ? getCategoryVisual(cat)
-              : { icon: 'devices' as const, description: 'Dispositivo electrónico' };
-            const canChangeCategory = point.categories.length > 1;
-
-            return (
-              <View key={item.id} style={styles.card}>
-                {/* Category selector row */}
-                <Pressable
-                  accessibilityRole={canChangeCategory ? 'button' : 'none'}
-                  accessibilityLabel={
-                    canChangeCategory
-                      ? `Categoría: ${cat?.name ?? 'Dispositivo'}. Tocá para cambiar.`
-                      : `Categoría: ${cat?.name ?? 'Dispositivo'}. Única categoría aceptada.`
-                  }
-                  accessibilityState={{ disabled: !canChangeCategory }}
-                  disabled={!canChangeCategory || action.busy}
-                  style={({ pressed }) => [
-                    styles.cardRow,
-                    canChangeCategory && pressed && styles.pressed,
-                  ]}
-                  onPress={() => setEditingItemId(item.id)}
-                >
-                  <View style={styles.iconCircle}>
-                    <MaterialCommunityIcons
-                      name={visual.icon}
-                      size={24}
-                      color={colors.primaryDark}
-                    />
-                  </View>
-                  <View style={styles.cardTextCol}>
-                    <Text style={styles.cardTitle}>
-                      {cat?.name ?? 'Categoría de residuo'}
-                    </Text>
-                    <Text style={styles.cardSubtitle}>{visual.description}</Text>
-                    {!canChangeCategory && (
-                      <Text style={styles.onlyCategoryNotice}>
-                        Única categoría aceptada en este punto
-                      </Text>
-                    )}
-                  </View>
-                  {canChangeCategory ? (
-                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                  ) : null}
-                </Pressable>
-
-                {/* Divider */}
-                <View style={styles.cardDivider} />
-
-                {/* Stepper row with quantity label & optional remove button */}
-                <View style={styles.stepperSectionRow}>
-                  <Text style={styles.stepperLabel}>Cantidad:</Text>
-                  <NumericStepper
-                    value={item.quantity}
-                    min={1}
-                    max={999}
-                    onChange={(q) => handleUpdateQuantity(item.id, q)}
-                    disabled={action.busy}
-                    accessibilityLabel={`Cantidad de ${cat?.name ?? 'unidades'}`}
+        {!hasCategories ? (
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>Dispositivos a entregar</Text>
+            <View style={[styles.card, styles.emptyCategoriesCard]}>
+              <View style={styles.cardRow}>
+                <View style={styles.iconCircle}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={24}
+                    color={colors.primaryDark}
                   />
-                  {items.length > 1 && (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Quitar ${cat?.name ?? 'dispositivo'}`}
-                      style={styles.removeItemBtn}
-                      disabled={action.busy}
-                      onPress={() => handleRemoveItem(item.id)}
-                    >
-                      <Ionicons name="trash-outline" size={20} color={colors.danger} />
-                    </Pressable>
-                  )}
                 </View>
-
-                {rates?.points[item.categoryId] ? (
-                  <Text style={styles.itemPointsHint}>
-                    {rates.points[item.categoryId]} pts por unidad (
-                    {(item.quantity * rates.points[item.categoryId]).toLocaleString('es-AR')} pts en
-                    total)
+                <View style={styles.cardTextCol}>
+                  <Text style={styles.cardTitle}>
+                    Este punto no tiene dispositivos habilitados
                   </Text>
-                ) : null}
+                  <Text style={styles.cardSubtitle}>
+                    Todavía no tiene categorías cargadas para recibir entregas presenciales. Elegí
+                    otro punto para continuar.
+                  </Text>
+                </View>
               </View>
-            );
-          })}
-
-          {/* Action: Agregar otra categoría (solo disponible si hay categorías no seleccionadas) */}
-          {remainingCategories.length > 0 && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Agregar otra categoría de residuo"
-              style={({ pressed }) => [styles.addCategoryBtn, pressed && styles.pressed]}
-              disabled={action.busy}
-              onPress={handleAddItem}
-            >
-              <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
-              <Text style={styles.addCategoryText}>+ Agregar otra categoría</Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* Card: Estimación de puntos si hay tarifas */}
-        {rates && estimatedPoints > 0 && (
-          <View style={styles.estimateCallout}>
-            <Ionicons name="sparkles" size={20} color={colors.primaryDark} />
-            <View style={styles.cardTextCol}>
-              <Text style={styles.estimateCalloutTitle}>
-                Estimado: {estimatedPoints.toLocaleString('es-AR')} puntos globales
-              </Text>
-              <Text style={styles.estimateCalloutSubtitle}>
-                El equipo receptor verificará los dispositivos antes de acreditar tus puntos.
-              </Text>
+              <ActionButton title="Elegir otro punto" onPress={() => onChangePoint('')} />
             </View>
           </View>
-        )}
+        ) : (
+          <>
+            {/* Section: Dispositivos a entregar */}
+            <View style={styles.fieldSection}>
+              <Text style={styles.fieldLabel}>Dispositivos a entregar</Text>
 
-        {/* Card: Notas (opcional) */}
-        <View style={styles.fieldSection}>
-          <Text style={styles.fieldLabel}>Notas (opcional)</Text>
-          <View style={[styles.card, styles.notesCard]}>
-            <TextInput
-              style={styles.notesInput}
-              placeholder="Agregá información adicional sobre tu entrega (opcional)."
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              maxLength={2000}
-              value={notes}
-              onChangeText={setNotes}
-              editable={!action.busy}
-              textAlignVertical="top"
-            />
-            <Text style={styles.charCounter}>{notes.length}/2000</Text>
-          </View>
-        </View>
+              {items.map((item) => {
+                const cat =
+                  point.categories.find((c) => c.id === item.categoryId) || point.categories[0];
+                const visual = cat
+                  ? getCategoryVisual(cat)
+                  : { icon: 'devices' as const, description: 'Dispositivo electrónico' };
+                const canChangeCategory = point.categories.length > 1;
 
-        {/* Card: Foto (opcional) */}
-        <View style={styles.fieldSection}>
-          <Text style={styles.fieldLabel}>Foto (opcional)</Text>
-          {photo ? (
-            <View style={styles.photoContainer}>
-              <Image
-                source={{ uri: photo.uri }}
-                accessibilityLabel="Foto de los residuos"
-                style={styles.photoPreview}
-                resizeMode="cover"
-              />
-              <View style={styles.photoActions}>
+                return (
+                  <View key={item.id} style={styles.card}>
+                    {/* Category selector row */}
+                    <Pressable
+                      accessibilityRole={canChangeCategory ? 'button' : 'none'}
+                      accessibilityLabel={
+                        canChangeCategory
+                          ? `Categoría: ${cat?.name ?? 'Dispositivo'}. Tocá para cambiar.`
+                          : `Categoría: ${cat?.name ?? 'Dispositivo'}. Única categoría aceptada.`
+                      }
+                      accessibilityState={{ disabled: !canChangeCategory }}
+                      disabled={!canChangeCategory || action.busy}
+                      style={({ pressed }) => [
+                        styles.cardRow,
+                        canChangeCategory && pressed && styles.pressed,
+                      ]}
+                      onPress={() => setEditingItemId(item.id)}
+                    >
+                      <View style={styles.iconCircle}>
+                        <MaterialCommunityIcons
+                          name={visual.icon}
+                          size={24}
+                          color={colors.primaryDark}
+                        />
+                      </View>
+                      <View style={styles.cardTextCol}>
+                        <Text style={styles.cardTitle}>
+                          {cat?.name ?? 'Categoría de residuo'}
+                        </Text>
+                        <Text style={styles.cardSubtitle}>{visual.description}</Text>
+                        {!canChangeCategory && (
+                          <Text style={styles.onlyCategoryNotice}>
+                            Única categoría aceptada en este punto
+                          </Text>
+                        )}
+                      </View>
+                      {canChangeCategory ? (
+                        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                      ) : null}
+                    </Pressable>
+
+                    {/* Divider */}
+                    <View style={styles.cardDivider} />
+
+                    {/* Stepper row with quantity label & optional remove button */}
+                    <View style={styles.stepperSectionRow}>
+                      <Text style={styles.stepperLabel}>Cantidad:</Text>
+                      <NumericStepper
+                        value={item.quantity}
+                        min={1}
+                        max={999}
+                        onChange={(q) => handleUpdateQuantity(item.id, q)}
+                        disabled={action.busy}
+                        accessibilityLabel={`Cantidad de ${cat?.name ?? 'unidades'}`}
+                      />
+                      {items.length > 1 && (
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Quitar ${cat?.name ?? 'dispositivo'}`}
+                          style={styles.removeItemBtn}
+                          disabled={action.busy}
+                          onPress={() => handleRemoveItem(item.id)}
+                        >
+                          <Ionicons name="trash-outline" size={20} color={colors.danger} />
+                        </Pressable>
+                      )}
+                    </View>
+
+                    {rates?.points[item.categoryId] ? (
+                      <Text style={styles.itemPointsHint}>
+                        {rates.points[item.categoryId]} pts por unidad (
+                        {(item.quantity * rates.points[item.categoryId]).toLocaleString('es-AR')} pts
+                        en total)
+                      </Text>
+                    ) : null}
+                  </View>
+                );
+              })}
+
+              {/* Action: Agregar otra categoría (solo disponible si hay categorías no seleccionadas) */}
+              {remainingCategories.length > 0 && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Cambiar foto"
-                  style={styles.photoActionBtn}
+                  accessibilityLabel="Agregar otra categoría de residuo"
+                  style={({ pressed }) => [styles.addCategoryBtn, pressed && styles.pressed]}
+                  disabled={action.busy}
+                  onPress={handleAddItem}
+                >
+                  <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
+                  <Text style={styles.addCategoryText}>+ Agregar otra categoría</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Card: Estimación de puntos si hay tarifas */}
+            {rates && estimatedPoints > 0 && (
+              <View style={styles.estimateCallout}>
+                <Ionicons name="sparkles" size={20} color={colors.primaryDark} />
+                <View style={styles.cardTextCol}>
+                  <Text style={styles.estimateCalloutTitle}>
+                    Estimado: {estimatedPoints.toLocaleString('es-AR')} puntos globales
+                  </Text>
+                  <Text style={styles.estimateCalloutSubtitle}>
+                    El equipo receptor verificará los dispositivos antes de acreditar tus puntos.
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Card: Notas (opcional) */}
+            <View style={styles.fieldSection}>
+              <Text style={styles.fieldLabel}>Notas (opcional)</Text>
+              <View style={[styles.card, styles.notesCard]}>
+                <TextInput
+                  style={styles.notesInput}
+                  placeholder="Agregá información adicional sobre tu entrega (opcional)."
+                  placeholderTextColor={colors.textSecondary}
+                  multiline
+                  maxLength={2000}
+                  value={notes}
+                  onChangeText={setNotes}
+                  editable={!action.busy}
+                  textAlignVertical="top"
+                />
+                <Text style={styles.charCounter}>{notes.length}/2000</Text>
+              </View>
+            </View>
+
+            {/* Card: Foto (opcional) */}
+            <View style={styles.fieldSection}>
+              <Text style={styles.fieldLabel}>Foto (opcional)</Text>
+              {photo ? (
+                <View style={styles.photoContainer}>
+                  <Image
+                    source={{ uri: photo.uri }}
+                    accessibilityLabel="Foto de los residuos"
+                    style={styles.photoPreview}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.photoActions}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Cambiar foto"
+                      style={styles.photoActionBtn}
+                      disabled={action.busy}
+                      onPress={handlePickPhoto}
+                    >
+                      <Ionicons name="camera-reverse-outline" size={18} color={colors.primary} />
+                      <Text style={styles.photoActionText}>Cambiar foto</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Quitar foto"
+                      style={styles.photoActionBtn}
+                      disabled={action.busy}
+                      onPress={handleRemovePhoto}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                      <Text style={[styles.photoActionText, { color: colors.danger }]}>Quitar</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Subir foto de los residuos (opcional)"
+                  style={({ pressed }) => [
+                    styles.card,
+                    styles.uploadCard,
+                    pressed && styles.pressed,
+                  ]}
                   disabled={action.busy}
                   onPress={handlePickPhoto}
                 >
-                  <Ionicons name="camera-reverse-outline" size={18} color={colors.primary} />
-                  <Text style={styles.photoActionText}>Cambiar foto</Text>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="camera-outline" size={24} color={colors.primaryDark} />
+                  </View>
+                  <View style={styles.cardTextCol}>
+                    <Text style={styles.cardTitle}>Subir foto</Text>
+                    <Text style={styles.cardSubtitle}>
+                      Podés agregar una foto de los residuos (opcional, JPG/PNG hasta 5 MB).
+                    </Text>
+                  </View>
                 </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Quitar foto"
-                  style={styles.photoActionBtn}
-                  disabled={action.busy}
-                  onPress={handleRemovePhoto}
-                >
-                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                  <Text style={[styles.photoActionText, { color: colors.danger }]}>Quitar</Text>
-                </Pressable>
-              </View>
+              )}
             </View>
-          ) : (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Subir foto de los residuos (opcional)"
-              style={({ pressed }) => [styles.card, styles.uploadCard, pressed && styles.pressed]}
-              disabled={action.busy}
-              onPress={handlePickPhoto}
-            >
-              <View style={styles.iconCircle}>
-                <Ionicons name="camera-outline" size={24} color={colors.primaryDark} />
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.cardTitle}>Subir foto</Text>
-                <Text style={styles.cardSubtitle}>
-                  Podés agregar una foto de los residuos (opcional, JPG/PNG hasta 5 MB).
-                </Text>
-              </View>
-            </Pressable>
-          )}
-        </View>
 
-        {/* Info callout */}
-        <View style={styles.infoCallout}>
-          <Ionicons name="information-circle-outline" size={20} color={colors.primaryDark} />
-          <Text style={styles.infoCalloutText}>
-            Los puntos se acreditan cuando el receptor confirma lo recibido en el punto verde.
-          </Text>
-        </View>
+            {/* Info callout */}
+            <View style={styles.infoCallout}>
+              <Ionicons name="information-circle-outline" size={20} color={colors.primaryDark} />
+              <Text style={styles.infoCalloutText}>
+                Los puntos se acreditan cuando el receptor confirma lo recibido en el punto verde.
+              </Text>
+            </View>
 
-        {action.error ? (
-          <Text accessibilityRole="alert" style={styles.errorText}>
-            {action.error}
-          </Text>
-        ) : null}
+            {action.error ? (
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                {action.error}
+              </Text>
+            ) : null}
 
-        {/* Action Button: Generar código */}
-        <View style={styles.actionContainer}>
-          <ActionButton
-            title="Generar código"
-            loading={action.busy}
-            disabled={items.length === 0}
-            onPress={handleGenerateCode}
-          />
-        </View>
+            {/* Action Button: Generar código */}
+            <View style={styles.actionContainer}>
+              <ActionButton
+                title="Generar código"
+                loading={action.busy}
+                disabled={items.length === 0}
+                onPress={handleGenerateCode}
+              />
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* Modal: Selector de categoría para un item específico (sin categorías duplicadas) */}
@@ -836,6 +871,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 16,
     padding: 16,
+  },
+  emptyCategoriesCard: {
+    gap: 16,
   },
   cardRow: {
     flexDirection: 'row',
