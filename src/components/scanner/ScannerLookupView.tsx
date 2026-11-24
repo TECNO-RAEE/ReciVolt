@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { colors, fonts } from '@/theme';
 
@@ -59,15 +60,14 @@ export function ScannerLookupView({
               <Text style={styles.cameraHint}>
                 Apuntá la cámara al código presentado por el ciudadano.
               </Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Abrir cámara del dispositivo"
-                style={styles.cameraToggleBtn}
-                onPress={onToggleCamera}
-              >
-                <Ionicons name="camera-outline" size={20} color={colors.textOnPrimary} />
-                <Text style={styles.cameraToggleBtnText}>Abrir cámara</Text>
-              </Pressable>
+              <View style={styles.cameraBtnWrap}>
+                <ActionButton
+                  title="Abrir cámara"
+                  icon={<Ionicons name="camera-outline" size={20} color={colors.textOnPrimary} />}
+                  disabled={busy}
+                  onPress={onToggleCamera}
+                />
+              </View>
             </View>
           )}
 
@@ -79,15 +79,14 @@ export function ScannerLookupView({
         </View>
 
         {camera && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar cámara"
-            style={styles.closeCameraBtn}
-            onPress={onCloseCamera}
-          >
-            <Ionicons name="close" size={18} color={colors.textSecondary} />
-            <Text style={styles.closeCameraText}>Cerrar visor de cámara</Text>
-          </Pressable>
+          <View style={styles.closeCameraWrap}>
+            <ActionButton
+              title="Cerrar visor de cámara"
+              secondary
+              disabled={busy}
+              onPress={onCloseCamera}
+            />
+          </View>
         )}
       </View>
 
@@ -112,6 +111,10 @@ export function ScannerLookupView({
             onChangeText={onChangeCode}
             autoCapitalize="characters"
             autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (code.trim() && !busy) onSearch();
+            }}
             editable={!busy}
           />
           {code.length > 0 && (
@@ -126,6 +129,8 @@ export function ScannerLookupView({
           )}
         </View>
 
+        <PortalFeedback error={error} notice={notice} />
+
         <ActionButton
           title="Buscar"
           loading={busy}
@@ -133,14 +138,6 @@ export function ScannerLookupView({
           onPress={onSearch}
         />
       </View>
-
-      {error ? (
-        <Text accessibilityRole="alert" style={styles.errorText}>
-          {error}
-        </Text>
-      ) : null}
-
-      {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
     </>
   );
 }
@@ -193,20 +190,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: 260,
   },
-  cameraToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 20,
-    minHeight: 44,
-    borderRadius: 12,
+  cameraBtnWrap: {
     marginTop: 8,
-  },
-  cameraToggleBtnText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.textOnPrimary,
   },
   cornerTopLeft: {
     position: 'absolute',
@@ -252,19 +237,9 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     borderBottomRightRadius: 8,
   },
-  closeCameraBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 44,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginTop: 10,
-  },
-  closeCameraText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
+  closeCameraWrap: {
+    width: '100%',
+    marginTop: 12,
   },
   orRow: {
     flexDirection: 'row',
@@ -300,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderControl,
     borderRadius: 12,
     paddingLeft: 12,
     minHeight: 48,
@@ -318,17 +293,5 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.danger,
-    textAlign: 'center',
-  },
-  noticeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.primaryDark,
-    textAlign: 'center',
   },
 });

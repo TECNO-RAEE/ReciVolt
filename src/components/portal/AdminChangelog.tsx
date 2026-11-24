@@ -3,6 +3,7 @@ import { Text, View, type TextStyle } from 'react-native';
 import type { ComponentProps } from 'react';
 import type { Ionicons } from '@expo/vector-icons';
 import { SearchBar } from '@/components/discovery/SearchBar';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalData } from '@/hooks/usePortalData';
 import {
   auditGroupOf,
@@ -106,15 +107,30 @@ export function AdminChangelog({
       {data && !loading && !error && (
         <>
           {data.entries.length === 0 && (
-            <AdminEmpty
-              icon="time-outline"
-              title="Sin operaciones registradas"
-              description={
-                filtered
-                  ? 'No hay resultados para estos filtros.'
-                  : 'Las próximas operaciones aparecerán aquí automáticamente.'
-              }
-            />
+            <View style={s.stack}>
+              <AdminEmpty
+                icon="time-outline"
+                title="Sin operaciones registradas"
+                description={
+                  filtered
+                    ? 'No hay resultados para estos filtros.'
+                    : 'Las próximas operaciones aparecerán aquí automáticamente.'
+                }
+              />
+              {filtered && (
+                <ActionButton
+                  title="Limpiar filtros"
+                  secondary
+                  onPress={() => {
+                    setDraft('');
+                    setSearch('');
+                    setCompanyId('');
+                    setGroup('');
+                    setPage(0);
+                  }}
+                />
+              )}
+            </View>
           )}
           {data.entries.map((entry) => (
             <ChangelogEntry
@@ -203,11 +219,6 @@ function ChangelogEntry({
               </Text>
             </View>
           ))}
-          {entry.targetId && (
-            <Text selectable style={s.hint}>
-              Referencia: {entry.targetId}
-            </Text>
-          )}
         </View>
       )}
     </PortalListItem>

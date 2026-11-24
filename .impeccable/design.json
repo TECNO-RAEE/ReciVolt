@@ -295,6 +295,20 @@
           "oklch(95.00% 0.0884 155.53)"
         ]
       },
+      "borderControl": {
+        "displayName": "Borde de controles",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.0270 238.70)",
+          "oklch(26.43% 0.0270 238.70)",
+          "oklch(37.86% 0.0270 238.70)",
+          "oklch(49.29% 0.0270 238.70)",
+          "oklch(60.71% 0.0270 238.70)",
+          "oklch(72.14% 0.0270 238.70)",
+          "oklch(83.57% 0.0270 238.70)",
+          "oklch(95.00% 0.0270 238.70)"
+        ]
+      },
       "navInactive": {
         "displayName": "Navegación inactiva",
         "role": "neutral",
@@ -388,7 +402,7 @@
       "refersTo": "field",
       "description": "Etiqueta persistente y campo de PortalField.",
       "html": "<label class=\"ds-field-label\">Nombre del punto verde<input class=\"ds-field\" type=\"text\" placeholder=\"Nombre del lugar\"></label>",
-      "css": ".ds-field-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:400 15px/23px Roboto,sans-serif}.ds-field{min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #E2EBE6;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-field::placeholder{color:#53676D}.ds-field:hover{border-color:#246440}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+      "css": ".ds-field-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:400 15px/23px Roboto,sans-serif}.ds-field{min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #748591;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-field::placeholder{color:#53676D}.ds-field:hover{border-color:#246440}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     },
     {
       "name": "Tarjeta ciudadana",
@@ -468,7 +482,7 @@
       "refersTo": "portal-select",
       "description": "PortalSelect: etiqueta persistente y campo con chevron que despliega opciones en línea (radio, seleccionada en primarySoft con check). Variante compacta con la etiqueta a la izquierda y un ancho fijo de 208 px.",
       "html": "<label class=\"ds-select-label\">Estado<button class=\"ds-select\" type=\"button\" aria-expanded=\"false\">Publicado<svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m6 9 6 6 6-6\"/></svg></button></label>",
-      "css": ".ds-select-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:500 14px/20px Roboto,sans-serif}.ds-select{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #E2EBE6;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-select:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+      "css": ".ds-select-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:500 14px/20px Roboto,sans-serif}.ds-select{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #748591;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-select:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     },
     {
       "name": "Fila de premio",

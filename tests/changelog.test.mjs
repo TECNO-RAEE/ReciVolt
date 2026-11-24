@@ -61,3 +61,46 @@ test('toda acción que el historial de admin incluye por lista blanca se puede f
   for (const [, action] of list.matchAll(/'([a-z_]+)'/g))
     assert.ok(auditGroupOf(action), `${action} no tiene grupo de filtro`);
 });
+test('traduce campos de empresa, puntos, premios y booleanos sin exponer UUID crudos', () => {
+  const uuid = '11111111-2222-3333-4444-555555555555';
+  assert.deepEqual(
+    changelogChanges(
+      [
+        {
+          id: uuid,
+          business_name: 'Eco Norte',
+          pickup_enabled: false,
+          intake_confirmed: false,
+          active: false,
+          points_cost: 50,
+          stock: null,
+          company_id: null,
+        },
+      ],
+      [
+        {
+          id: uuid,
+          business_name: 'Eco Norte',
+          pickup_enabled: true,
+          intake_confirmed: true,
+          active: true,
+          points_cost: 75,
+          stock: 10,
+          company_id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+        },
+      ]
+    ),
+    [
+      { entity: 'Eco Norte', field: 'Retiro a domicilio', before: 'No', after: 'Sí' },
+      { entity: 'Eco Norte', field: 'Política confirmada', before: 'No', after: 'Sí' },
+      { entity: 'Eco Norte', field: 'Activo', before: 'No', after: 'Sí' },
+      { entity: 'Eco Norte', field: 'Costo en puntos', before: '50', after: '75' },
+      { entity: 'Eco Norte', field: 'Unidades disponibles', before: 'Sin valor', after: '10' },
+      { entity: 'Eco Norte', field: 'Empresa', before: 'Sin valor', after: 'Asignada' },
+    ]
+  );
+  assert.deepEqual(
+    changelogChanges([{ id: uuid, phone: '111' }], [{ id: uuid, phone: '222' }]),
+    [{ entity: 'Registro', field: 'Teléfono', before: '111', after: '222' }]
+  );
+});

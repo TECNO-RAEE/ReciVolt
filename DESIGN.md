@@ -12,6 +12,7 @@ colors:
   impactWeight: '#0E5C28'
   danger: '#A30303'
   dangerBackground: 'rgba(179, 38, 30, 0.16)'
+  overlay: 'rgba(16, 40, 44, 0.55)'
   background: '#F8FBF9'
   surface: '#FFFFFF'
   tabBarBackground: '#FFFFFF'

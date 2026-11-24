@@ -17,12 +17,13 @@ import { colors } from '@/theme';
 
 export default function CompanyScreen() {
   const { company, access, selectCompany } = useAuth();
-  const { data, loading, error, refresh, owner } = useCompanyPortal();
+  const { data, loading, refreshing, error, refresh, owner } = useCompanyPortal();
   const memberships = activeMemberships(access);
   return (
     <PortalPage
       title="Mi empresa"
       back="/"
+      refreshing={refreshing}
       onRefresh={() => void refresh()}
       action={
         <Pressable
@@ -53,6 +54,7 @@ export default function CompanyScreen() {
           onChange={selectCompany}
         />
       )}
+      <PortalLoading loading={loading && !data} error={error} retry={() => void refresh()} />
       <ActionButton
         title="Recibir entrega o validar premio"
         icon={<Ionicons name="scan-outline" size={22} color={colors.textOnPrimary} />}
@@ -83,7 +85,7 @@ export default function CompanyScreen() {
               onPress={() => router.push('/company/rewards')}
             />
             <PortalMenuItem
-              title="Datos"
+              title="Datos de la empresa"
               icon="business-outline"
               onPress={() => router.push('/company/profile')}
             />
@@ -108,7 +110,6 @@ export default function CompanyScreen() {
           </>
         )}
       </View>
-      <PortalLoading loading={loading && !data} error={error} retry={() => void refresh()} />
     </PortalPage>
   );
 }

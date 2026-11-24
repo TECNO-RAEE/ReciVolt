@@ -1,8 +1,14 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CompanyPage } from '@/components/portal/CompanyPage';
-import { PortalFeedback, PortalField, portalStyles as s } from '@/components/portal/PortalUI';
+import {
+  PortalFeedback,
+  PortalField,
+  PortalLink,
+  portalStyles as s,
+} from '@/components/portal/PortalUI';
 import { brand } from '@/config/brand';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData } from '@/models/Portal';
@@ -11,7 +17,7 @@ import { portalCommand } from '@/services/portal.service';
 
 export default function CompanyProfileScreen() {
   return (
-    <CompanyPage title="Datos" ownerOnly>
+    <CompanyPage title="Datos de la empresa" ownerOnly>
       {(data) => <CompanyProfile data={data} />}
     </CompanyPage>
   );
@@ -31,24 +37,47 @@ function CompanyProfile({ data }: Readonly<{ data: CompanyPortalData }>) {
           {data.details.legalName} · CUIT {data.details.taxId}
         </Text>
       )}
-      <Text style={s.hint}>Para corregir datos legales, contactá al equipo de {brand.name}.</Text>
+      <View style={{ gap: 2 }}>
+        <Text style={s.hint}>¿Necesitás corregir datos legales?</Text>
+        <PortalLink
+          title={`Contactá al equipo de ${brand.name}`}
+          onPress={() => router.push('/contact?topic=support')}
+        />
+      </View>
+      <Text style={s.hint}>Los campos con * son obligatorios.</Text>
       <PortalField
-        label="Nombre comercial"
+        label="Nombre comercial *"
         value={name}
         onChangeText={setName}
+        maxLength={150}
         editable={!action.busy}
       />
-      <PortalField label="Teléfono" value={phone} onChangeText={setPhone} editable={!action.busy} />
       <PortalField
-        label="Dirección"
+        label="Teléfono *"
+        value={phone}
+        onChangeText={setPhone}
+        placeholder="Ej. 11 2345-6789"
+        keyboardType="phone-pad"
+        autoComplete="tel"
+        maxLength={100}
+        editable={!action.busy}
+      />
+      <PortalField
+        label="Dirección *"
         value={address}
         onChangeText={setAddress}
+        placeholder="Calle, altura y localidad"
+        maxLength={500}
         editable={!action.busy}
       />
       <PortalField
         label="Sitio web"
         value={website}
         onChangeText={setWebsite}
+        placeholder="https://…"
+        keyboardType="url"
+        autoComplete="url"
+        maxLength={1000}
         editable={!action.busy}
       />
       <PortalField
@@ -56,6 +85,7 @@ function CompanyProfile({ data }: Readonly<{ data: CompanyPortalData }>) {
         value={description}
         onChangeText={setDescription}
         multiline
+        maxLength={2000}
         editable={!action.busy}
       />
       <PortalFeedback error={action.error} notice={action.notice} />
@@ -64,13 +94,16 @@ function CompanyProfile({ data }: Readonly<{ data: CompanyPortalData }>) {
         loading={action.busy}
         onPress={() =>
           void action.run(async () => {
+            if (!name.trim() || !phone.trim() || !address.trim()) {
+              throw new Error('Completá nombre comercial, teléfono y dirección.');
+            }
             await portalCommand('save_company', {
               companyId: data.company.id,
-              name,
-              phone,
-              address,
-              website,
-              description,
+              name: name.trim(),
+              phone: phone.trim(),
+              address: address.trim(),
+              website: website.trim(),
+              description: description.trim(),
             });
             await refresh();
           })

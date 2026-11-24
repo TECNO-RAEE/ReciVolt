@@ -41,12 +41,8 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
 
   const scheduledDate = pickup?.scheduledDate;
   const date = selectedDate ?? scheduledDate ?? days[0].value;
-  const defaultSlot =
-    pickup?.scheduledTimeSlot &&
-    (pickupTimeSlots as readonly string[]).includes(pickup.scheduledTimeSlot)
-      ? pickup.scheduledTimeSlot
-      : pickupTimeSlots[0];
-  const slot = selectedSlot ?? defaultSlot;
+  const scheduledSlot = pickup?.scheduledTimeSlot?.trim() || null;
+  const slot = selectedSlot ?? scheduledSlot ?? pickupTimeSlots[0];
   const driver = editedDriver ?? pickup?.driverName ?? '';
 
   const dayOptions = useMemo(() => {
@@ -59,6 +55,17 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
     }
     return base;
   }, [days, scheduledDate]);
+
+  const slotOptions = useMemo(() => {
+    const base: { value: string; label: string }[] = pickupTimeSlots.map((t) => ({
+      value: t,
+      label: t,
+    }));
+    if (scheduledSlot && !base.some((o) => o.value === scheduledSlot)) {
+      base.unshift({ value: scheduledSlot, label: scheduledSlot });
+    }
+    return base;
+  }, [scheduledSlot]);
 
   async function reject() {
     await action.run(async () => {
@@ -114,7 +121,7 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
         <PortalSelect
           label="Horario de retiro"
           value={slot}
-          options={pickupTimeSlots.map((t) => ({ value: t, label: t }))}
+          options={slotOptions}
           onChange={setSelectedSlot}
           disabled={action.busy}
         />
@@ -135,15 +142,18 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
             icon={<Ionicons name="checkmark" size={22} color={colors.textOnPrimary} />}
             loading={action.busy}
             onPress={() =>
-              void action.run(async () => {
-                await pickupCommand('coordinate', {
-                  id: pickup!.id,
-                  scheduledDate: date,
-                  scheduledTimeSlot: slot,
-                  driverName: driver,
-                });
-                await refresh();
-              }, 'Coordinación confirmada.')
+              void action.run(
+                async () => {
+                  await pickupCommand('coordinate', {
+                    id: pickup!.id,
+                    scheduledDate: date,
+                    scheduledTimeSlot: slot,
+                    driverName: driver,
+                  });
+                  await refresh();
+                },
+                isRescheduling ? 'Reprogramación guardada.' : 'Coordinación confirmada.'
+              )
             }
           />
         )}
@@ -159,7 +169,7 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
             <View style={s.actions}>
               <ActionButton
                 title="Confirmar cancelación"
-                secondary
+                destructive
                 loading={action.busy}
                 onPress={() => void reject()}
               />

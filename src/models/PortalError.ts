@@ -7,7 +7,7 @@ type ErrorLike = {
 };
 
 const SPANISH_MARKERS =
-  /[áéíóúüñ¿¡]|\b(?:el|la|los|las|un|una|unos|unas|no|ya|de|del|para|con|por|en|al|se|es|son|está|están|tenés|podés|debe|deben|falta|faltan|revisá|completá|ingresá|elegí|seleccioná|indicá|usá|esperá|volvé|iniciá|confirmá|solicitá|agregá|guardá|cambiá|registrá|verificá)\b/i;
+  /[áéíóúüñ¿¡]|\b(?:el|la|los|las|un|una|unos|unas|no|ya|de|del|para|con|por|en|al|se|es|son|está|están|esta|este|ajeno|tenés|podés|debe|deben|falta|faltan|revisá|completá|ingresá|elegí|seleccioná|indicá|usá|esperá|volvé|iniciá|confirmá|solicitá|agregá|guardá|cambiá|registrá|verificá)\b/i;
 
 function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';

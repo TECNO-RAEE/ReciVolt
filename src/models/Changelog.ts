@@ -66,6 +66,28 @@ const labels: Record<string, string> = {
   requested_limit: 'Cupos solicitados',
   impact_xp: 'XP por unidad',
   minimum_xp: 'XP mínimo',
+  business_name: 'Nombre comercial',
+  legal_name: 'Razón social',
+  tax_id: 'CUIT',
+  corporate_email: 'Email corporativo',
+  phone: 'Teléfono',
+  responsible: 'Responsable',
+  address: 'Dirección',
+  activity: 'Actividad',
+  website: 'Sitio web',
+  description: 'Descripción',
+  pickup_enabled: 'Retiro a domicilio',
+  intake_confirmed: 'Política confirmada',
+  time_zone: 'Zona horaria',
+  active: 'Activo',
+  points_cost: 'Costo en puntos',
+  stock: 'Unidades disponibles',
+  title: 'Título',
+  category: 'Categoría',
+  image_url: 'Enlace de foto',
+  hours: 'Horarios',
+  starts_at: 'Disponible desde',
+  ends_at: 'Disponible hasta',
 };
 const values: Record<string, string> = {
   ACTIVE: 'Activa',
@@ -76,9 +98,13 @@ const values: Record<string, string> = {
   APPROVED: 'Aprobada',
   REJECTED: 'Rechazada',
 };
-function display(value: unknown) {
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function display(value: unknown, key?: string) {
   if (value == null) return 'Sin valor';
-  return values[String(value)] ?? String(value);
+  if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+  const text = String(value);
+  if (key === 'company_id' && uuidPattern.test(text)) return 'Asignada';
+  return values[text] ?? text;
 }
 export function changelogChanges(before: unknown, after: unknown) {
   const previous = Array.isArray(before) ? (before as Record<string, unknown>[]) : [];
@@ -87,14 +113,27 @@ export function changelogChanges(before: unknown, after: unknown) {
   for (const id of new Set([...previous, ...next].map((row) => row.id))) {
     const old = previous.find((row) => row.id === id);
     const current = next.find((row) => row.id === id);
-    const entity = String(current?.name ?? old?.name ?? id);
+    const rawEntity =
+      current?.name ??
+      old?.name ??
+      current?.title ??
+      old?.title ??
+      current?.business_name ??
+      old?.business_name ??
+      current?.legal_name ??
+      old?.legal_name ??
+      id;
+    const entity =
+      typeof rawEntity === 'string' && uuidPattern.test(rawEntity)
+        ? 'Registro'
+        : String(rawEntity);
     for (const key of new Set([...Object.keys(old ?? {}), ...Object.keys(current ?? {})])) {
       if (key === 'id' || old?.[key] === current?.[key]) continue;
       changes.push({
         entity,
         field: labels[key] ?? key,
-        before: display(old?.[key]),
-        after: display(current?.[key]),
+        before: display(old?.[key], key),
+        after: display(current?.[key], key),
       });
     }
   }

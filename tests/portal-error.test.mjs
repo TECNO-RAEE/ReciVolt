@@ -84,6 +84,7 @@ test('traduce códigos PostgREST PGRST* y errores de Postgres', () => {
 
 test('conserva sin alterar los mensajes de dominio y validación ya escritos en español', () => {
   const spanishErrors = [
+    { code: '42501', message: 'Premio ajeno a esta empresa.' },
     { code: '42501', message: 'Sólo el responsable puede solicitar una ampliación.' },
     { code: '22023', message: 'Indicá el estado y el motivo del cambio.' },
     new Error('Usá puntos enteros entre 0 y 1.000.000.'),

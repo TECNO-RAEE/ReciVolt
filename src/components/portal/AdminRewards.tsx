@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
@@ -10,7 +11,7 @@ import {
   PortalLoading,
   PortalBadge,
   PortalListItem,
-  PortalNav,
+  PortalSelect,
   PortalToggle,
   portalStyles as s,
 } from './PortalUI';
@@ -20,6 +21,48 @@ import { pointsLabel, rewardCategories, type Reward, type RewardCategory } from 
 import { getRewards, saveReward } from '@/services/reward.service';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import { colors } from '@/theme';
+
+function RewardThumbnail({ reward }: Readonly<{ reward: Pick<Reward, 'imageUrl' | 'title'> }>) {
+  const [failed, setFailed] = useState(false);
+  if (!reward.imageUrl || failed) {
+    return (
+      <View
+        accessibilityRole="image"
+        accessibilityLabel={`Sin foto para ${reward.title}`}
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 32,
+          backgroundColor: colors.primarySoft,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Ionicons name="gift-outline" size={26} color={colors.primaryDark} />
+      </View>
+    );
+  }
+  return (
+    <View
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        overflow: 'hidden',
+        backgroundColor: colors.primarySoft,
+      }}
+    >
+      <Image
+        source={{ uri: reward.imageUrl }}
+        style={{ width: 64, height: 64 }}
+        contentFit="cover"
+        transition={150}
+        accessibilityLabel={reward.title}
+        onError={() => setFailed(true)}
+      />
+    </View>
+  );
+}
 
 export function AdminRewards({
   companies,
@@ -41,6 +84,7 @@ export function AdminRewards({
     return () => onBackChange?.(null);
   }, [selected, onBackChange]);
   const [search, setSearch] = useState('');
+  const [now] = useState(() => Date.now());
   const rows = data?.filter((r) => matchesAdminSearch(search, r.id, r.title));
   if (selected)
     return (
@@ -73,31 +117,30 @@ export function AdminRewards({
       {!loading && !error && !!data?.length && rows?.length === 0 && (
         <Text style={s.body}>No encontramos premios para esta búsqueda.</Text>
       )}
-      {rows?.map((reward) => (
-        <PortalListItem
-          key={reward.id}
-          leading={
-            <View style={{ width: 64, height: 64, borderRadius: 32, overflow: 'hidden' }}>
-              <RewardPhoto reward={reward} height={64} />
-            </View>
-          }
-          title={reward.title}
-          lines={[
-            reward.businessName,
-            pointsLabel(reward.pointsCost),
-            reward.stock === 0 && 'Sin unidades disponibles',
-          ]}
-          badge={
-            <PortalBadge
-              label={reward.active ? 'Activo' : 'Borrador'}
-              tone={reward.active ? 'success' : 'neutral'}
-            />
-          }
-          badgeBelow
-          accessibilityHint="Editar premio"
-          onPress={() => setSelected(reward)}
-        />
-      ))}
+      {rows?.map((reward) => {
+        const expired = Boolean(reward.endsAt && Date.parse(reward.endsAt) <= now);
+        return (
+          <PortalListItem
+            key={reward.id}
+            leading={<RewardThumbnail key={`thumb:${reward.imageUrl ?? ''}`} reward={reward} />}
+            title={reward.title}
+            lines={[
+              reward.businessName,
+              pointsLabel(reward.pointsCost),
+              reward.stock === 0 && 'Sin unidades disponibles',
+            ]}
+            badge={
+              <PortalBadge
+                label={expired ? 'Vencido' : reward.active ? 'Activo' : 'Borrador'}
+                tone={expired ? 'danger' : reward.active ? 'success' : 'neutral'}
+              />
+            }
+            badgeBelow
+            accessibilityHint="Editar premio"
+            onPress={() => setSelected(reward)}
+          />
+        );
+      })}
       <ActionButton
         title="Crear premio"
         icon={<Ionicons name="add" size={24} color={colors.textOnPrimary} />}
@@ -129,6 +172,9 @@ export function RewardEditor({
   const [points, setPoints] = useState(String(reward?.pointsCost ?? ''));
   const [imageUrl, setImageUrl] = useState(reward?.imageUrl ?? '');
   const [businessName, setBusinessName] = useState(reward?.businessName ?? '');
+  const [businessNameCustomized, setBusinessNameCustomized] = useState(
+    Boolean(reward?.businessName)
+  );
   const [address, setAddress] = useState(reward?.address ?? '');
   const [hours, setHours] = useState(reward?.hours ?? '');
   const [stock, setStock] = useState(reward?.stock == null ? '' : String(reward.stock));
@@ -140,6 +186,7 @@ export function RewardEditor({
   const [endsAt, setEndsAt] = useState(reward?.endsAt ?? '');
   const [active, setActive] = useState(reward?.active ?? false);
   const action = usePortalAction();
+  const trimmedImageUrl = imageUrl.trim();
   const dateValue = (value: string) => {
     if (!value.trim()) return null;
     if (!Number.isFinite(Date.parse(value)))
@@ -173,7 +220,9 @@ export function RewardEditor({
                   disabled={action.busy}
                   onPress={() => {
                     setCompanyId(c.id);
-                    setBusinessName(c.name);
+                    if (!businessNameCustomized) {
+                      setBusinessName(c.name);
+                    }
                   }}
                 />
               ))}
@@ -198,16 +247,14 @@ export function RewardEditor({
         maxLength={2000}
         editable={!action.busy}
       />
-      <PortalNav
-        items={Object.values(rewardCategories)}
-        selected={rewardCategories[category]}
-        onSelect={(label) =>
-          setCategory(
-            Object.entries(rewardCategories).find(
-              ([, value]) => value === label
-            )![0] as RewardCategory
-          )
-        }
+      <PortalSelect
+        label="Categoría"
+        value={category}
+        options={(Object.entries(rewardCategories) as [RewardCategory, string][]).map(
+          ([value, label]) => ({ value, label })
+        )}
+        onChange={setCategory}
+        disabled={action.busy}
       />
       <PortalField
         label="Costo en puntos globales"
@@ -221,12 +268,24 @@ export function RewardEditor({
         value={imageUrl}
         onChangeText={setImageUrl}
         placeholder="https://…"
+        keyboardType="url"
         editable={!action.busy}
       />
+      {/^https:\/\/\S{3,}/.test(trimmedImageUrl) && (
+        <View style={{ borderRadius: 12, overflow: 'hidden' }}>
+          <RewardPhoto
+            reward={{ title: title.trim() || 'Vista previa del premio', imageUrl: trimmedImageUrl }}
+            height={160}
+          />
+        </View>
+      )}
       <PortalField
         label="Nombre visible del comercio"
         value={businessName}
-        onChangeText={setBusinessName}
+        onChangeText={(value) => {
+          setBusinessName(value);
+          setBusinessNameCustomized(value.trim().length > 0);
+        }}
         maxLength={120}
         editable={!action.busy}
       />
@@ -301,7 +360,7 @@ export function RewardEditor({
               throw new Error('El costo debe ser un entero entre 1 y 1.000.000 puntos.');
             if (stock !== '' && (!/^\d+$/.test(stock) || Number(stock) > 1000000))
               throw new Error('Revisá las unidades disponibles.');
-            if (imageUrl && !/^https:\/\//.test(imageUrl))
+            if (trimmedImageUrl && !/^https:\/\//.test(trimmedImageUrl))
               throw new Error('La foto debe tener un enlace https.');
             const lat = latitude.trim() ? Number(latitude) : null,
               lng = longitude.trim() ? Number(longitude) : null;
@@ -322,7 +381,7 @@ export function RewardEditor({
               description,
               category,
               pointsCost: Number(points),
-              imageUrl: imageUrl.trim() || null,
+              imageUrl: trimmedImageUrl || null,
               businessName: businessName.trim(),
               address: address.trim(),
               hours,

@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { PortalPage } from '@/components/portal/PortalUI';
 import {
   DeliveryConfirmationView,
   RedemptionConfirmationView,
@@ -10,9 +11,7 @@ import {
   ScannerLookupView,
 } from '@/components/scanner';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { usePortalAction } from '@/hooks/usePortalData';
-import { useScrollReset } from '@/hooks/useScrollReset';
 import {
   deliveryQuantity,
   effectiveDeliveryStatus,
@@ -33,8 +32,7 @@ export default function ScannerScreen() {
 
   if (!company) {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Validar código" back="/company" />
+      <PortalPage title="Validar código" back="/company">
         <View style={styles.centerContainer}>
           <View style={styles.emptyIconCircle}>
             <Ionicons name="business-outline" size={36} color={colors.textSecondary} />
@@ -49,7 +47,7 @@ export default function ScannerScreen() {
             onPress={() => router.replace('/company')}
           />
         </View>
-      </View>
+      </PortalPage>
     );
   }
 
@@ -79,7 +77,6 @@ function Scanner({
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [helpModalVisible, setHelpModalVisible] = useState(false);
 
-  const scroll = useScrollReset();
   const action = usePortalAction();
 
   useFocusEffect(
@@ -226,14 +223,8 @@ function Scanner({
   }
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader title={title} back="/company" action={headerAction} />
-      <ScrollView
-        ref={scroll}
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+    <>
+      <PortalPage title={title} back="/company" action={headerAction}>
         {resolvingInitial && !delivery && !redemption && (
           <View style={styles.resolvingBox}>
             <ActivityIndicator color={colors.primary} accessibilityLabel="Buscando código" />
@@ -303,30 +294,17 @@ function Scanner({
             onReset={handleReset}
           />
         )}
-      </ScrollView>
+      </PortalPage>
 
       <ScannerHelpModal
         visible={helpModalVisible}
         onClose={() => setHelpModalVisible(false)}
       />
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    width: '100%',
-    maxWidth: 600,
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 40,
-    gap: 16,
-  },
   centerContainer: {
     flex: 1,
     alignItems: 'center',
