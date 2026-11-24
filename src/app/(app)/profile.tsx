@@ -78,7 +78,17 @@ function Profile() {
       label: 'Mis puntos',
       onPress: () => router.push('/(app)/my-points'),
     },
+    {
+      icon: 'hardware-chip-outline' as const,
+      label: 'Qué recibimos',
+      onPress: () => router.push('/device-categories'),
+    },
     { icon: 'chatbubble-outline' as const, label: 'Contacto', onPress: () => router.push('/contact') },
+    {
+      icon: 'settings-outline' as const,
+      label: 'Configuraciones',
+      onPress: () => router.push('/settings'),
+    },
   ];
   const signOut = () =>
     void action.run(async () => {
