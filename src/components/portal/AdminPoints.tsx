@@ -4,12 +4,13 @@ import { SearchBar } from '@/components/discovery/SearchBar';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CompanyPointEditor } from './CompanyPointEditor';
 import {
+  PortalBadge,
+  PortalChoice,
+  PortalFeedback,
   PortalField,
   PortalLink,
-  PortalLoading,
-  PortalChoice,
-  PortalBadge,
   PortalListItem,
+  PortalLoading,
   portalStyles as s,
 } from './PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
@@ -18,6 +19,7 @@ import {
   type ManagedPoint,
   type PortalCompany,
 } from '@/models/Portal';
+import { splitPointAddress } from '@/models/PointAddress';
 import { getActiveRewardCompanyIds } from '@/services/reward.service';
 import {
   getAdminPoints,
@@ -31,8 +33,12 @@ const loadOrganizations = () =>
   Promise.all([getAdminPoints(), getActiveRewardCompanyIds()]).then(
     ([points, rewardCompanies]) => ({ points, rewardCompanies })
   );
-// "Calle 123, Villa Rosa, Buenos Aires" -> "Villa Rosa, Buenos Aires"
-const locality = (address?: string) => address?.split(',').slice(-2).join(',').trim() || null;
+// "Calle 123, Villa Rosa, Buenos Aires · Entre calles: X y Y" -> "Villa Rosa, Buenos Aires"
+const locality = (address?: string) => {
+  if (!address) return null;
+  const base = splitPointAddress(address).address;
+  return base.split(',').slice(-2).join(',').trim() || null;
+};
 
 export function AdminPoints({
   companies,
@@ -54,10 +60,12 @@ export function AdminPoints({
   const [pointId, setPointId] = useState<string>();
   const [creating, setCreating] = useState(false);
   const [companySearch, setCompanySearch] = useState('');
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [handledAdd, setHandledAdd] = useState(addRequest);
   if (addRequest !== handledAdd) {
     setHandledAdd(addRequest);
     setCreating(true);
+    setSavedNotice(null);
   }
   const listing = selected === undefined && !creating;
   useEffect(() => onListChange?.(listing), [listing, onListChange]);
@@ -70,6 +78,10 @@ export function AdminPoints({
     setSelected(undefined);
     setPointId(undefined);
   }, []);
+  const cancelCreating = useCallback(() => {
+    setCreating(false);
+    closeWorkspace();
+  }, [closeWorkspace]);
   const result = usePortalData(loadOrganizations);
   const { refresh: reloadOrganizations } = result;
   // Pull-to-refresh reloads the list without resetting an open editor.
@@ -84,16 +96,21 @@ export function AdminPoints({
         newPoint={creating}
         onBackChange={onBackChange}
         back={closeWorkspace}
+        exitCreating={cancelCreating}
         saved={async () => {
           await refresh();
           await result.refresh();
           setSelected(undefined);
           setCreating(false);
           setPointId(undefined);
+          setSavedNotice('Cambios guardados.');
         }}
       />
     );
-  if (creating)
+  if (creating) {
+    const filteredCompanies = companies.filter((c) =>
+      matchesAdminSearch(companySearch, c.name, c.id)
+    );
     return (
       <View style={s.stack}>
         <PortalLink title="Volver a puntos verdes" onPress={() => setCreating(false)} />
@@ -107,18 +124,25 @@ export function AdminPoints({
           value={companySearch}
           onChangeText={setCompanySearch}
         />
-        {companies
-          .filter((c) => matchesAdminSearch(companySearch, c.name, c.id))
-          .map((c) => (
-            <PortalChoice
-              key={c.id}
-              label={c.name}
-              selected={false}
-              onPress={() => setSelected(c)}
-            />
-          ))}
+        {filteredCompanies.length === 0 && (
+          <Text style={s.body}>
+            {companies.length
+              ? 'No encontramos instituciones para esta búsqueda.'
+              : 'Todavía no hay instituciones registradas. Creá una nueva institución arriba.'}
+          </Text>
+        )}
+        {filteredCompanies.map((c) => (
+          <PortalChoice
+            key={c.id}
+            label={c.name}
+            selected={false}
+            role="button"
+            onPress={() => setSelected(c)}
+          />
+        ))}
       </View>
     );
+  }
   const organizations = companies
     .filter((c) => matchesAdminSearch(search, c.name, c.id))
     .map((company) => {
@@ -134,10 +158,14 @@ export function AdminPoints({
     <View style={s.stack}>
       <SearchBar
         value={search}
-        onChangeText={setSearch}
+        onChangeText={(value) => {
+          setSearch(value);
+          if (savedNotice) setSavedNotice(null);
+        }}
         label="Buscar organización"
         placeholder="Buscar organización"
       />
+      <PortalFeedback notice={savedNotice} />
       <PortalLoading
         loading={result.loading}
         error={result.error}
@@ -172,7 +200,10 @@ export function AdminPoints({
               locality(points[0]?.address),
               points.length > 1 && `${points.length} puntos verdes`,
             ]}
-            onPress={() => setSelected(company)}
+            onPress={() => {
+              setSavedNotice(null);
+              setSelected(company);
+            }}
           />
         ))}
     </View>
@@ -185,6 +216,7 @@ function PointWorkspace({
   newPoint,
   onBackChange,
   back,
+  exitCreating,
   saved,
 }: Readonly<{
   company: PortalCompany | null;
@@ -192,6 +224,7 @@ function PointWorkspace({
   newPoint: boolean;
   onBackChange?: (handler: (() => void) | null) => void;
   back: () => void;
+  exitCreating: () => void;
   saved: () => Promise<void>;
 }>) {
   const loader = useCallback(
@@ -205,25 +238,31 @@ function PointWorkspace({
   const [companyName, setCompanyName] = useState('');
   const [search, setSearch] = useState('');
   const currentPoint = pointId ? data?.points.find((p) => p.id === pointId) : editing;
+  const backTarget = pointWorkspaceBackTarget({
+    hasCompany: Boolean(company),
+    hasPointId: Boolean(pointId),
+    newPoint,
+    isEditingPoint: currentPoint !== undefined,
+  });
   const handleBack = useCallback(() => {
-    const target = pointWorkspaceBackTarget({
-      hasCompany: Boolean(company),
-      hasPointId: Boolean(pointId),
-      newPoint,
-      isEditingPoint: currentPoint !== undefined,
-    });
-    if (target === 'points_list') setEditing(undefined);
+    if (backTarget === 'points_list') setEditing(undefined);
     else back();
-  }, [company, pointId, newPoint, currentPoint, back]);
+  }, [backTarget, back]);
   useEffect(() => {
     onBackChange?.(handleBack);
     return () => onBackChange?.(null);
   }, [handleBack, onBackChange]);
+  const filteredPoints =
+    data?.points.filter((p) => matchesAdminSearch(search, p.name, p.id)) ?? [];
   return (
     <View style={s.stack}>
-      {editing === undefined && !pointId && (
-        <PortalLink title="Volver a puntos verdes" onPress={back} />
-      )}
+      {currentPoint === undefined ? (
+        !pointId && <PortalLink title="Volver a puntos verdes" onPress={back} />
+      ) : newPoint ? (
+        <PortalLink title="Volver a elegir institución" onPress={handleBack} />
+      ) : backTarget === 'points_list' ? (
+        <PortalLink title="Volver a puntos de la empresa" onPress={handleBack} />
+      ) : null}
       <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
       {data &&
         !error &&
@@ -234,13 +273,23 @@ function PointWorkspace({
                 label="Nombre de la institución responsable"
                 value={companyName}
                 onChangeText={setCompanyName}
+                maxLength={150}
               />
             )}
             {company && <Text style={s.subtitle}>{company.name}</Text>}
             <CompanyPointEditor
+              key={currentPoint?.id ?? 'new'}
               data={data}
               point={currentPoint}
-              onCancel={handleBack}
+              isAdmin
+              onCancel={newPoint ? exitCreating : handleBack}
+              cancelLabel={
+                newPoint
+                  ? 'Cancelar y volver a puntos verdes'
+                  : currentPoint === null
+                    ? 'Cancelar alta'
+                    : 'Cancelar edición'
+              }
               onSaved={saved}
               savePoint={async (input) => {
                 if (!company && !companyName.trim())
@@ -253,27 +302,40 @@ function PointWorkspace({
           <>
             <Text style={s.subtitle}>{company?.name}</Text>
             <ActionButton title="Agregar punto verde" onPress={() => setEditing(null)} />
-            <PortalField
-              label="Buscar puntos por nombre o ID"
-              value={search}
-              onChangeText={setSearch}
-            />
+            {data.points.length > 0 && (
+              <PortalField
+                label="Buscar puntos por nombre o ID"
+                value={search}
+                onChangeText={setSearch}
+              />
+            )}
             {data.points.length === 0 && (
               <Text style={s.body}>Esta institución todavía no tiene puntos verdes.</Text>
             )}
-            {data.points
-              .filter((p) => matchesAdminSearch(search, p.name, p.id))
-              .map((point) => (
-                <View key={point.id} style={s.row}>
-                  <Text style={s.subtitle}>{point.name}</Text>
-                  <Text style={s.body}>{point.address}</Text>
-                  <Text style={s.hint}>{point.active ? 'Publicado' : 'Borrador'}</Text>
-                  <Text selectable style={s.hint}>
-                    ID: {point.id}
-                  </Text>
-                  <PortalLink title="Editar punto verde" onPress={() => setEditing(point)} />
-                </View>
-              ))}
+            {data.points.length > 0 && filteredPoints.length === 0 && (
+              <Text style={s.body}>No encontramos puntos verdes para esta búsqueda.</Text>
+            )}
+            {filteredPoints.map((point) => (
+              <PortalListItem
+                key={point.id}
+                icon="leaf-outline"
+                title={point.name}
+                badge={
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    <PortalBadge
+                      label={point.active ? 'Publicado' : 'Borrador'}
+                      tone={point.active ? 'success' : 'neutral'}
+                    />
+                    {!point.intakeConfirmed && (
+                      <PortalBadge label="Política pendiente" tone="neutral" />
+                    )}
+                  </View>
+                }
+                lines={[point.address, `ID: ${point.id}`]}
+                accessibilityHint="Editar punto verde"
+                onPress={() => setEditing(point)}
+              />
+            ))}
           </>
         ))}
     </View>

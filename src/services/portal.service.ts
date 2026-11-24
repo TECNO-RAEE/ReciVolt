@@ -1,6 +1,6 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from '@/config/supabase';
-import { getDeviceCategoryGroupKey } from '@/models/DeviceCategory';
+import { getDeviceCategoryGroupKey, type DeviceIntakeMode } from '@/models/DeviceCategory';
 import { requiresPolicyMigration } from '@/services/green-point.service';
 import type {
   AdminPortalData,
@@ -10,6 +10,7 @@ import type {
   CompanyLimitRequest,
   CompanyPortalData,
   ManagedPoint,
+  PointInput,
   PortalCompany,
 } from '@/models/Portal';
 
@@ -89,6 +90,17 @@ export async function portalCommand(
         : error.message
     );
   return data;
+}
+export interface PointIntakePolicyInput {
+  deviceCategoryId: string;
+  mode: DeviceIntakeMode;
+}
+export interface PointSaveInput extends PointInput {
+  intakeConfirmed?: boolean;
+  intakePolicies?: PointIntakePolicyInput[];
+}
+export function savePoint(input: PointSaveInput) {
+  return portalCommand('save_point', input);
 }
 export async function saveGreenPointDevicePolicy(
   pointId: string,
@@ -381,6 +393,6 @@ export async function sendCompanyInvitation(invitationId: string, name?: string)
   });
   if (error)
     throw new Error(
-      'El acceso quedó reservado, pero el email no pudo enviarse. Podés reintentarlo desde Invitaciones.'
+      'El acceso quedó reservado, pero el email no pudo enviarse. Podés reintentarlo desde esta pantalla.'
     );
 }

@@ -10,11 +10,16 @@ insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
  ('34000000-0000-0000-0000-000000000003','admin-search-worker@example.test',now(),'{"full_name":"Prueba buscador trabajador"}'),
  ('34000000-0000-0000-0000-000000000004','admin-search-admin@example.test',now(),'{"full_name":"Prueba buscador admin"}');
 insert into platform_admins values('34000000-0000-0000-0000-000000000004',now());
-insert into companies(id,name) values('34000000-0000-0000-0000-000000000011','Prueba buscador empresa');
+insert into companies(id,name) values
+ ('34000000-0000-0000-0000-000000000011','Prueba buscador empresa'),
+ ('34000000-0000-0000-0000-000000000012','Empresa sin detalles A'),
+ ('34000000-0000-0000-0000-000000000013','Empresa sin detalles B');
 insert into company_details(company_id,legal_name,tax_id,corporate_email,phone,responsible,address,activity)
  values('34000000-0000-0000-0000-000000000011','Institución de prueba','34999111999','empresa@example.test','123','Responsable','Calle de prueba','Reciclaje');
 insert into company_memberships(user_id,company_id,role,status) values
  ('34000000-0000-0000-0000-000000000002','34000000-0000-0000-0000-000000000011','company_owner','ACTIVE'),
+ ('34000000-0000-0000-0000-000000000002','34000000-0000-0000-0000-000000000012','company_owner','ACTIVE'),
+ ('34000000-0000-0000-0000-000000000002','34000000-0000-0000-0000-000000000013','company_owner','ACTIVE'),
  ('34000000-0000-0000-0000-000000000003','34000000-0000-0000-0000-000000000011','company_worker','ACTIVE');
 insert into rewards(id,company_id,title,category,points_cost,business_name,address,active)
  values('34000000-0000-0000-0000-000000000021','34000000-0000-0000-0000-000000000011','Prueba buscador premio','food',10,'Prueba empresa','Calle',false);
@@ -60,7 +65,19 @@ insert into admin_test_results select lives_ok($$select admin_edit_record('compa
 insert into admin_test_results select is((select phone from company_details where company_id='34000000-0000-0000-0000-000000000011'),'456','contact edits persist');
 insert into admin_test_results select lives_ok($$select portal_command('admin_save_point',jsonb_build_object('companyId','34000000-0000-0000-0000-000000000011','name','Prueba buscador punto','address','Calle 123 · Entre calles: Primera y Segunda','latitude',-34.459,'longitude',-58.914,'phone','123','description','Entrada principal','timeZone','America/Argentina/Buenos_Aires','active',true,'pickupEnabled',false,'categories',jsonb_build_array((select id from device_categories where active limit 1)),'schedules','[{"weekday":1,"opensMinute":540,"closesMinute":1080}]'::jsonb))$$,'admin publishes a point with chosen coordinates and cross streets');
 insert into admin_test_results select is(jsonb_array_length(admin_search_records('prueba buscador punto','points')),1,'published point searchable by name');
+insert into admin_test_results select is(admin_search_records('admin-search-citizen@example.test','users')->0->>'id','34000000-0000-0000-0000-000000000001','admin searches users by email');
+insert into admin_test_results select is(jsonb_array_length(admin_search_records('primera y segunda','points')),1,'admin searches points by address');
+insert into admin_test_results select is(admin_search_records('prueba empresa','rewards')->0->>'id','34000000-0000-0000-0000-000000000021','admin searches rewards by business name');
+insert into admin_test_results select is(jsonb_array_length(admin_search_records('ACTIVE','companies')),0,'company search ignores status enum');
 insert into admin_test_results select is(jsonb_array_length(admin_changelog(0,'prueba-historial-admins-34',false)),1,'old clients cannot include citizen actions in admin history');
+reset role;
+select set_config('request.jwt.claim.sub','34000000-0000-0000-0000-000000000002',true);
+set local role authenticated;
+insert into admin_test_results select lives_ok($$select portal_command('save_company','{"companyId":"34000000-0000-0000-0000-000000000012","name":"Empresa A actualizada","phone":"1111-2222","address":"Av. Uno 100","website":"https://uno.example.test","description":"Sin CUIT"}')$$,'save_company inserts missing company_details');
+insert into admin_test_results select lives_ok($$select portal_command('save_company','{"companyId":"34000000-0000-0000-0000-000000000013","name":"Empresa B actualizada","phone":"3333-4444","address":"Av. Dos 200"}')$$,'save_company inserts missing company_details for a second company without tax_id collision');
+insert into admin_test_results select is((select phone from company_details where company_id='34000000-0000-0000-0000-000000000012'),'1111-2222','upserted company_details phone persists');
+insert into admin_test_results select lives_ok($$select portal_command('save_company','{"companyId":"34000000-0000-0000-0000-000000000012","name":"Empresa A actualizada","phone":"9999-0000","address":"Av. Uno 100"}')$$,'save_company updates previously upserted company_details');
+insert into admin_test_results select is((select phone from company_details where company_id='34000000-0000-0000-0000-000000000012'),'9999-0000','updated upserted company_details persists');
 reset role;
 insert into admin_test_results select is((select count(*) from platform_admins where user_id='34000000-0000-0000-0000-000000000001'),0::bigint,'profile editing cannot grant admin access');
 insert into admin_test_results select is((select worker_limit from companies where id='34000000-0000-0000-0000-000000000011'),20,'unapproved limit field ignored');
