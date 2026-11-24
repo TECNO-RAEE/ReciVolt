@@ -1,7 +1,7 @@
 # UX Follow-up: Reward fallback photos, Apple HIG Dark Mode, QR confirmation modal
 
-Branch `feature/ux-rewards-darkmode-qr` (stacked on `feature/ux-db-terms-and-polish`).
-Delivery strategy: `exception-ok` (stacked branch; dark mode spans `@/theme` and consumers cleanly in cohesive work-unit commits). Chain strategy: `stacked-to-main`.
+Branch `feature/ux-rewards-darkmode-qr` (accumulates UX Blocks 1–5 + follow-ups over `main`).
+Delivery strategy: `exception-ok` (user-selected consolidated PR to `main` with `size:exception`; work-unit commits remain cohesive). Chain strategy: `single-to-main`.
 Test runner: `npx tsc --noEmit && npm run lint && node --test tests/*.test.mjs`.
 
 ## Specs
