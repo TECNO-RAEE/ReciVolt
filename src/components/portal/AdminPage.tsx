@@ -13,41 +13,56 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { PortalNav, portalStyles } from './PortalUI';
-import { colors } from '@/theme';
+import { PortalFeedback, PortalNav, usePortalStyles } from './PortalUI';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export function AdminPage({
   title = 'Administración',
   back = '/',
+  onBack,
+  hideBack = false,
   sections,
   selected,
   onSelect,
   refresh,
+  refreshing: refreshingProp = false,
+  error,
+  hasData,
   footer,
   children,
 }: Readonly<{
   title?: string;
   back?: Href;
+  onBack?: () => void;
+  hideBack?: boolean;
   sections: readonly string[];
   selected: string;
   onSelect: (section: string) => void;
   refresh: () => Promise<void>;
+  refreshing?: boolean;
+  error?: string | null;
+  hasData?: boolean;
   footer?: ReactNode;
   children: ReactNode;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
-  const [refreshing, setRefreshing] = useState(false);
+  const [localRefreshing, setLocalRefreshing] = useState(false);
+  const refreshing = refreshingProp || localRefreshing;
   const reload = () => {
     if (refreshing) return;
-    setRefreshing(true);
-    void refresh().finally(() => setRefreshing(false));
+    setLocalRefreshing(true);
+    void refresh().finally(() => setLocalRefreshing(false));
   };
   return (
     <View style={styles.page}>
       <ScreenHeader
         title={title}
         back={back}
+        onBack={onBack}
+        hideBack={hideBack}
         action={
           <Pressable
             accessibilityRole="button"
@@ -94,6 +109,7 @@ export function AdminPage({
         }
         contentContainerStyle={styles.content}
       >
+        {error && hasData !== false && <PortalFeedback error={error} />}
         {children}
       </ScrollView>
       {footer && (
@@ -114,6 +130,9 @@ export function AdminEmpty({
   description: string;
   icon?: ComponentProps<typeof Ionicons>['name'];
 }>) {
+  const colors = useColors();
+  const portalStyles = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.empty}>
       <Ionicons name={icon} color={colors.textSecondary} size={44} />
@@ -122,28 +141,29 @@ export function AdminEmpty({
     </View>
   );
 }
-const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.background },
-  frame: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 16 },
-  navRow: { flexDirection: 'row', alignItems: 'stretch' },
-  nav: { flex: 1, minWidth: 0 },
-  navAction: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  iconButton: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center' },
-  content: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    padding: 16,
-    paddingBottom: 32,
-    gap: 16,
-  },
-  footer: { backgroundColor: colors.background },
-  footerContent: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  empty: { gap: 12, paddingVertical: 24, alignItems: 'center' },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    page: { flex: 1, backgroundColor: colors.background },
+    frame: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 16 },
+    navRow: { flexDirection: 'row', alignItems: 'stretch' },
+    nav: { flex: 1, minWidth: 0 },
+    navAction: { borderBottomWidth: 1, borderBottomColor: colors.border },
+    iconButton: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'center' },
+    content: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      padding: 16,
+      paddingBottom: 32,
+      gap: 16,
+    },
+    footer: { backgroundColor: colors.background },
+    footerContent: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    empty: { gap: 12, paddingVertical: 24, alignItems: 'center' },
+  });

@@ -7,13 +7,15 @@ import {
   type Coordinates,
   type GreenPoint,
 } from '@/models/GreenPoint';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 export function PointRow({
   point,
   location,
   now,
   onPress,
 }: Readonly<{ point: GreenPoint; location: Coordinates | null; now: Date; onPress: () => void }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const status = openingStatus(point, now);
   const listedCategories = [
     ...point.categories.map((category) => category.name),
@@ -56,19 +58,20 @@ export function PointRow({
     </Pressable>
   );
 }
-const styles = StyleSheet.create({
-  row: {
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  content: { flex: 1, gap: 6 },
-  heading: { flexDirection: 'row', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' },
-  name: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text, flexShrink: 1 },
-  distance: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.primary },
-  text: { fontFamily: fonts.regular, fontSize: 14, color: colors.text },
-  address: { fontFamily: fonts.regular, fontSize: 14, color: colors.brandDark, lineHeight: 20 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    row: {
+      paddingVertical: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    content: { flex: 1, gap: 6 },
+    heading: { flexDirection: 'row', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' },
+    name: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text, flexShrink: 1 },
+    distance: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.primary },
+    text: { fontFamily: fonts.regular, fontSize: 14, color: colors.text },
+    address: { fontFamily: fonts.regular, fontSize: 14, color: colors.brandDark, lineHeight: 20 },
+  });

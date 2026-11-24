@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 
 const slides = [
@@ -25,16 +25,26 @@ const slides = [
   },
 ] as const;
 export default function OnboardingScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { replay } = useLocalSearchParams<{ replay?: string }>();
   const { onboardingComplete, continueAsGuest } = useAuth();
   const [index, setIndex] = useState(0);
-  const [saving, setSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'guest' | 'register' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  if (onboardingComplete && replay !== '1') return <Redirect href="/" />;
+  const [leavingToAuth, setLeavingToAuth] = useState(false);
+  const saving = pendingAction !== null;
+
+  if (onboardingComplete && replay !== '1' && !leavingToAuth) {
+    return <Redirect href="/" />;
+  }
+
   const slide = slides[index];
+  const canGoBack = router.canGoBack();
+
   async function finish() {
     if (saving) return;
-    setSaving(true);
+    setPendingAction('guest');
     setError(null);
     try {
       await continueAsGuest();
@@ -42,19 +52,36 @@ export default function OnboardingScreen() {
     } catch {
       setError('No pudimos guardar tu preferencia. Intentá nuevamente.');
     } finally {
-      setSaving(false);
+      setPendingAction(null);
     }
   }
+
+  async function handleCreateAccount() {
+    if (saving) return;
+    setPendingAction('register');
+    setError(null);
+    setLeavingToAuth(true);
+    try {
+      await continueAsGuest();
+      router.push('/register');
+    } catch {
+      setLeavingToAuth(false);
+      setError('No pudimos guardar tu preferencia. Intentá nuevamente.');
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <ScreenHeader
         title={`Conocé ${brand.name}`}
         back="/"
+        hideBack={index === 0 && !canGoBack}
         onBack={() => {
           if (saving) return;
           if (index > 0) setIndex(index - 1);
-          else if (router.canGoBack()) router.back();
-          else void finish();
+          else if (canGoBack) router.back();
         }}
         action={
           <Pressable
@@ -139,14 +166,29 @@ export default function OnboardingScreen() {
               {error}
             </Text>
           )}
-          <ActionButton
-            title={index === 2 ? 'Comenzar' : 'Siguiente'}
-            loading={saving}
-            onPress={() => {
-              if (index === 2) void finish();
-              else setIndex(index + 1);
-            }}
-          />
+          {index === 2 ? (
+            <>
+              <ActionButton
+                title="Crear cuenta"
+                loading={pendingAction === 'register'}
+                disabled={saving}
+                onPress={() => void handleCreateAccount()}
+              />
+              <ActionButton
+                title="Explorar sin cuenta"
+                secondary
+                loading={pendingAction === 'guest'}
+                disabled={saving}
+                onPress={() => void finish()}
+              />
+            </>
+          ) : (
+            <ActionButton
+              title="Siguiente"
+              disabled={saving}
+              onPress={() => setIndex(index + 1)}
+            />
+          )}
           <Pressable
             accessibilityRole="button"
             style={styles.skip}
@@ -160,40 +202,41 @@ export default function OnboardingScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', padding: 24 },
-  skip: { paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center' },
-  link: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 14 },
-  steps: { flexDirection: 'row', gap: 8 },
-  stepButton: { flex: 1, minHeight: 44, justifyContent: 'center' },
-  stepLine: { height: 3, borderRadius: 2, backgroundColor: colors.border },
-  stepComplete: { backgroundColor: colors.primary },
-  slide: { flex: 1, justifyContent: 'center', gap: 24, paddingVertical: 24 },
-  illustration: {
-    minHeight: 200,
-    paddingVertical: 32,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-  },
-  copy: { gap: 12, minHeight: 164 },
-  title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 36, color: colors.text },
-  description: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.brandDark },
-  footer: { gap: 12 },
-  footerHeading: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    minHeight: 44,
-  },
-  back: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
-  progress: { fontFamily: fonts.regular, fontSize: 14, color: colors.brandDark },
-  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', padding: 24 },
+    skip: { paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center' },
+    link: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 14 },
+    steps: { flexDirection: 'row', gap: 8 },
+    stepButton: { flex: 1, minHeight: 44, justifyContent: 'center' },
+    stepLine: { height: 3, borderRadius: 2, backgroundColor: colors.border },
+    stepComplete: { backgroundColor: colors.primaryAction },
+    slide: { flex: 1, justifyContent: 'center', gap: 24, paddingVertical: 24 },
+    illustration: {
+      minHeight: 200,
+      paddingVertical: 32,
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+    },
+    copy: { gap: 12, minHeight: 164 },
+    title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 36, color: colors.text },
+    description: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.brandDark },
+    footer: { gap: 12 },
+    footerHeading: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      minHeight: 44,
+    },
+    back: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
+    progress: { fontFamily: fonts.regular, fontSize: 14, color: colors.brandDark },
+    error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
+  });

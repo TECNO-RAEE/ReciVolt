@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface NumericStepperProps {
   value: number;
@@ -27,6 +27,8 @@ export function NumericStepper({
   incrementAccessibilityLabel = 'Aumentar cantidad',
   testID,
 }: Readonly<NumericStepperProps>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const safeValue = Number.isFinite(value) ? value : min;
   const canDecrement = !disabled && safeValue > min;
   const canIncrement = !disabled && safeValue < max;
@@ -97,40 +99,41 @@ export function NumericStepper({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  button: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-    backgroundColor: colors.surfaceSoft,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
-  value: {
-    minWidth: 52,
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    lineHeight: 28,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  valueDisabled: {
-    color: colors.textSecondary,
-    opacity: 0.6,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 16,
+    },
+    button: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    buttonDisabled: {
+      opacity: 0.4,
+      backgroundColor: colors.surfaceSoft,
+    },
+    buttonPressed: {
+      opacity: 0.7,
+    },
+    value: {
+      minWidth: 52,
+      fontFamily: fonts.bold,
+      fontSize: 24,
+      lineHeight: 28,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    valueDisabled: {
+      color: colors.textSecondary,
+      opacity: 0.6,
+    },
+  });

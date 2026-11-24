@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { CompanyPage } from '@/components/portal/CompanyPage';
-import { PortalFeedback, PortalField, portalStyles as s } from '@/components/portal/PortalUI';
+import { PortalFeedback, PortalField, usePortalStyles } from '@/components/portal/PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData } from '@/models/Portal';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
 import { portalCommand } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function CategoryPointsScreen() {
   return (
@@ -18,6 +18,9 @@ export default function CategoryPointsScreen() {
   );
 }
 function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   const { refresh } = useCompanyPortal();
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(
@@ -28,19 +31,19 @@ function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
     )
   );
   const action = usePortalAction();
+  if (data.categories.length === 0) {
+    return (
+      <InfoNote>
+        Todavía no hay categorías de dispositivos activas para configurar puntos por unidad.
+      </InfoNote>
+    );
+  }
   return (
     <>
       <InfoNote>
         Se acreditan al confirmar lo recibido y se suman al saldo global de cada ciudadano.
       </InfoNote>
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: 12,
-          backgroundColor: colors.surface,
-        }}
-      >
+      <View style={styles.card}>
         {data.categories.map((c, i) => (
           <View
             key={c.id}
@@ -56,7 +59,8 @@ function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
               compact
               suffix="puntos por unidad"
               keyboardType="number-pad"
-              value={values[c.id]}
+              maxLength={7}
+              value={values[c.id] ?? ''}
               editable={!action.busy}
               onChangeText={(value) => setValues({ ...values, [c.id]: value.replace(/\D/g, '') })}
             />
@@ -71,12 +75,12 @@ function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
           void action.run(async () => {
             const categories = data.categories.map((c) => ({
               id: c.id,
-              points: Number(values[c.id]),
+              points: Number(values[c.id] ?? ''),
             }));
             if (
               categories.some(
                 (c) =>
-                  !values[c.id].trim() ||
+                  !(values[c.id] ?? '').trim() ||
                   !Number.isSafeInteger(c.points) ||
                   c.points < 0 ||
                   c.points > 1000000
@@ -91,3 +95,13 @@ function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
     </>
   );
 }
+
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+    },
+  });

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { PortalLoading } from '@/components/portal/PortalUI';
 import { AdminPage } from '@/components/portal/AdminPage';
@@ -10,7 +10,7 @@ import { AdminPoints } from '@/components/portal/AdminPoints';
 import { LimitsManager } from '@/components/portal/LimitsManager';
 import { usePortalData } from '@/hooks/usePortalData';
 import { getAdminPortal } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 
 const sections = [
   'Puntos verdes',
@@ -20,23 +20,37 @@ const sections = [
   'Historial de cambios',
 ] as const;
 export default function AdminScreen() {
+  const colors = useColors();
   const [tab, setTab] = useState<string>('Puntos verdes');
   const [reload, setReload] = useState(0);
   const [pointsList, setPointsList] = useState(true);
   const [addingPoint, setAddingPoint] = useState(0);
-  const { data, loading, error, refresh } = usePortalData(getAdminPortal);
+  const backActionRef = useRef<(() => void) | null>(null);
+  const [hasInnerBack, setHasInnerBack] = useState(false);
+  const registerBack = useCallback((handler: (() => void) | null) => {
+    backActionRef.current = handler;
+    setHasInnerBack(Boolean(handler));
+  }, []);
+  const { data, loading, refreshing, error, refresh } = usePortalData(getAdminPortal);
   return (
     <AdminPage
       sections={sections}
       selected={tab}
+      onBack={hasInnerBack ? () => backActionRef.current?.() : undefined}
+      hideBack={!hasInnerBack}
       onSelect={(value) => {
         setTab(value);
         setPointsList(true);
+        backActionRef.current = null;
+        setHasInnerBack(false);
       }}
       refresh={() => {
         setReload((value) => value + 1);
         return refresh();
       }}
+      refreshing={refreshing}
+      error={error}
+      hasData={Boolean(data)}
       footer={
         tab === 'Puntos verdes' &&
         pointsList &&
@@ -49,10 +63,12 @@ export default function AdminScreen() {
         )
       }
     >
-      <PortalLoading loading={loading && !data} error={error} retry={() => void refresh()} />
-      {data && !error && (
+      {!data && <PortalLoading loading={loading} error={error} retry={() => void refresh()} />}
+      {data && (
         <>
-          {tab === 'Buscador' && <AdminSearch companies={data.companies} refresh={refresh} />}
+          {tab === 'Buscador' && (
+            <AdminSearch companies={data.companies} refresh={refresh} onBackChange={registerBack} />
+          )}
           {tab === 'Puntos verdes' && (
             <AdminPoints
               reload={reload}
@@ -60,9 +76,12 @@ export default function AdminScreen() {
               refresh={refresh}
               addRequest={addingPoint}
               onListChange={setPointsList}
+              onBackChange={registerBack}
             />
           )}
-          {tab === 'Premios' && <AdminRewards reload={reload} companies={data.companies} />}
+          {tab === 'Premios' && (
+            <AdminRewards reload={reload} companies={data.companies} onBackChange={registerBack} />
+          )}
           {tab === 'Límites' && <LimitsManager data={data} refresh={refresh} />}
           {tab === 'Historial de cambios' && (
             <AdminChangelog reload={reload} companies={data.companies} />

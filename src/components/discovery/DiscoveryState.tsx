@@ -1,12 +1,14 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 export function DiscoveryState({
   loading,
   error,
   empty,
   retry,
 }: Readonly<{ loading: boolean; error: string | null; empty?: string; retry: () => void }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       {loading ? (
@@ -20,7 +22,8 @@ export function DiscoveryState({
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: { paddingVertical: 24, gap: 16 },
-  text: { color: colors.brandDark, fontFamily: fonts.regular, fontSize: 16, lineHeight: 24 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { paddingVertical: 24, gap: 16 },
+    text: { color: colors.brandDark, fontFamily: fonts.regular, fontSize: 16, lineHeight: 24 },
+  });

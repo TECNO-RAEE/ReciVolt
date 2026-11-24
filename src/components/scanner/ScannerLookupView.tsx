@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ScannerLookupViewProps = {
   readonly camera: boolean;
@@ -35,6 +36,8 @@ export function ScannerLookupView({
   error,
   notice,
 }: ScannerLookupViewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <>
       {/* Cámara con marco y esquinas de visor de escáner */}
@@ -54,20 +57,19 @@ export function ScannerLookupView({
                 <Ionicons name="qr-code-outline" size={64} color={colors.primaryDark} />
               </View>
               <Text style={styles.cameraInstructions}>
-                Escaneá el código de entrega o canje
+                Escaneá el código de entrega, retiro o canje
               </Text>
               <Text style={styles.cameraHint}>
                 Apuntá la cámara al código presentado por el ciudadano.
               </Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Abrir cámara del dispositivo"
-                style={styles.cameraToggleBtn}
-                onPress={onToggleCamera}
-              >
-                <Ionicons name="camera-outline" size={20} color={colors.textOnPrimary} />
-                <Text style={styles.cameraToggleBtnText}>Abrir cámara</Text>
-              </Pressable>
+              <View style={styles.cameraBtnWrap}>
+                <ActionButton
+                  title="Abrir cámara"
+                  icon={<Ionicons name="camera-outline" size={20} color={colors.textOnPrimary} />}
+                  disabled={busy}
+                  onPress={onToggleCamera}
+                />
+              </View>
             </View>
           )}
 
@@ -79,15 +81,14 @@ export function ScannerLookupView({
         </View>
 
         {camera && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar cámara"
-            style={styles.closeCameraBtn}
-            onPress={onCloseCamera}
-          >
-            <Ionicons name="close" size={18} color={colors.textSecondary} />
-            <Text style={styles.closeCameraText}>Cerrar visor de cámara</Text>
-          </Pressable>
+          <View style={styles.closeCameraWrap}>
+            <ActionButton
+              title="Cerrar visor de cámara"
+              secondary
+              disabled={busy}
+              onPress={onCloseCamera}
+            />
+          </View>
         )}
       </View>
 
@@ -104,13 +105,18 @@ export function ScannerLookupView({
         <View style={styles.inputBox}>
           <Ionicons name="barcode-outline" size={22} color={colors.textSecondary} />
           <TextInput
+            accessibilityLabel="Ingresar código manual"
             style={styles.manualInput}
-            placeholder="TR-… o código manual"
+            placeholder="TR-… o TRR-…"
             placeholderTextColor={colors.textSecondary}
             value={code}
             onChangeText={onChangeCode}
             autoCapitalize="characters"
             autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (code.trim() && !busy) onSearch();
+            }}
             editable={!busy}
           />
           {code.length > 0 && (
@@ -125,6 +131,8 @@ export function ScannerLookupView({
           )}
         </View>
 
+        <PortalFeedback error={error} notice={notice} />
+
         <ActionButton
           title="Buscar"
           loading={busy}
@@ -132,202 +140,161 @@ export function ScannerLookupView({
           onPress={onSearch}
         />
       </View>
-
-      {error ? (
-        <Text accessibilityRole="alert" style={styles.errorText}>
-          {error}
-        </Text>
-      ) : null}
-
-      {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  viewfinderCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    padding: 16,
-    alignItems: 'center',
-  },
-  cameraBox: {
-    width: '100%',
-    height: 280,
-    backgroundColor: colors.surfaceSoft,
-    borderRadius: 16,
-    overflow: 'hidden',
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-    gap: 8,
-  },
-  qrArtworkCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  cameraInstructions: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  cameraHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 260,
-  },
-  cameraToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 20,
-    minHeight: 44,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  cameraToggleBtnText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.textOnPrimary,
-  },
-  cornerTopLeft: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    width: 32,
-    height: 32,
-    borderTopWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: colors.accent,
-    borderTopLeftRadius: 8,
-  },
-  cornerTopRight: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderTopWidth: 4,
-    borderRightWidth: 4,
-    borderColor: colors.accent,
-    borderTopRightRadius: 8,
-  },
-  cornerBottomLeft: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    width: 32,
-    height: 32,
-    borderBottomWidth: 4,
-    borderLeftWidth: 4,
-    borderColor: colors.accent,
-    borderBottomLeftRadius: 8,
-  },
-  cornerBottomRight: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderBottomWidth: 4,
-    borderRightWidth: 4,
-    borderColor: colors.accent,
-    borderBottomRightRadius: 8,
-  },
-  closeCameraBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 44,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginTop: 10,
-  },
-  closeCameraText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  orRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
-  },
-  orLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  orText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  manualEntryCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-  },
-  fieldLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.text,
-  },
-  inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingLeft: 12,
-    minHeight: 48,
-    gap: 10,
-  },
-  manualInput: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.text,
-    paddingVertical: 10,
-  },
-  clearBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.danger,
-    textAlign: 'center',
-  },
-  noticeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.primaryDark,
-    textAlign: 'center',
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    viewfinderCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 16,
+      alignItems: 'center',
+    },
+    cameraBox: {
+      width: '100%',
+      height: 280,
+      backgroundColor: colors.surfaceSoft,
+      borderRadius: 16,
+      overflow: 'hidden',
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cameraPlaceholder: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20,
+      gap: 8,
+    },
+    qrArtworkCircle: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 6,
+    },
+    cameraInstructions: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    cameraHint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      maxWidth: 260,
+    },
+    cameraBtnWrap: {
+      marginTop: 8,
+    },
+    cornerTopLeft: {
+      position: 'absolute',
+      top: 16,
+      left: 16,
+      width: 32,
+      height: 32,
+      borderTopWidth: 4,
+      borderLeftWidth: 4,
+      borderColor: colors.accent,
+      borderTopLeftRadius: 8,
+    },
+    cornerTopRight: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      width: 32,
+      height: 32,
+      borderTopWidth: 4,
+      borderRightWidth: 4,
+      borderColor: colors.accent,
+      borderTopRightRadius: 8,
+    },
+    cornerBottomLeft: {
+      position: 'absolute',
+      bottom: 16,
+      left: 16,
+      width: 32,
+      height: 32,
+      borderBottomWidth: 4,
+      borderLeftWidth: 4,
+      borderColor: colors.accent,
+      borderBottomLeftRadius: 8,
+    },
+    cornerBottomRight: {
+      position: 'absolute',
+      bottom: 16,
+      right: 16,
+      width: 32,
+      height: 32,
+      borderBottomWidth: 4,
+      borderRightWidth: 4,
+      borderColor: colors.accent,
+      borderBottomRightRadius: 8,
+    },
+    closeCameraWrap: {
+      width: '100%',
+      marginTop: 12,
+    },
+    orRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: 12,
+    },
+    orLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.border,
+    },
+    orText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    manualEntryCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 16,
+      gap: 12,
+    },
+    fieldLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.text,
+    },
+    inputBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderControl,
+      borderRadius: 12,
+      paddingLeft: 12,
+      minHeight: 48,
+      gap: 10,
+    },
+    manualInput: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.text,
+      paddingVertical: 10,
+    },
+    clearBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

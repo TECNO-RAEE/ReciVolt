@@ -1,14 +1,15 @@
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import { ActivityIndicator, View } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { DiscoveryProvider } from '@/providers/DiscoveryProvider';
 import { WalletProvider } from '@/providers/WalletProvider';
 import { canAccessCitizen } from '@/models/Access';
-import { colors } from '@/theme';
+import { ThemeProvider, useColorSchemeName, useColors } from '@/theme';
 import { useFonts } from 'expo-font';
 import { Roboto_400Regular, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto';
 
@@ -25,20 +26,38 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <StatusBar style="dark" />
+    <ThemeProvider>
+      <RootShell />
+    </ThemeProvider>
+  );
+}
 
-      <DiscoveryProvider>
-        <WalletProvider>
-          <Navigation />
-        </WalletProvider>
-      </DiscoveryProvider>
-    </AuthProvider>
+function RootShell() {
+  const scheme = useColorSchemeName();
+  const colors = useColors();
+
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(colors.background).catch(() => undefined);
+  }, [colors.background]);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <AuthProvider>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+
+        <DiscoveryProvider>
+          <WalletProvider>
+            <Navigation />
+          </WalletProvider>
+        </DiscoveryProvider>
+      </AuthProvider>
+    </View>
   );
 }
 
 function Navigation() {
   const { session, role, guest, loading, recoveringPassword } = useAuth();
+  const colors = useColors();
   const [ready, setReady] = useState(false);
   if (!ready && !loading) setReady(true);
   // Delay initial routing, but keep the navigator mounted during later Auth events.
@@ -49,7 +68,7 @@ function Navigation() {
       </View>
     );
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="portal-access" />
       <Stack.Screen name="company-application" />

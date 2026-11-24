@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   canCoordinatePickup,
+  canEditPickupSchedule,
   canMarkPickupInTransit,
   canReceivePickup,
   canRequestPickup,
@@ -223,8 +224,35 @@ test('operation guards reflect the pickup state machine', () => {
   assert.equal(canReceivePickup('REQUESTED'), false);
   assert.equal(canReceivePickup('COMPLETED'), false);
 
+  assert.equal(canEditPickupSchedule('REQUESTED'), true);
+  assert.equal(canEditPickupSchedule('COORDINATED'), true);
+  assert.equal(canEditPickupSchedule('IN_TRANSIT'), false);
+  assert.equal(canEditPickupSchedule('COMPLETED'), false);
+  assert.equal(canEditPickupSchedule('CANCELLED'), false);
+
   assert.equal(isPickupActive('REQUESTED'), true);
   assert.equal(isPickupActive('IN_TRANSIT'), true);
   assert.equal(isPickupActive('COMPLETED'), false);
   assert.equal(isPickupActive('CANCELLED'), false);
+});
+
+test('pickupTotalUnits detecta 0 cuando todas las cantidades confirmadas son 0', () => {
+  const items = [
+    {
+      categoryId: 'cat-1',
+      categoryName: 'Lavarropas',
+      declaredQuantity: 2,
+      confirmedQuantity: 0,
+      pointsSnapshot: 500,
+    },
+    {
+      categoryId: 'cat-2',
+      categoryName: 'Heladera',
+      declaredQuantity: 1,
+      confirmedQuantity: 0,
+      pointsSnapshot: 800,
+    },
+  ];
+  assert.equal(pickupTotalUnits(items), 0);
+  assert.deepEqual(pickupEstimate(items), { points: 0 });
 });

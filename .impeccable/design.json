@@ -12,6 +12,7 @@
       "completion": "Revisar contra DESIGN.md, corregir las desviaciones introducidas y registrar evidencia y pendientes antes de considerar terminada una contribución de interfaz.",
       "evidence": "Capturas de las pantallas afectadas en móvil y escritorio, estados comprobados y limitaciones reales. Para cambios sin efecto visual, indicar que no aplica y explicar el motivo.",
       "enforcement": "Revisión del autor y del revisor; no configura un bloqueo automático de GitHub.",
+      "appearancePreference": "Decisión explícita del 24/11/2026: por defecto sigue la apariencia del sistema (Automático), permite cambiar entre Automático, Claro y Oscuro desde Configuraciones y alternar rápido entre Claro y Oscuro desde la esquina superior derecha de Inicio (sol en modo claro, luna en modo oscuro).",
       "approvedPendingNavigation": "Decisión del 26/10/2026 pendiente de implementación: Inicio · Puntos verdes · Premios · Marketplace · Perfil. Dispositivos reacondicionados en catálogo de Empresa, vista previa de hasta cuatro productos en el punto verde y catálogo global de Marketplace. La muestra HTML conserva la navegación implementada hasta realizar ese cambio."
     },
     "colorMeta": {
@@ -295,6 +296,20 @@
           "oklch(95.00% 0.0884 155.53)"
         ]
       },
+      "borderControl": {
+        "displayName": "Borde de controles",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.0270 238.70)",
+          "oklch(26.43% 0.0270 238.70)",
+          "oklch(37.86% 0.0270 238.70)",
+          "oklch(49.29% 0.0270 238.70)",
+          "oklch(60.71% 0.0270 238.70)",
+          "oklch(72.14% 0.0270 238.70)",
+          "oklch(83.57% 0.0270 238.70)",
+          "oklch(95.00% 0.0270 238.70)"
+        ]
+      },
       "navInactive": {
         "displayName": "Navegación inactiva",
         "role": "neutral",
@@ -322,7 +337,80 @@
           "oklch(83.57% 0.0341 233.19)",
           "oklch(95.00% 0.0341 233.19)"
         ]
-      }
+      },
+      "primaryAction": {
+        "displayName": "Fondo de acción principal",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.0884 155.53)",
+          "oklch(49.29% 0.0884 155.53)"
+        ]
+      },
+      "dangerAction": {
+        "displayName": "Fondo de acción destructiva",
+        "role": "danger",
+        "tonalRamp": [
+          "oklch(25.00% 0.1450 25.00)",
+          "oklch(50.00% 0.1450 25.00)"
+        ]
+      },
+      "warning": { "displayName": "Estado pendiente (texto)", "role": "warning" },
+      "warningSecondary": { "displayName": "Estado pendiente secundario", "role": "warning" },
+      "warningSoft": { "displayName": "Fondo de estado pendiente", "role": "warning" },
+      "warningSurface": { "displayName": "Ícono de estado pendiente", "role": "warning" },
+      "warningBorder": { "displayName": "Borde de estado pendiente", "role": "warning" },
+      "info": { "displayName": "Estado en camino (texto)", "role": "info" },
+      "infoSecondary": { "displayName": "Estado en camino secundario", "role": "info" },
+      "infoSoft": { "displayName": "Fondo de estado en camino", "role": "info" },
+      "infoSurface": { "displayName": "Ícono de estado en camino", "role": "info" },
+      "infoBorder": { "displayName": "Borde de estado en camino", "role": "info" },
+      "successBorder": { "displayName": "Borde de estado confirmado", "role": "primary" },
+      "successIconBackground": { "displayName": "Ícono de estado confirmado", "role": "primary" },
+      "skeletonHighlight": { "displayName": "Superficie de skeleton", "role": "neutral" },
+      "qrBackground": { "displayName": "Zona silenciosa de código QR", "role": "neutral" },
+      "cardBorderSubtle": { "displayName": "Borde sutil de tarjeta", "role": "neutral" }
+    },
+    "darkColors": {
+      "primary": "#5CD08C",
+      "primaryAction": "#256D46",
+      "primaryDark": "#8CE4AF",
+      "primarySoft": "#193426",
+      "surfaceSoft": "#1D3027",
+      "accent": "#5CD08C",
+      "brandDark": "#E4F2EA",
+      "impactValue": "#6EE09B",
+      "impactWeight": "#82E4A8",
+      "danger": "#FF8A80",
+      "dangerAction": "#B9261E",
+      "dangerBackground": "rgba(255, 92, 82, 0.18)",
+      "overlay": "rgba(4, 10, 7, 0.72)",
+      "warning": "#F6D06B",
+      "warningSecondary": "#E8BA46",
+      "warningSoft": "#2D2512",
+      "warningSurface": "#3D3116",
+      "warningBorder": "#5C491F",
+      "info": "#86CCFA",
+      "infoSecondary": "#74BEF0",
+      "infoSoft": "#132635",
+      "infoSurface": "#1A354A",
+      "infoBorder": "#284D6B",
+      "successBorder": "#2D543D",
+      "successIconBackground": "#214231",
+      "background": "#0C1511",
+      "surface": "#15231C",
+      "tabBarBackground": "#121F19",
+      "impactBackground": "#193426",
+      "avatarBackground": "#263B30",
+      "skeletonHighlight": "#284435",
+      "qrBackground": "#FFFFFF",
+      "text": "#EDF5F0",
+      "textSecondary": "#A7BBB1",
+      "textOnPrimary": "#FFFFFF",
+      "navInactive": "#9BB0A5",
+      "border": "#263A30",
+      "borderControl": "#6E877A",
+      "borderPrimary": "#5CD08C",
+      "cardBorderSubtle": "#2D4739"
     },
     "typographyMeta": {
       "screen-title": {
@@ -388,7 +476,7 @@
       "refersTo": "field",
       "description": "Etiqueta persistente y campo de PortalField.",
       "html": "<label class=\"ds-field-label\">Nombre del punto verde<input class=\"ds-field\" type=\"text\" placeholder=\"Nombre del lugar\"></label>",
-      "css": ".ds-field-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:400 15px/23px Roboto,sans-serif}.ds-field{min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #E2EBE6;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-field::placeholder{color:#53676D}.ds-field:hover{border-color:#246440}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+      "css": ".ds-field-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:400 15px/23px Roboto,sans-serif}.ds-field{min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #748591;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-field::placeholder{color:#53676D}.ds-field:hover{border-color:#246440}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     },
     {
       "name": "Tarjeta ciudadana",
@@ -404,7 +492,7 @@
       "refersTo": "chip",
       "description": "Filtro de Premios; fondo verde profundo al seleccionar.",
       "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" type=\"button\" aria-pressed=\"true\">Todos</button><button class=\"ds-chip\" type=\"button\" aria-pressed=\"false\">Gastronomía</button></div>",
-      "css": ".ds-chips{display:flex;gap:8px;flex-wrap:wrap}.ds-chip{min-height:36px;padding:0 15px;border:1px solid #E2EBE6;border-radius:24px;background:#F1F7F3;color:#102530;font:400 12px Roboto,sans-serif;cursor:pointer}.ds-chip[aria-pressed=true]{background:#174F32;border-color:#174F32;color:#fff}.ds-chip:hover{opacity:.85}.ds-chip:active{opacity:.7}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+      "css": ".ds-chips{display:flex;gap:8px;flex-wrap:wrap}.ds-chip{min-height:44px;padding:0 15px;border:1px solid #E2EBE6;border-radius:24px;background:#F1F7F3;color:#102530;font:400 12px Roboto,sans-serif;cursor:pointer}.ds-chip[aria-pressed=true]{background:#174F32;border-color:#174F32;color:#fff}.ds-chip:hover{opacity:.85}.ds-chip:active{opacity:.7}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     },
     {
       "name": "Header compartido",
@@ -420,7 +508,7 @@
       "refersTo": "bottom-navigation",
       "description": "Cuatro destinos en el orden acordado.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Navegación principal\"><a class=\"ds-nav-link\" href=\"#home\" ><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"m3 10 9-7 9 7v10h-6v-7H9v7H3Z\"/></svg><span>Inicio</span></a><a class=\"ds-nav-link\" href=\"#map\" aria-current=\"page\"><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2Z\"/><path d=\"M9 3v16M15 5v16\"/></svg><span>Puntos verdes</span></a><a class=\"ds-nav-link\" href=\"#gift\" ><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"M3 8h18v4H3ZM5 12v9h14v-9M12 8v13\"/><path d=\"M12 8C5 8 5 2 8 3c3 1 4 5 4 5Zm0 0c7 0 7-6 4-5-3 1-4 5-4 5Z\"/></svg><span>Premios</span></a><a class=\"ds-nav-link\" href=\"#person\" ><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><circle cx=\"12\" cy=\"7\" r=\"4\"/><path d=\"M4 21v-3c0-7 16-7 16 0v3Z\"/></svg><span>Perfil</span></a></nav>",
-      "css": ".ds-nav{display:flex;min-height:72px;padding:8px 0 12px;background:#fff;border-top:1px solid #E2EBE6}.ds-nav-link{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:#748591;font:400 11px Roboto,sans-serif;text-decoration:none}.ds-nav-link[aria-current=page]{color:#246440}.ds-nav-link:hover{color:#246440}.ds-nav-link:active{opacity:.7}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+      "css": ".ds-nav{display:flex;min-height:72px;padding:8px 0 12px;background:#fff;border-top:1px solid #E2EBE6}.ds-nav-link{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;color:#53676D;font:400 11px Roboto,sans-serif;text-decoration:none}.ds-nav-link[aria-current=page]{color:#246440}.ds-nav-link:hover{color:#246440}.ds-nav-link:active{opacity:.7}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     },
     {
       "name": "Resumen de puntos",
@@ -468,7 +556,7 @@
       "refersTo": "portal-select",
       "description": "PortalSelect: etiqueta persistente y campo con chevron que despliega opciones en línea (radio, seleccionada en primarySoft con check). Variante compacta con la etiqueta a la izquierda y un ancho fijo de 208 px.",
       "html": "<label class=\"ds-select-label\">Estado<button class=\"ds-select\" type=\"button\" aria-expanded=\"false\">Publicado<svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m6 9 6 6 6-6\"/></svg></button></label>",
-      "css": ".ds-select-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:500 14px/20px Roboto,sans-serif}.ds-select{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #E2EBE6;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-select:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+      "css": ".ds-select-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:500 14px/20px Roboto,sans-serif}.ds-select{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #748591;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-select:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     },
     {
       "name": "Fila de premio",

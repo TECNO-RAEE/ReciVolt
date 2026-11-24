@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, View, type TextStyle } from 'react-native';
+import { Text, View } from 'react-native';
 import type { ComponentProps } from 'react';
 import type { Ionicons } from '@expo/vector-icons';
 import { SearchBar } from '@/components/discovery/SearchBar';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalData } from '@/hooks/usePortalData';
 import {
   auditGroupOf,
@@ -13,14 +14,14 @@ import {
 } from '@/models/Changelog';
 import type { AuditEntry, PortalCompany } from '@/models/Portal';
 import { getChangelog } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors } from '@/theme';
 import { AdminEmpty } from './AdminPage';
 import {
   PortalLink,
   PortalListItem,
   PortalLoading,
   PortalSelect,
-  portalStyles as s,
+  usePortalStyles,
 } from './PortalUI';
 
 const groupIcons: Record<AuditGroupKey, ComponentProps<typeof Ionicons>['name']> = {
@@ -37,6 +38,7 @@ export function AdminChangelog({
   companies,
   reload = 0,
 }: Readonly<{ companies: PortalCompany[]; reload?: number }>) {
+  const s = usePortalStyles();
   const [page, setPage] = useState(0);
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
@@ -106,15 +108,30 @@ export function AdminChangelog({
       {data && !loading && !error && (
         <>
           {data.entries.length === 0 && (
-            <AdminEmpty
-              icon="time-outline"
-              title="Sin operaciones registradas"
-              description={
-                filtered
-                  ? 'No hay resultados para estos filtros.'
-                  : 'Las próximas operaciones aparecerán aquí automáticamente.'
-              }
-            />
+            <View style={s.stack}>
+              <AdminEmpty
+                icon="time-outline"
+                title="Sin operaciones registradas"
+                description={
+                  filtered
+                    ? 'No hay resultados para estos filtros.'
+                    : 'Las próximas operaciones aparecerán aquí automáticamente.'
+                }
+              />
+              {filtered && (
+                <ActionButton
+                  title="Limpiar filtros"
+                  secondary
+                  onPress={() => {
+                    setDraft('');
+                    setSearch('');
+                    setCompanyId('');
+                    setGroup('');
+                    setPage(0);
+                  }}
+                />
+              )}
+            </View>
           )}
           {data.entries.map((entry) => (
             <ChangelogEntry
@@ -149,10 +166,12 @@ function ChangelogEntry({
   open,
   toggle,
 }: Readonly<{ entry: AuditEntry; open: boolean; toggle: () => void }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
   const group = auditGroupOf(entry.action);
   const changes = changelogChanges(entry.details.before, entry.details.after);
   const name = typeof entry.details.name === 'string' ? entry.details.name : null;
-  const detail: TextStyle = { ...s.body, color: colors.textSecondary };
+  const detail = [s.body, { color: colors.textSecondary }];
   return (
     <PortalListItem
       icon={group ? groupIcons[group] : 'time-outline'}
@@ -203,11 +222,6 @@ function ChangelogEntry({
               </Text>
             </View>
           ))}
-          {entry.targetId && (
-            <Text selectable style={s.hint}>
-              Referencia: {entry.targetId}
-            </Text>
-          )}
         </View>
       )}
     </PortalListItem>

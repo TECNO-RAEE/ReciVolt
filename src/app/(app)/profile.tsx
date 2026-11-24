@@ -1,19 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CitizenBalanceCard } from '@/components/account/CitizenBalanceCard';
-import { CitizenPage, rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 export default function ProfileScreen() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
   return session ? (
     <Profile />
   ) : (
-    <CitizenPage title="Tu perfil">
+    <CitizenPage title="Perfil">
       <View style={s.card}>
         <Text style={s.subtitle}>Comenzá a sumar impacto</Text>
         <Text style={s.body}>
@@ -25,6 +29,7 @@ export default function ProfileScreen() {
       <View style={s.card}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Mis entregas"
           onPress={() => router.push('/my-raee')}
           style={styles.menuRow}
         >
@@ -34,6 +39,7 @@ export default function ProfileScreen() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Qué recibimos"
           onPress={() => router.push('/device-categories')}
           style={styles.menuRow}
         >
@@ -47,9 +53,13 @@ export default function ProfileScreen() {
   );
 }
 function SettingsLink() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel="Configuraciones"
       onPress={() => router.push('/settings')}
       style={styles.menuRow}
     >
@@ -60,13 +70,22 @@ function SettingsLink() {
   );
 }
 function Profile() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const { profile, logout } = useAuth();
   const action = usePortalAction();
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const menuItems = [
     {
       icon: 'refresh-outline' as const,
       label: 'Mis entregas',
-      onPress: () => router.push({ pathname: '/my-activity', params: { tab: 'Entregas' } }),
+      onPress: () => router.push('/my-raee'),
+    },
+    {
+      icon: 'time-outline' as const,
+      label: 'Mi actividad',
+      onPress: () => router.push('/my-activity'),
     },
     {
       icon: 'gift-outline' as const,
@@ -78,11 +97,22 @@ function Profile() {
       label: 'Mis puntos',
       onPress: () => router.push('/(app)/my-points'),
     },
+    {
+      icon: 'hardware-chip-outline' as const,
+      label: 'Qué recibimos',
+      onPress: () => router.push('/device-categories'),
+    },
     { icon: 'chatbubble-outline' as const, label: 'Contacto', onPress: () => router.push('/contact') },
+    {
+      icon: 'settings-outline' as const,
+      label: 'Configuraciones',
+      onPress: () => router.push('/settings'),
+    },
   ];
   const signOut = () =>
     void action.run(async () => {
       await logout();
+      setConfirmingSignOut(false);
       router.replace('/');
     }, '');
   return (
@@ -100,6 +130,7 @@ function Profile() {
           <Pressable
             key={label}
             accessibilityRole="button"
+            accessibilityLabel={label}
             onPress={onPress}
             style={[styles.menuRow, styles.menuDivider]}
           >
@@ -110,10 +141,11 @@ function Profile() {
         ))}
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={action.busy ? 'Cerrando sesión' : 'Cerrar sesión'}
           disabled={action.busy}
           style={styles.menuRow}
           onPress={() => {
-            if (Platform.OS === 'web') signOut();
+            if (Platform.OS === 'web') setConfirmingSignOut(true);
             else
               Alert.alert('Cerrar sesión', '¿Querés cerrar tu sesión?', [
                 { text: 'Cancelar', style: 'cancel' },
@@ -128,22 +160,68 @@ function Profile() {
           <Ionicons name="chevron-forward" size={19} color={colors.textSecondary} />
         </Pressable>
       </View>
-      <PortalFeedback error={action.error} />
+      {!confirmingSignOut && <PortalFeedback error={action.error} />}
+      <Modal
+        transparent
+        visible={confirmingSignOut}
+        animationType="fade"
+        onRequestClose={() => {
+          if (!action.busy) setConfirmingSignOut(false);
+        }}
+      >
+        <View style={styles.backdrop}>
+          <View accessibilityViewIsModal style={styles.modal}>
+            <Ionicons name="log-out-outline" size={32} color={colors.danger} />
+            <Text accessibilityRole="header" style={s.subtitle}>
+              Cerrar sesión
+            </Text>
+            <Text style={s.body}>¿Querés cerrar tu sesión?</Text>
+            <PortalFeedback error={action.error} />
+            <ActionButton
+              title="Cancelar"
+              disabled={action.busy}
+              onPress={() => setConfirmingSignOut(false)}
+            />
+            <ActionButton
+              title="Cerrar sesión"
+              secondary
+              loading={action.busy}
+              onPress={signOut}
+            />
+          </View>
+        </View>
+      </Modal>
     </CitizenPage>
   );
 }
-const styles = StyleSheet.create({
-  identity: { alignItems: 'center', gap: 8, paddingVertical: 12 },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  menuRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  menuDivider: { borderBottomWidth: 1, borderColor: colors.border },
-  logoutText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.danger },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    identity: { alignItems: 'center', gap: 8, paddingVertical: 12 },
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    menuRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
+    menuDivider: { borderBottomWidth: 1, borderColor: colors.border },
+    logoutText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.danger },
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modal: {
+      width: '100%',
+      maxWidth: 400,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 24,
+      gap: 14,
+    },
+  });

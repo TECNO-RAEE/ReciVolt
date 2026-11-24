@@ -3,6 +3,7 @@ name: ReciVolt
 description: Lenguaje de diseño compartido basado en la vista del ciudadano.
 colors:
   primary: '#246440'
+  primaryAction: '#246440'
   primaryDark: '#174F32'
   primarySoft: '#E7F3EB'
   surfaceSoft: '#F1F7F3'
@@ -11,18 +12,77 @@ colors:
   impactValue: '#0B5C27'
   impactWeight: '#0E5C28'
   danger: '#A30303'
+  dangerAction: '#A30303'
   dangerBackground: 'rgba(179, 38, 30, 0.16)'
+  overlay: 'rgba(16, 40, 44, 0.55)'
+  warning: '#6D4C00'
+  warningSecondary: '#8D6B00'
+  warningSoft: '#FFF8E1'
+  warningSurface: '#FFF0B2'
+  warningBorder: '#FFE082'
+  info: '#0B4B75'
+  infoSecondary: '#155B8A'
+  infoSoft: '#E8F3FA'
+  infoSurface: '#CEE8F7'
+  infoBorder: '#BFE0F2'
+  successBorder: '#B9DFC4'
+  successIconBackground: '#D1EBD9'
   background: '#F8FBF9'
   surface: '#FFFFFF'
   tabBarBackground: '#FFFFFF'
   impactBackground: '#E8F3EC'
   avatarBackground: '#D9D9D9'
+  skeletonHighlight: '#D6E7DB'
+  qrBackground: '#FFFFFF'
   text: '#102530'
   textSecondary: '#53676D'
   textOnPrimary: '#FFFFFF'
+  navInactive: '#53676D'
   border: '#E2EBE6'
+  borderControl: '#748591'
   borderPrimary: '#246440'
-  navInactive: '#748591'
+  cardBorderSubtle: '#FFFFFF'
+darkColors:
+  primary: '#5CD08C'
+  primaryAction: '#256D46'
+  primaryDark: '#8CE4AF'
+  primarySoft: '#193426'
+  surfaceSoft: '#1D3027'
+  accent: '#5CD08C'
+  brandDark: '#E4F2EA'
+  impactValue: '#6EE09B'
+  impactWeight: '#82E4A8'
+  danger: '#FF8A80'
+  dangerAction: '#B9261E'
+  dangerBackground: 'rgba(255, 92, 82, 0.18)'
+  overlay: 'rgba(4, 10, 7, 0.72)'
+  warning: '#F6D06B'
+  warningSecondary: '#E8BA46'
+  warningSoft: '#2D2512'
+  warningSurface: '#3D3116'
+  warningBorder: '#5C491F'
+  info: '#86CCFA'
+  infoSecondary: '#74BEF0'
+  infoSoft: '#132635'
+  infoSurface: '#1A354A'
+  infoBorder: '#284D6B'
+  successBorder: '#2D543D'
+  successIconBackground: '#214231'
+  background: '#0C1511'
+  surface: '#15231C'
+  tabBarBackground: '#121F19'
+  impactBackground: '#193426'
+  avatarBackground: '#263B30'
+  skeletonHighlight: '#284435'
+  qrBackground: '#FFFFFF'
+  text: '#EDF5F0'
+  textSecondary: '#A7BBB1'
+  textOnPrimary: '#FFFFFF'
+  navInactive: '#9BB0A5'
+  border: '#263A30'
+  borderControl: '#6E877A'
+  borderPrimary: '#5CD08C'
+  cardBorderSubtle: '#2D4739'
 typography:
   greeting:
     fontFamily: Roboto
@@ -106,7 +166,7 @@ spacing:
   bottom: 32px
 components:
   button-primary:
-    backgroundColor: '{colors.primary}'
+    backgroundColor: '{colors.primaryAction}'
     textColor: '{colors.textOnPrimary}'
     typography: '{typography.button-label}'
     rounded: '{rounded.button}'
@@ -134,7 +194,7 @@ components:
     typography: '{typography.chip-label}'
     rounded: '{rounded.chip}'
   chip-selected:
-    backgroundColor: '{colors.primaryDark}'
+    backgroundColor: '{colors.primaryAction}'
     textColor: '{colors.textOnPrimary}'
     typography: '{typography.chip-label}'
     rounded: '{rounded.chip}'
@@ -178,7 +238,7 @@ Este documento es obligatorio para agentes, desarrolladores, diseñadores y cual
 
 Las decisiones explícitas más recientes del usuario tienen prioridad. Para el resto, esta guía rige el diseño; el mockup original sirve como referencia visual y no revierte cambios posteriores de navegación o contenido. Las recomendaciones genéricas de herramientas o skills se adaptan a esta identidad.
 
-Los valores del frontmatter son la referencia documentada. Su implementación está en [colors.ts](src/theme/colors.ts), [typography.ts](src/theme/typography.ts) y los componentes compartidos indicados más abajo. `navInactive` documenta un valor observado en la navegación; todavía no es una propiedad del objeto `colors`. Las escalas de tamaño, radio y espaciado documentan estilos existentes, no un módulo de tokens ya implementado. Las medidas se expresan en unidades de layout de React Native; `px` permite exportarlas a herramientas web.
+Los valores del frontmatter son la referencia documentada. Su implementación está en [colors.ts](src/theme/colors.ts), [typography.ts](src/theme/typography.ts) y los componentes compartidos indicados más abajo. `navInactive` y `borderControl` forman parte de `colors` para cumplir contraste AA en pestañas inactivas y bordes de controles. Las escalas de tamaño, radio y espaciado documentan estilos existentes, no un módulo de tokens ya implementado. Las medidas se expresan en unidades de layout de React Native; `px` permite exportarlas a herramientas web.
 
 Si código y guía difieren, identificar la desviación y corregirla dentro del alcance del trabajo. No convertir un estilo aislado en una nueva regla ni cambiar la identidad global de manera incidental. Cuando se apruebe un cambio del sistema, actualizar componente, tema, esta guía y su representación en `.impeccable/design.json` juntos. Los ejemplos de ese archivo son muestras estáticas para documentación, no componentes de producción.
 
@@ -194,17 +254,17 @@ El autor y quien revisa usan la checklist final de esta guía. Una desviación d
 
 ## Colors
 
-Usar los nombres semánticos del tema mediante `@/theme`. Las ilustraciones y el mapa pueden tener sus propios colores; esos colores no crean variantes de botones ni una segunda paleta para formularios.
+Usar los tokens semánticos dinámicos de `@/theme` (`useColors()`, `useThemedStyles()`, `useThemePreference()`, `usePortalStyles()`, `useRewardStyles()`). La app sigue por defecto la apariencia clara u oscura del sistema (`userInterfaceStyle: "automatic"`) y permite elegir manualmente `Automático`, `Claro` u `Oscuro` desde `Configuraciones`, o alternar entre `Claro` y `Oscuro` desde el botón superior derecho de `Inicio` (`sol` en modo claro, `luna` en modo oscuro) (decisión explícita del usuario). Las ilustraciones adaptan sus superficies y trazos en modo oscuro; el marco de códigos QR conserva `qrBackground` (`#FFFFFF`) para garantizar lectura óptica confiable sin deslumbramiento en el resto de la pantalla.
 
-| Familia            | Tokens                                                | Uso                                                                                         |
-| ------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Verde bosque       | `primary`, `primaryDark`, `borderPrimary`             | Acción principal, selección, enlaces y contornos de acciones secundarias.                   |
-| Verde suave        | `primarySoft`, `surfaceSoft`, `impactBackground`      | Resumen de puntos, avisos informativos, categorías y bloques de impacto.                    |
-| Verde de impacto   | `accent`, `impactValue`, `impactWeight`               | Detalles de ilustración y métricas ambientales existentes; no sustituye el verde de acción. |
-| Superficies claras | `background`, `surface`, `tabBarBackground`, `border` | Fondo de pantalla, tarjetas, navegación y separación de contenido.                          |
-| Tinta y gris       | `text`, `textSecondary`, `brandDark`                  | Títulos, contenido principal, ayudas y metadatos.                                           |
-| Estado crítico     | `danger`, `dangerBackground`                          | Errores y acciones destructivas con texto que explique su efecto.                           |
-| Apoyos existentes  | `avatarBackground`, `navInactive`, `overlay`         | Avatar sin foto, navegación inactiva y capa modal translúcida.                             |
+| Familia | Tokens | Uso |
+| --- | --- | --- |
+| Verde bosque y acción | `primary`, `primaryAction`, `primaryDark`, `borderPrimary` | `primary` para enlaces, pestañas, íconos y contornos; `primaryAction` para botones sólidos con `textOnPrimary`. |
+| Verde suave | `primarySoft`, `surfaceSoft`, `impactBackground`, `skeletonHighlight`, `successIconBackground`, `successBorder` | Resumen de puntos, avisos informativos, categorías, estados de carga y bloques de impacto. |
+| Verde de impacto | `accent`, `impactValue`, `impactWeight` | Detalles de ilustración y métricas ambientales existentes; no sustituye el verde de acción. |
+| Superficies | `background`, `surface`, `tabBarBackground`, `border`, `cardBorderSubtle`, `qrBackground` | Base de pantalla, tarjetas elevadas en modo oscuro (`surface` > `background`), navegación, separadores y zona silenciosa de QR. |
+| Tinta y contraste | `text`, `textSecondary`, `brandDark`, `textOnPrimary` | Títulos, contenido principal, ayudas y encabezados adaptados al esquema activo. |
+| Estado crítico y alertas | `danger`, `dangerAction`, `dangerBackground`, `warning*`, `info*` | Errores, acciones destructivas y banners de estado con contraste AA mínimo 4.5:1 en claro y oscuro. |
+| Apoyos existentes | `avatarBackground`, `navInactive`, `borderControl`, `overlay` | Avatar sin foto, navegación inactiva, bordes de controles y capa modal translúcida. |
 
 **The Color con significado Rule.** El verde identifica acciones y selección; el rojo identifica problemas o consecuencias destructivas. Un estado siempre lleva texto o icono comprensible además del color.
 
@@ -282,7 +342,7 @@ Las curvas transmiten cercanía y ayudan a distinguir controles, tarjetas y figu
 | Acceso rápido de Inicio               | `rounded.quick-access`                               |
 | Resumen de puntos                     | `rounded.points`                                     |
 | Categoría                             | `rounded.chip`                                       |
-| Avatar y moneda                       | Círculo; no usar esta forma para todas las acciones. |
+| Botón de apariencia y moneda          | Círculo; no usar esta forma para todas las acciones. |
 
 Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del texto. Hojas y planeta usan las formas de `EcoArtwork`; no sustituirlas por emojis o ilustraciones de otro estilo.
 
@@ -307,7 +367,7 @@ Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del
 
 ### Header y navegación
 
-`ScreenHeader` tiene altura mínima (72), controles de volver y acción con ancho (44), y título de hasta dos líneas. El espacio derecho se conserva aunque no tenga acción, para mantener el título centrado. Inicio usa su hoja, nombre de marca y acceso al perfil.
+`ScreenHeader` tiene altura mínima (72), controles de volver y acción con ancho (44), y título de hasta dos líneas. El espacio derecho se conserva aunque no tenga acción, para mantener el título centrado. Inicio usa su hoja, nombre de marca y el botón circular de apariencia (sol en modo claro, luna en modo oscuro); el acceso a Perfil permanece en la barra de navegación inferior.
 
 La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en ese orden. Sección activa en verde con icono lleno; inactiva con icono de contorno. “Mis entregas” se encuentra en Perfil; el acceso rápido de Inicio puede llevar allí. La sección del mapa se llama “Puntos verdes”. El mapa ocupa el bloque de Inicio que antes mostraba premios destacados. Las capturas antiguas con otra navegación no son referencia de estructura.
 

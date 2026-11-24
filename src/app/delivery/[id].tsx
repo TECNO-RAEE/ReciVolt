@@ -1,54 +1,68 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Image,
   Modal,
   Platform,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { AccountRequired } from '@/components/auth/AccountRequired';
+import { CitizenPage, CopyableCode } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { ScanSuccessModal } from '@/components/ui/ScanSuccessModal';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
-import { useScrollReset } from '@/hooks/useScrollReset';
-import {
-  deliveryQr,
-  deliveryStatusNames,
-  effectiveDeliveryStatus,
-} from '@/models/Delivery';
+import { useStatusPolling } from '@/hooks/useStatusPolling';
+import { deliveryQr, deliveryStatusNames, effectiveDeliveryStatus } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
+import { pointsLabel } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
+import { useWallet } from '@/providers/WalletProvider';
 import { deliveryCommand, getDeliveryPhotoUrl } from '@/services/delivery.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+
+const PENDING_DELIVERY_STATUSES = ['PENDING_RECEPTION'] as const;
+const CONFIRMED_DELIVERY_STATUSES = ['CONFIRMED'] as const;
+
+function quantityUnitLabel(count: number) {
+  return count === 1 ? 'unidad' : 'unidades';
+}
 
 export default function DeliveryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <DeliveryDetail key={id ?? 'missing'} id={id} />;
+}
+
+function DeliveryDetail({ id }: Readonly<{ id: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
+  const { refresh: refreshWallet } = useWallet();
   const loader = useCallback(() => deliveryCommand('get', { id }), [id]);
-  const { data, loading, error, refresh } = usePortalData(loader);
+  const { data, loading, error, refresh, silentRefresh } = usePortalData(loader);
   const action = usePortalAction();
-  const scroll = useScrollReset();
 
-  const [copied, setCopied] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [scanSuccessVisible, setScanSuccessVisible] = useState(false);
 
-  useEffect(() => {
-    return () => {
-      if (copyTimerRef.current) {
-        clearTimeout(copyTimerRef.current);
-      }
-    };
-  }, []);
+  const currentStatus = session && data ? effectiveDeliveryStatus(data) : null;
+  useStatusPolling({
+    resetKey: id,
+    status: currentStatus,
+    pendingStatuses: PENDING_DELIVERY_STATUSES,
+    confirmedStatuses: CONFIRMED_DELIVERY_STATUSES,
+    poll: silentRefresh,
+    onConfirmed: () => {
+      setCancelModalVisible(false);
+      setScanSuccessVisible(true);
+      void refreshWallet();
+    },
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -57,28 +71,8 @@ export default function DeliveryDetailScreen() {
   );
 
   if (!session) {
-    return <AccountRequired title="Tu entrega" />;
+    return <AccountRequired title="Tu entrega" back="/my-raee" />;
   }
-
-  const handleCopyCode = async (code: string) => {
-    try {
-      let success = false;
-      if (Clipboard?.setStringAsync) {
-        await Clipboard.setStringAsync(code);
-        success = true;
-      } else if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(code);
-        success = true;
-      }
-      if (success) {
-        setCopied(true);
-        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-        copyTimerRef.current = setTimeout(() => setCopied(false), 2500);
-      }
-    } catch {
-      // Do not set copied on clipboard error
-    }
-  };
 
   const handleConfirmCancel = () => {
     setCancelModalVisible(false);
@@ -105,25 +99,23 @@ export default function DeliveryDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Tu entrega" back="/my-raee" />
+      <CitizenPage title="Tu entrega" back="/my-raee">
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Cargando información de la entrega…</Text>
         </View>
-      </View>
+      </CitizenPage>
     );
   }
 
   if (error || !data) {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Tu entrega" back="/my-raee" />
+      <CitizenPage title="Tu entrega" back="/my-raee">
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>{error || 'No pudimos encontrar esta entrega.'}</Text>
           <ActionButton title="Reintentar" onPress={() => void refresh()} />
         </View>
-      </View>
+      </CitizenPage>
     );
   }
 
@@ -132,13 +124,8 @@ export default function DeliveryDetailScreen() {
   // VIEW 1: Confirmed reception
   if (status === 'CONFIRMED') {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Detalle de entrega" back="/my-raee" />
-        <ScrollView
-          ref={scroll}
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-        >
+      <>
+        <CitizenPage title="Detalle de entrega" back="/my-raee">
           {/* Hero de confirmación */}
           <View style={styles.confirmedHero}>
             <View style={styles.checkCircle}>
@@ -169,8 +156,19 @@ export default function DeliveryDetailScreen() {
             {data.items.map((item, index) => {
               const visual = getCategoryVisual({ name: item.categoryName });
               const count = item.confirmedQuantity ?? item.declaredQuantity;
+              const actionLabel =
+                item.confirmedQuantity !== null
+                  ? count === 1
+                    ? 'recibida'
+                    : 'recibidas'
+                  : count === 1
+                    ? 'declarada'
+                    : 'declaradas';
               return (
-                <View key={`${item.categoryId}-${index}`} style={[styles.cardRow, { marginTop: 10 }]}>
+                <View
+                  key={`${item.categoryId}-${index}`}
+                  style={[styles.cardRow, { marginTop: 10 }]}
+                >
                   <View style={styles.iconCircle}>
                     <MaterialCommunityIcons
                       name={visual.icon}
@@ -181,8 +179,7 @@ export default function DeliveryDetailScreen() {
                   <View style={styles.cardTextCol}>
                     <Text style={styles.cardTitle}>{item.categoryName}</Text>
                     <Text style={styles.cardSubtitle}>
-                      {count} {item.categoryName.toLowerCase()}{' '}
-                      {item.confirmedQuantity !== null ? 'recibidas' : 'declaradas'}
+                      {count} {quantityUnitLabel(count)} {actionLabel}
                     </Text>
                   </View>
                 </View>
@@ -198,7 +195,7 @@ export default function DeliveryDetailScreen() {
               </View>
               <View style={styles.cardTextCol}>
                 <Text style={styles.pointsAccreditedTitle}>
-                  {data.points.toLocaleString('es-AR')} puntos acreditados
+                  {pointsLabel(data.points)} {data.points === 1 ? 'acreditado' : 'acreditados'}
                 </Text>
                 <Text style={styles.pointsAccreditedSubtitle}>
                   Tu saldo se puede usar en toda la red de recompensas.
@@ -209,31 +206,35 @@ export default function DeliveryDetailScreen() {
 
           {/* Botones de acción */}
           <View style={styles.actionButtonsCol}>
-            <ActionButton
-              title="Ver mis puntos"
-              onPress={() => router.push('/my-points')}
-            />
+            <ActionButton title="Ver mis puntos" onPress={() => router.push('/my-points')} />
             <ActionButton
               title="Volver al inicio"
               secondary
               onPress={() => router.replace('/home')}
             />
           </View>
-        </ScrollView>
-      </View>
+        </CitizenPage>
+
+        <ScanSuccessModal
+          visible={scanSuccessVisible}
+          title="¡Entrega confirmada!"
+          highlight={data.points > 0 ? `+${pointsLabel(data.points)}` : null}
+          message={`${data.pointName} (${data.companyName}) confirmó la recepción física de tus dispositivos${data.points > 0 ? ' y acreditó tus puntos' : ''}.`}
+          onPrimary={() => {
+            setScanSuccessVisible(false);
+            router.replace('/home');
+          }}
+          onDismiss={() => setScanSuccessVisible(false)}
+        />
+      </>
     );
   }
 
   // VIEW 2: Pending reception
   if (status === 'PENDING_RECEPTION') {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Tu entrega" back="/my-raee" />
-        <ScrollView
-          ref={scroll}
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-        >
+      <>
+        <CitizenPage title="Tu entrega" back="/my-raee">
           {/* Banner: Pendiente de recepción */}
           <View style={styles.pendingBanner}>
             <View style={styles.pendingIconCircle}>
@@ -262,29 +263,19 @@ export default function DeliveryDetailScreen() {
 
           {/* Card: Código QR y código manual */}
           <View style={[styles.card, styles.qrCard]}>
-            <View style={styles.qrWrapper}>
-              <QRCode value={deliveryQr(data.code)} size={200} quietZone={12} ecl="M" />
+            <View accessibilityLabel="Código QR de la entrega" style={styles.qrWrapper}>
+              <QRCode
+                value={deliveryQr(data.code)}
+                size={200}
+                quietZone={12}
+                ecl="M"
+                color="#102530"
+                backgroundColor={colors.qrBackground}
+              />
             </View>
 
             <Text style={styles.manualCodeLabel}>Código manual</Text>
-            <View style={styles.manualCodeRow}>
-              <Text selectable style={styles.manualCodeText}>
-                {data.code}
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Copiar código manual"
-                style={styles.copyBtn}
-                onPress={() => void handleCopyCode(data.code)}
-              >
-                <Ionicons
-                  name={copied ? 'checkmark' : 'copy-outline'}
-                  size={20}
-                  color={copied ? colors.primaryDark : colors.textSecondary}
-                />
-              </Pressable>
-            </View>
-            {copied && <Text style={styles.copiedFeedback}>Código copiado al portapapeles</Text>}
+            <CopyableCode code={data.code} />
           </View>
 
           {/* Card: Resumen de entrega */}
@@ -293,7 +284,10 @@ export default function DeliveryDetailScreen() {
             {data.items.map((item, index) => {
               const visual = getCategoryVisual({ name: item.categoryName });
               return (
-                <View key={`${item.categoryId}-${index}`} style={[styles.cardRow, { marginTop: 10 }]}>
+                <View
+                  key={`${item.categoryId}-${index}`}
+                  style={[styles.cardRow, { marginTop: 10 }]}
+                >
                   <View style={styles.iconCircle}>
                     <MaterialCommunityIcons
                       name={visual.icon}
@@ -304,7 +298,7 @@ export default function DeliveryDetailScreen() {
                   <View style={styles.cardTextCol}>
                     <Text style={styles.cardTitle}>{item.categoryName}</Text>
                     <Text style={styles.cardSubtitle}>
-                      {item.declaredQuantity} {item.categoryName.toLowerCase()}
+                      {item.declaredQuantity} {quantityUnitLabel(item.declaredQuantity)}
                     </Text>
                   </View>
                 </View>
@@ -316,9 +310,7 @@ export default function DeliveryDetailScreen() {
                 <Text style={styles.notesText}>{data.notes}</Text>
               </View>
             ) : null}
-            {data.photoPath ? (
-              <DeliveryPhoto path={data.photoPath} />
-            ) : null}
+            {data.photoPath ? <DeliveryPhoto path={data.photoPath} /> : null}
           </View>
 
           {/* Banner de advertencia: Todavía no suma puntos */}
@@ -347,7 +339,7 @@ export default function DeliveryDetailScreen() {
             loading={action.busy}
             onPress={handleCancelPress}
           />
-        </ScrollView>
+        </CitizenPage>
 
         {/* Modal de confirmación para cancelar en web */}
         <Modal
@@ -357,7 +349,7 @@ export default function DeliveryDetailScreen() {
           onRequestClose={() => setCancelModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalAlertCard}>
+            <View accessibilityViewIsModal style={styles.modalAlertCard}>
               <View style={styles.modalAlertIcon}>
                 <Ionicons name="alert-circle-outline" size={32} color={colors.danger} />
               </View>
@@ -366,144 +358,101 @@ export default function DeliveryDetailScreen() {
                 Si cancelás esta entrega, el código quedará inhabilitado y no se acreditarán puntos.
               </Text>
               <View style={styles.modalAlertActions}>
-                <Pressable
-                  accessibilityRole="button"
-                  style={styles.modalCancelBtn}
+                <ActionButton title="Sí, cancelar" destructive onPress={handleConfirmCancel} />
+                <ActionButton
+                  title="Volver"
+                  secondary
                   onPress={() => setCancelModalVisible(false)}
-                >
-                  <Text style={styles.modalCancelText}>Volver</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  style={styles.modalConfirmBtn}
-                  onPress={handleConfirmCancel}
-                >
-                  <Text style={styles.modalConfirmText}>Sí, cancelar</Text>
-                </Pressable>
+                />
               </View>
             </View>
           </View>
         </Modal>
-      </View>
+      </>
     );
   }
 
   // VIEW 3: CANCELLED
   if (status === 'CANCELLED') {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Tu entrega" back="/my-raee" />
-        <ScrollView
-          ref={scroll}
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.card}>
-            <View style={styles.cardRow}>
-              <View
-                style={[
-                  styles.iconCircle,
-                  { backgroundColor: colors.dangerBackground },
-                ]}
-              >
-                <Ionicons name="close-circle" size={24} color={colors.danger} />
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.cardTitle}>Entrega cancelada</Text>
-                <Text style={styles.cardSubtitle}>
-                  Esta entrega fue cancelada y el código quedó inhabilitado. No acredita puntos.
-                </Text>
-              </View>
+      <CitizenPage title="Tu entrega" back="/my-raee">
+        <View style={styles.card}>
+          <View style={styles.cardRow}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.dangerBackground }]}>
+              <Ionicons name="close-circle" size={24} color={colors.danger} />
+            </View>
+            <View style={styles.cardTextCol}>
+              <Text style={styles.cardTitle}>Entrega cancelada</Text>
+              <Text style={styles.cardSubtitle}>
+                Esta entrega fue cancelada y el código quedó inhabilitado. No acredita puntos.
+              </Text>
             </View>
           </View>
+        </View>
 
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Organización</Text>
-            <Text style={styles.cardSubtitle}>
-              {data.pointName} · {data.companyName}
-            </Text>
-          </View>
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Organización</Text>
+          <Text style={styles.cardSubtitle}>
+            {data.pointName} · {data.companyName}
+          </Text>
+        </View>
 
-          <ActionButton
-            title="Volver a Mis entregas"
-            onPress={() => router.replace('/my-raee')}
-          />
-        </ScrollView>
-      </View>
+        <ActionButton title="Volver a Mis entregas" onPress={() => router.replace('/my-raee')} />
+      </CitizenPage>
     );
   }
 
   // VIEW 4: EXPIRED
   if (status === 'EXPIRED') {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Tu entrega" back="/my-raee" />
-        <ScrollView
-          ref={scroll}
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.card}>
-            <View style={styles.cardRow}>
-              <View
-                style={[
-                  styles.iconCircle,
-                  { backgroundColor: colors.surfaceSoft },
-                ]}
-              >
-                <Ionicons name="time-outline" size={24} color={colors.textSecondary} />
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.cardTitle}>Código vencido</Text>
-                <Text style={styles.cardSubtitle}>
-                  El plazo para presentar este código expiró antes de la recepción.
-                </Text>
-              </View>
+      <CitizenPage title="Tu entrega" back="/my-raee">
+        <View style={styles.card}>
+          <View style={styles.cardRow}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.surfaceSoft }]}>
+              <Ionicons name="time-outline" size={24} color={colors.textSecondary} />
+            </View>
+            <View style={styles.cardTextCol}>
+              <Text style={styles.cardTitle}>Código vencido</Text>
+              <Text style={styles.cardSubtitle}>
+                El plazo para presentar este código expiró antes de la recepción.
+              </Text>
             </View>
           </View>
+        </View>
 
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Organización</Text>
-            <Text style={styles.cardSubtitle}>
-              {data.pointName} · {data.companyName}
-            </Text>
-          </View>
-
-          <ActionButton
-            title="Iniciar nueva entrega"
-            onPress={() => router.replace('/new-delivery')}
-          />
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // Fallback: any other status
-  const statusLabel = deliveryStatusNames[status] ?? status;
-  return (
-    <View style={styles.screen}>
-      <ScreenHeader title="Tu entrega" back="/my-raee" />
-      <ScrollView
-        ref={scroll}
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Estado de entrega: {statusLabel}</Text>
+          <Text style={styles.sectionTitle}>Organización</Text>
           <Text style={styles.cardSubtitle}>
             {data.pointName} · {data.companyName}
           </Text>
         </View>
+
         <ActionButton
-          title="Volver a Mis entregas"
-          onPress={() => router.replace('/my-raee')}
+          title="Iniciar nueva entrega"
+          onPress={() => router.replace('/new-delivery')}
         />
-      </ScrollView>
-    </View>
+      </CitizenPage>
+    );
+  }
+
+  // Fallback: any other status
+  const statusLabel = deliveryStatusNames[status] ?? 'En revisión';
+  return (
+    <CitizenPage title="Tu entrega" back="/my-raee">
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Estado de entrega: {statusLabel}</Text>
+        <Text style={styles.cardSubtitle}>
+          {data.pointName} · {data.companyName}
+        </Text>
+      </View>
+      <ActionButton title="Volver a Mis entregas" onPress={() => router.replace('/my-raee')} />
+    </CitizenPage>
   );
 }
 
 function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const loader = useCallback(() => getDeliveryPhotoUrl(path), [path]);
   const { data, loading } = usePortalData(loader);
 
@@ -529,324 +478,259 @@ function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    width: '100%',
-    maxWidth: 600,
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 16,
-  },
-  loadingText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.danger,
-    textAlign: 'center',
-    paddingHorizontal: 12,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  cardTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 22,
-    color: colors.text,
-  },
-  cardSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  sectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  pendingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 14,
-  },
-  pendingIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pendingTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 15,
-    color: colors.primaryDark,
-  },
-  pendingSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  qrCard: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-  },
-  qrWrapper: {
-    padding: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  manualCodeLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 18,
-  },
-  manualCodeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-  },
-  manualCodeText: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-    letterSpacing: 0.5,
-  },
-  copyBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copiedFeedback: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: colors.primaryDark,
-    marginTop: 4,
-  },
-  warningBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: 14,
-  },
-  warningIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  warningTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: colors.text,
-  },
-  warningSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  notesBlock: {
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: 4,
-  },
-  notesLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  notesText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.text,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 180,
-    borderRadius: 12,
-  },
-  confirmedHero: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    gap: 8,
-  },
-  checkCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmedTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    lineHeight: 30,
-    color: colors.text,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  confirmedSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 320,
-  },
-  pointsAccreditedCard: {
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.border,
-  },
-  pointsAccreditedTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.primaryDark,
-  },
-  pointsAccreditedSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  actionButtonsCol: {
-    gap: 12,
-    marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalAlertCard: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalAlertIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.dangerBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalAlertTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-  },
-  modalAlertMsg: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  modalAlertActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-    width: '100%',
-  },
-  modalCancelBtn: {
-    flex: 1,
-    minHeight: 44,
-    paddingVertical: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCancelText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.text,
-  },
-  modalConfirmBtn: {
-    flex: 1,
-    minHeight: 44,
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: colors.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalConfirmText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textOnPrimary,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    centerContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      gap: 16,
+    },
+    loadingText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    errorText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.danger,
+      textAlign: 'center',
+      paddingHorizontal: 12,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 16,
+    },
+    cardRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardTextCol: {
+      flex: 1,
+      gap: 2,
+    },
+    cardTitle: {
+      fontFamily: fonts.semiBold,
+      fontSize: 16,
+      lineHeight: 22,
+      color: colors.text,
+    },
+    cardSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    sectionTitle: {
+      fontFamily: fonts.semiBold,
+      fontSize: 15,
+      color: colors.text,
+      marginBottom: 4,
+    },
+    pendingBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 14,
+    },
+    pendingIconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pendingTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 15,
+      color: colors.primaryDark,
+    },
+    pendingSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    qrCard: {
+      alignItems: 'center',
+      paddingVertical: 24,
+      paddingHorizontal: 20,
+    },
+    qrWrapper: {
+      padding: 14,
+      backgroundColor: colors.qrBackground,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    manualCodeLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 18,
+      marginBottom: 8,
+    },
+    warningBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      padding: 14,
+    },
+    warningIconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    warningTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 14,
+      color: colors.text,
+    },
+    warningSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    notesBlock: {
+      marginTop: 12,
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      gap: 4,
+    },
+    notesLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    notesText: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.text,
+    },
+    photoPreview: {
+      width: '100%',
+      height: 180,
+      borderRadius: 12,
+    },
+    confirmedHero: {
+      alignItems: 'center',
+      paddingVertical: 16,
+      gap: 8,
+    },
+    checkCircle: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: colors.primaryAction,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    confirmedTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 24,
+      lineHeight: 30,
+      color: colors.text,
+      textAlign: 'center',
+      marginTop: 4,
+    },
+    confirmedSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      maxWidth: 320,
+    },
+    pointsAccreditedCard: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.border,
+    },
+    pointsAccreditedTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      lineHeight: 24,
+      color: colors.primaryDark,
+    },
+    pointsAccreditedSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
+    actionButtonsCol: {
+      gap: 12,
+      marginTop: 8,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modalAlertCard: {
+      width: '100%',
+      maxWidth: 380,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 24,
+      alignItems: 'center',
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalAlertIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.dangerBackground,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalAlertTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      color: colors.text,
+    },
+    modalAlertMsg: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    modalAlertActions: {
+      gap: 8,
+      marginTop: 12,
+      width: '100%',
+    },
+  });

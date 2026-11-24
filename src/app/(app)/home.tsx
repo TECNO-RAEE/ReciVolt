@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { QuickAccess } from '@/components/home/QuickAccess';
 import { HomeBotanical, ImpactPlant, LeafMark } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { PortalLink } from '@/components/portal/PortalUI';
+import { PortalFeedback, PortalLink } from '@/components/portal/PortalUI';
 import { InfoNote, PointsCard } from '@/components/rewards/RewardsUI';
 import { PointsMap } from '@/components/discovery/PointsMap';
 import { PointRow } from '@/components/discovery/PointRow';
@@ -15,11 +15,15 @@ import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemePreference, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export default function HomeScreen() {
+  const colors = useColors();
+  const { scheme, setPreference } = useThemePreference();
+  const isDark = scheme === 'dark';
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { profile, session } = useAuth();
   const wallet = useWallet();
@@ -68,11 +72,15 @@ export default function HomeScreen() {
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Abrir perfil"
-            onPress={() => router.push('/profile')}
-            style={styles.avatar}
+            aria-pressed={isDark}
+            accessibilityLabel={
+              isDark ? 'Modo oscuro. Cambiar a modo claro' : 'Modo claro. Cambiar a modo oscuro'
+            }
+            accessibilityHint="Cambia entre apariencia clara y oscura"
+            onPress={() => setPreference(isDark ? 'light' : 'dark')}
+            style={({ pressed }) => [styles.themeToggle, pressed && styles.themeTogglePressed]}
           >
-            <Ionicons name="person" size={20} color={colors.primaryDark} />
+            <Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={colors.primaryDark} />
           </Pressable>
         </View>
         <View style={styles.intro}>
@@ -112,7 +120,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/rewards')}
           />
           <QuickAccess
-            title="Impacto"
+            title="Preparar equipos"
             icon={<Ionicons name="leaf" size={26} color={colors.primaryDark} />}
             onPress={() => router.push('/impact')}
           />
@@ -155,11 +163,7 @@ export default function HomeScreen() {
                 onPress={() => void requestLocation()}
               />
             )}
-            {locationError && (
-              <Text accessibilityRole="alert" style={styles.description}>
-                {locationError}
-              </Text>
-            )}
+            {locationError && <PortalFeedback error={locationError} />}
           </View>
         )}
         <Pressable
@@ -170,9 +174,7 @@ export default function HomeScreen() {
           <ImpactPlant />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={styles.impactTitle}>Pequeñas acciones,{'\n'}grandes cambios</Text>
-            <Text style={styles.impactHint}>
-              Tus entregas de RAEE ayudan{'\n'}a un futuro más verde.
-            </Text>
+            <Text style={styles.impactHint}>Tus entregas ayudan a un futuro más verde.</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} />
         </Pressable>
@@ -180,71 +182,73 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: {
-    width: '100%',
-    maxWidth: 720,
-    alignSelf: 'center',
-    padding: 20,
-    gap: 16,
-    paddingBottom: 28,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  wordmark: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  brand: { fontFamily: fonts.bold, color: colors.text, fontSize: 25, letterSpacing: -0.7 },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#DCEBE0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  intro: { flexDirection: 'row', minHeight: 106, paddingTop: 12, justifyContent: 'space-between' },
-  ecology: { position: 'absolute', right: -20, bottom: -24, opacity: 0.8 },
-  greeting: { fontFamily: fonts.bold, fontSize: 27, color: colors.text, letterSpacing: -0.6 },
-  description: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    marginTop: 6,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: -10,
-  },
-  sectionTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
-  quickGrid: { flexDirection: 'row', gap: 10 },
-  mapCard: {
-    backgroundColor: colors.surface,
-    padding: 8,
-    borderRadius: 18,
-    gap: 10,
-    overflow: 'hidden',
-    boxShadow: '0 5px 18px rgba(31,75,48,0.07)',
-  },
-  impact: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.primarySoft,
-    borderRadius: 18,
-    padding: 16,
-  },
-  impactTitle: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 20, color: colors.text },
-  impactHint: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.textSecondary,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: {
+      width: '100%',
+      maxWidth: 720,
+      alignSelf: 'center',
+      padding: 20,
+      gap: 16,
+      paddingBottom: 28,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 8,
+    },
+    wordmark: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+    brand: { fontFamily: fonts.bold, color: colors.text, fontSize: 25, letterSpacing: -0.7 },
+    themeToggle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    themeTogglePressed: { opacity: 0.7 },
+    intro: { flexDirection: 'row', minHeight: 106, paddingTop: 12, justifyContent: 'space-between' },
+    ecology: { position: 'absolute', right: -20, bottom: -24, opacity: 0.8 },
+    greeting: { fontFamily: fonts.bold, fontSize: 27, color: colors.text, letterSpacing: -0.6 },
+    description: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      marginTop: 6,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: -10,
+    },
+    sectionTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
+    quickGrid: { flexDirection: 'row', gap: 10 },
+    mapCard: {
+      backgroundColor: colors.surface,
+      padding: 8,
+      borderRadius: 18,
+      gap: 10,
+      overflow: 'hidden',
+      boxShadow: '0 5px 18px rgba(31,75,48,0.07)',
+    },
+    impact: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.primarySoft,
+      borderRadius: 18,
+      padding: 16,
+    },
+    impactTitle: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 20, color: colors.text },
+    impactHint: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.textSecondary,
+    },
+  });

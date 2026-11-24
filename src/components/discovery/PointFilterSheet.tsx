@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import type { DeviceCategory } from '@/models/DeviceCategory';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface PointFilterValues {
   categoryIds: string[];
@@ -42,6 +42,8 @@ export function PointFilterSheet({
   onApply: (values: PointFilterValues) => void;
   onClose: () => void;
 }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [draft, setDraft] = useState(values);
   // Al abrir la hoja, el borrador vuelve a partir de los filtros aplicados (sin useEffect:
   // se ajusta durante el render, como recomienda React para sincronizar con una prop).
@@ -201,64 +203,68 @@ export function PointFilterSheet({
     </Modal>
   );
 }
-const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
-  sheet: {
-    width: '100%',
-    maxWidth: 960,
-    alignSelf: 'center',
-    maxHeight: '88%',
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 10,
-    paddingBottom: Platform.select({ ios: 24, default: 16 }),
-    gap: 12,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-    alignSelf: 'center',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  title: { fontFamily: fonts.bold, fontSize: 18, color: colors.text },
-  closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 20, gap: 12, paddingBottom: 8 },
-  label: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text, marginTop: 8 },
-  hint: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
-  checkboxRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  optionRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkboxLabel: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.text,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  actionSlot: { flex: 1 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
+    sheet: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      maxHeight: '88%',
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingTop: 10,
+      paddingBottom: Platform.select({ ios: 24, default: 16 }),
+      gap: 12,
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderControl,
+      alignSelf: 'center',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+    },
+    title: { fontFamily: fonts.bold, fontSize: 18, color: colors.text },
+    closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    content: { paddingHorizontal: 20, gap: 12, paddingBottom: 8 },
+    label: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text, marginTop: 8 },
+    hint: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
+    checkboxRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 },
+    optionRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12 },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      borderWidth: 1.5,
+      borderColor: colors.borderControl,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    checkboxChecked: {
+      backgroundColor: colors.primaryAction,
+      borderColor: colors.primaryAction,
+    },
+    checkboxLabel: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.text,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    actionSlot: { flex: 1 },
+  });

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type IconName =
   'person-outline' | 'location-outline' | 'notifications-outline' | 'settings-outline';
@@ -19,6 +19,8 @@ export function ProfileMenuItem({
   icon,
   onPress,
 }: Readonly<ProfileMenuItemProps>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
@@ -37,43 +39,44 @@ export function ProfileMenuItem({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    minHeight: 63,
-    flexDirection: 'row',
-    alignItems: 'center',
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      minHeight: 63,
+      flexDirection: 'row',
+      alignItems: 'center',
 
-    paddingHorizontal: 12,
+      paddingHorizontal: 12,
 
-    backgroundColor: colors.background,
+      backgroundColor: colors.background,
 
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 10,
-  },
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: 10,
+    },
 
-  textContainer: {
-    flex: 1,
-    marginLeft: 14,
-  },
+    textContainer: {
+      flex: 1,
+      marginLeft: 14,
+    },
 
-  title: {
-    fontFamily: 'Inter',
-    fontSize: 20,
-    fontWeight: '500',
-    color: colors.text,
-  },
+    title: {
+      fontFamily: 'Inter',
+      fontSize: 20,
+      fontWeight: '500',
+      color: colors.text,
+    },
 
-  subtitle: {
-    marginTop: 2,
+    subtitle: {
+      marginTop: 2,
 
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '400',
-    color: colors.text,
-  },
+      fontFamily: 'Inter',
+      fontSize: 16,
+      fontWeight: '400',
+      color: colors.text,
+    },
 
-  pressed: {
-    opacity: 0.65,
-  },
-});
+    pressed: {
+      opacity: 0.65,
+    },
+  });

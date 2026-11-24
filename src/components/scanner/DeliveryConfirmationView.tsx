@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { DeliveryPhotoPreview } from './DeliveryPhotoPreview';
+import { PortalFeedback } from '@/components/portal/PortalUI';
+import { InfoNote } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
 import { NumericStepper } from '@/components/ui/NumericStepper';
@@ -12,7 +13,8 @@ import {
   type Delivery,
 } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { DeliveryPhotoPreview } from './DeliveryPhotoPreview';
 
 type DeliveryConfirmationViewProps = {
   readonly delivery: Delivery;
@@ -39,6 +41,8 @@ export function DeliveryConfirmationView({
   onRefresh,
   onReset,
 }: DeliveryConfirmationViewProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const status = effectiveDeliveryStatus(delivery);
   const isPending = status === 'PENDING_RECEPTION';
 
@@ -101,6 +105,8 @@ export function DeliveryConfirmationView({
                       onChange={(val) => onQuantityChange(item.categoryId, val)}
                       disabled={busy}
                       accessibilityLabel={`Cantidad recibida de ${item.categoryName}`}
+                      decrementAccessibilityLabel={`Disminuir cantidad de ${item.categoryName}`}
+                      incrementAccessibilityLabel={`Aumentar cantidad de ${item.categoryName}`}
                     />
                   </View>
 
@@ -121,21 +127,19 @@ export function DeliveryConfirmationView({
           />
 
           {/* Advertencia preventiva */}
-          <View style={styles.warningAlertCard}>
-            <Ionicons name="alert-circle-outline" size={22} color={colors.primaryDark} />
-            <Text style={styles.warningAlertText}>
-              Confirmá solo lo que recibiste físicamente. Si no llegó alguna categoría, ajustá
-              su valor en 0.
-            </Text>
-          </View>
+          <InfoNote>
+            Confirmá solo lo que recibiste físicamente. Si no llegó alguna categoría, ajustá su
+            valor en 0.
+          </InfoNote>
 
           {/* Validación si todo quedó en 0 */}
           {totalPhysicalUnits === 0 && (
-            <View style={styles.zeroUnitsAlertCard}>
+            <View accessibilityLiveRegion="polite" style={styles.zeroUnitsAlertCard}>
               <Ionicons name="information-circle-outline" size={22} color={colors.danger} />
               <Text style={styles.zeroUnitsAlertText}>
-                No se puede confirmar la recepción con 0 unidades. Si el ciudadano no entregó ningún
-                dispositivo, utilizá &quot;Cancelar y volver&quot;.
+                No se puede confirmar la recepción con 0 unidades. Si no recibiste ningún
+                dispositivo, usá &quot;Escanear otro código&quot; para salir; la entrega quedará
+                pendiente y sin puntos acreditados.
               </Text>
             </View>
           )}
@@ -151,6 +155,8 @@ export function DeliveryConfirmationView({
             </View>
           ) : null}
 
+          <PortalFeedback error={error} notice={notice} />
+
           {/* Botones de acción */}
           <View style={styles.actionCol}>
             <ActionButton
@@ -160,7 +166,7 @@ export function DeliveryConfirmationView({
               onPress={onConfirmDelivery}
             />
             <ActionButton
-              title="Cancelar y volver"
+              title="Escanear otro código"
               secondary
               disabled={busy}
               onPress={onReset}
@@ -168,13 +174,13 @@ export function DeliveryConfirmationView({
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Consultar de nuevo el estado original del código"
+              accessibilityLabel="Actualizar estado"
               style={styles.refreshLinkBtn}
               disabled={busy}
               onPress={onRefresh}
             >
               <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
-              <Text style={styles.refreshLinkText}>Consultar estado original del código</Text>
+              <Text style={styles.refreshLinkText}>Actualizar estado</Text>
             </Pressable>
           </View>
         </>
@@ -203,156 +209,123 @@ export function DeliveryConfirmationView({
             }
           />
 
+          <PortalFeedback error={error} notice={notice} />
+
           <View style={styles.actionCol}>
             <ActionButton title="Escanear otro código" onPress={onReset} />
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Consultar de nuevo el estado original del código"
+              accessibilityLabel="Actualizar estado"
               style={styles.refreshLinkBtn}
               disabled={busy}
               onPress={onRefresh}
             >
               <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
-              <Text style={styles.refreshLinkText}>Consultar estado original del código</Text>
+              <Text style={styles.refreshLinkText}>Actualizar estado</Text>
             </Pressable>
           </View>
         </>
       )}
-
-      {/* Notificaciones y errores globales siempre visibles */}
-      {error ? (
-        <Text accessibilityRole="alert" style={styles.errorText}>
-          {error}
-        </Text>
-      ) : null}
-
-      {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  fieldSection: {
-    gap: 10,
-  },
-  sectionHeader: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.text,
-    marginLeft: 2,
-  },
-  sectionHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginLeft: 2,
-    marginBottom: 2,
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 12,
-  },
-  stepperSectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  stepperLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.text,
-  },
-  itemSubtotalText: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 8,
-    textAlign: 'right',
-  },
-  warningAlertCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: 14,
-  },
-  warningAlertText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.text,
-  },
-  zeroUnitsAlertCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: 14,
-    padding: 14,
-  },
-  zeroUnitsAlertText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.danger,
-  },
-  notesCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-  },
-  notesLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  notesContent: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.text,
-  },
-  actionCol: {
-    gap: 12,
-    marginTop: 8,
-  },
-  refreshLinkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    minHeight: 44,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  refreshLinkText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.danger,
-    textAlign: 'center',
-  },
-  noticeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.primaryDark,
-    textAlign: 'center',
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    fieldSection: {
+      gap: 10,
+    },
+    sectionHeader: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.text,
+      marginLeft: 2,
+    },
+    sectionHint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginLeft: 2,
+      marginBottom: 2,
+    },
+    cardDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 12,
+    },
+    stepperSectionRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    stepperLabel: {
+      flexShrink: 1,
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.text,
+    },
+    itemSubtotalText: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 8,
+      textAlign: 'right',
+    },
+    zeroUnitsAlertCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: 14,
+      padding: 14,
+    },
+    zeroUnitsAlertText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.danger,
+    },
+    notesCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 16,
+    },
+    notesLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: 4,
+    },
+    notesContent: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.text,
+    },
+    actionCol: {
+      gap: 12,
+      marginTop: 8,
+    },
+    refreshLinkBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      minHeight: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    },
+    refreshLinkText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+  });

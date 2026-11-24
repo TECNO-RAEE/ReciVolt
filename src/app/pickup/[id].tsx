@@ -19,9 +19,11 @@ import { AccountRequired } from '@/components/auth/AccountRequired';
 import { PickupTimeline } from '@/components/pickup/PickupTimeline';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoCard } from '@/components/ui/InfoCard';
+import { ScanSuccessModal } from '@/components/ui/ScanSuccessModal';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { useScrollReset } from '@/hooks/useScrollReset';
+import { useStatusPolling } from '@/hooks/useStatusPolling';
 import { getCategoryVisual } from '@/models/DeviceCategory';
 import {
   formatPickupDate,
@@ -29,23 +31,50 @@ import {
   pickupQr,
   pickupStatusNames,
 } from '@/models/Pickup';
+import { pointsLabel } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
+import { useWallet } from '@/providers/WalletProvider';
 import { getPickupPhotoUrl, pickupCommand } from '@/services/pickup.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+
+const PENDING_PICKUP_STATUSES = ['REQUESTED', 'COORDINATED', 'IN_TRANSIT'] as const;
+const CONFIRMED_PICKUP_STATUSES = ['COMPLETED'] as const;
 
 export default function PickupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <PickupDetail key={id ?? 'missing'} id={id} />;
+}
+
+function PickupDetail({ id }: Readonly<{ id: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
+  const { refresh: refreshWallet } = useWallet();
   const loader = useCallback(() => pickupCommand('get', { id }), [id]);
-  const { data: pickup, loading, error, refresh } = usePortalData(loader);
+  const { data: pickup, loading, error, refresh, silentRefresh } = usePortalData(loader);
   const action = usePortalAction();
   const scroll = useScrollReset();
 
   const [copied, setCopied] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [scanSuccessVisible, setScanSuccessVisible] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useStatusPolling({
+    resetKey: id,
+    status: session && pickup ? pickup.status : null,
+    pendingStatuses: PENDING_PICKUP_STATUSES,
+    confirmedStatuses: CONFIRMED_PICKUP_STATUSES,
+    poll: silentRefresh,
+    onConfirmed: () => {
+      setDetailsModalVisible(false);
+      setCancelModalVisible(false);
+      setScanSuccessVisible(true);
+      void refreshWallet();
+    },
+  });
 
   useEffect(() => {
     return () => {
@@ -172,7 +201,7 @@ export default function PickupDetailScreen() {
         {isRequested && (
           <View style={styles.yellowBanner}>
             <View style={styles.bannerIconCircleYellow}>
-              <Ionicons name="time-outline" size={24} color="#8D6B00" />
+              <Ionicons name="time-outline" size={24} color={colors.warningSecondary} />
             </View>
             <View style={styles.bannerTextCol}>
               <Text style={styles.yellowBannerTitle}>Por coordinar</Text>
@@ -202,7 +231,7 @@ export default function PickupDetailScreen() {
         {isInTransit && (
           <View style={styles.blueBanner}>
             <View style={styles.bannerIconCircleBlue}>
-              <Ionicons name="car-outline" size={24} color="#0B4B75" />
+              <Ionicons name="car-outline" size={24} color={colors.info} />
             </View>
             <View style={styles.bannerTextCol}>
               <Text style={styles.blueBannerTitle}>Vehículo en camino</Text>
@@ -294,7 +323,10 @@ export default function PickupDetailScreen() {
                 </View>
                 <View style={styles.quantityBadge}>
                   <Text style={styles.quantityText}>
-                    {it.confirmedQuantity ?? it.declaredQuantity} {it.declaredQuantity === 1 ? 'unidad' : 'unidades'}
+                    {(() => {
+                      const displayQuantity = it.confirmedQuantity ?? it.declaredQuantity;
+                      return `${displayQuantity} ${displayQuantity === 1 ? 'unidad' : 'unidades'}`;
+                    })()}
                   </Text>
                 </View>
               </View>
@@ -327,7 +359,7 @@ export default function PickupDetailScreen() {
         {/* 7. Acciones principales */}
         <View style={styles.actionsContainer}>
           <ActionButton
-            title="Ver detalle de la solicitud"
+            title="Ver código / QR de retiro"
             secondary
             onPress={() => setDetailsModalVisible(true)}
           />
@@ -371,12 +403,18 @@ export default function PickupDetailScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.modalBody}>
-              <View style={styles.qrContainer}>
+              <View
+                accessibilityRole="image"
+                accessibilityLabel="Código QR del retiro"
+                style={styles.qrContainer}
+              >
                 <QRCode
                   value={pickupQr(pickup.code)}
                   size={190}
-                  color={colors.text}
-                  backgroundColor={colors.surface}
+                  quietZone={12}
+                  ecl="M"
+                  color="#102530"
+                  backgroundColor={colors.qrBackground}
                 />
               </View>
 
@@ -452,11 +490,13 @@ export default function PickupDetailScreen() {
             <View style={styles.confirmModalActions}>
               <ActionButton
                 title="Conservar solicitud"
-                secondary
+                secondary={false}
+                disabled={action.busy}
                 onPress={() => setCancelModalVisible(false)}
               />
               <ActionButton
                 title="Sí, cancelar retiro"
+                secondary={true}
                 loading={action.busy}
                 onPress={handleConfirmCancel}
               />
@@ -464,434 +504,447 @@ export default function PickupDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <ScanSuccessModal
+        visible={Boolean(scanSuccessVisible && pickup.status === 'COMPLETED')}
+        title="¡Retiro confirmado!"
+        highlight={pickup.points > 0 ? `+${pointsLabel(pickup.points)}` : null}
+        message={`${pickup.pointName ? `${pickup.pointName} (${pickup.companyName})` : pickup.companyName} confirmó la recepción de tu retiro${pickup.points > 0 ? ' y acreditó tus puntos' : ''}.`}
+        onPrimary={() => {
+          setScanSuccessVisible(false);
+          router.replace('/home');
+        }}
+        onDismiss={() => setScanSuccessVisible(false)}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    padding: 16,
-    paddingBottom: 40,
-    gap: 14,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 12,
-  },
-  loadingText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.danger,
-    textAlign: 'center',
-  },
-  yellowBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#FFF8E1',
-    borderWidth: 1,
-    borderColor: '#FFE082',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  bannerIconCircleYellow: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFF0B2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  yellowBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: '#6D4C00',
-  },
-  yellowBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: '#8D6B00',
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  greenBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: '#C3E4CD',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  bannerIconCircleGreen: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#D1EBD9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  greenBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.primaryDark,
-  },
-  greenBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.primaryDark,
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  blueBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#E8F3FA',
-    borderWidth: 1,
-    borderColor: '#BFE0F2',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  bannerIconCircleBlue: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#CEE8F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  blueBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: '#0B4B75',
-  },
-  blueBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: '#155B8A',
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  successBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: '#B9DFC4',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  successBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.primaryDark,
-  },
-  successBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.primaryDark,
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  cancelledBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  bannerIconCircleGrey: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelledBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.textSecondary,
-  },
-  cancelledBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  bannerTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    gap: 12,
-  },
-  cardHeaderTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: colors.text,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 4,
-  },
-  itemIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemName: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: colors.text,
-  },
-  itemRate: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  quantityBadge: {
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  quantityText: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.text,
-  },
-  notesBox: {
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 10,
-    gap: 4,
-    marginTop: 6,
-  },
-  notesLabel: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  notesText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.text,
-    lineHeight: 18,
-  },
-  photoContainer: {
-    marginTop: 6,
-    gap: 6,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 160,
-    borderRadius: 10,
-  },
-  photoCaption: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  creditNoticeBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.surfaceSoft,
-    borderRadius: 12,
-    padding: 14,
-    gap: 10,
-  },
-  creditNoticeText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  actionsContainer: {
-    gap: 10,
-    marginTop: 4,
-  },
-  noticeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    borderRadius: 10,
-    padding: 12,
-    gap: 8,
-  },
-  noticeBannerText: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.primaryDark,
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.dangerBackground,
-    borderRadius: 10,
-    padding: 12,
-    gap: 8,
-  },
-  errorBannerText: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.danger,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '85%',
-    padding: 20,
-    gap: 16,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-  },
-  modalBody: {
-    alignItems: 'center',
-    gap: 16,
-    paddingBottom: 24,
-  },
-  qrContainer: {
-    padding: 14,
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  codeContainer: {
-    alignItems: 'center',
-    gap: 6,
-    width: '100%',
-  },
-  codeLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  codeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  codeText: {
-    fontFamily: fonts.bold,
-    fontSize: 15,
-    color: colors.primaryDark,
-    letterSpacing: 0.5,
-  },
-  copyBtn: {
-    padding: 4,
-  },
-  copiedNotice: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: colors.primary,
-  },
-  metadataList: {
-    width: '100%',
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-  },
-  metadataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  metadataLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  metadataValue: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.text,
-  },
-  confirmModalBox: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    margin: 24,
-    padding: 24,
-    alignItems: 'center',
-    gap: 14,
-    alignSelf: 'center',
-    maxWidth: 400,
-    width: '90%',
-  },
-  confirmModalTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  confirmModalText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  confirmModalActions: {
-    width: '100%',
-    gap: 10,
-    marginTop: 6,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 16,
+      paddingBottom: 40,
+      gap: 14,
+    },
+    centerContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      gap: 12,
+    },
+    loadingText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    errorText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.danger,
+      textAlign: 'center',
+    },
+    yellowBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.warningSoft,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    bannerIconCircleYellow: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.warningSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    yellowBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.warning,
+    },
+    yellowBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.warningSecondary,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    greenBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.successBorder,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    bannerIconCircleGreen: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.successIconBackground,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    greenBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.primaryDark,
+    },
+    greenBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.primaryDark,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    blueBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.infoSoft,
+      borderWidth: 1,
+      borderColor: colors.infoBorder,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    bannerIconCircleBlue: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.infoSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    blueBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.info,
+    },
+    blueBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.infoSecondary,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    successBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.successBorder,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    successBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.primaryDark,
+    },
+    successBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.primaryDark,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    cancelledBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    bannerIconCircleGrey: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cancelledBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.textSecondary,
+    },
+    cancelledBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    bannerTextCol: {
+      flex: 1,
+      gap: 2,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      gap: 12,
+    },
+    cardHeaderTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: colors.text,
+    },
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 4,
+    },
+    itemIconCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    itemName: {
+      fontFamily: fonts.bold,
+      fontSize: 14,
+      color: colors.text,
+    },
+    itemRate: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    quantityBadge: {
+      backgroundColor: colors.surfaceSoft,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    quantityText: {
+      fontFamily: fonts.bold,
+      fontSize: 13,
+      color: colors.text,
+    },
+    notesBox: {
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      padding: 10,
+      gap: 4,
+      marginTop: 6,
+    },
+    notesLabel: {
+      fontFamily: fonts.bold,
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    notesText: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.text,
+      lineHeight: 18,
+    },
+    photoContainer: {
+      marginTop: 6,
+      gap: 6,
+    },
+    photoPreview: {
+      width: '100%',
+      height: 160,
+      borderRadius: 10,
+    },
+    photoCaption: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    creditNoticeBox: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.surfaceSoft,
+      borderRadius: 12,
+      padding: 14,
+      gap: 10,
+    },
+    creditNoticeText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    actionsContainer: {
+      gap: 10,
+      marginTop: 4,
+    },
+    noticeBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primarySoft,
+      borderRadius: 10,
+      padding: 12,
+      gap: 8,
+    },
+    noticeBannerText: {
+      flex: 1,
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.primaryDark,
+    },
+    errorBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.dangerBackground,
+      borderRadius: 10,
+      padding: 12,
+      gap: 8,
+    },
+    errorBannerText: {
+      flex: 1,
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.danger,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: '85%',
+      padding: 20,
+      gap: 16,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    modalTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      color: colors.text,
+    },
+    modalBody: {
+      alignItems: 'center',
+      gap: 16,
+      paddingBottom: 24,
+    },
+    qrContainer: {
+      padding: 14,
+      backgroundColor: colors.qrBackground,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    codeContainer: {
+      alignItems: 'center',
+      gap: 6,
+      width: '100%',
+    },
+    codeLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    codeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.surfaceSoft,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    codeText: {
+      fontFamily: fonts.bold,
+      fontSize: 15,
+      color: colors.primaryDark,
+      letterSpacing: 0.5,
+    },
+    copyBtn: {
+      padding: 4,
+    },
+    copiedNotice: {
+      fontFamily: fonts.semiBold,
+      fontSize: 12,
+      color: colors.primary,
+    },
+    metadataList: {
+      width: '100%',
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 14,
+      gap: 8,
+    },
+    metadataRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    metadataLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    metadataValue: {
+      fontFamily: fonts.bold,
+      fontSize: 13,
+      color: colors.text,
+    },
+    confirmModalBox: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      margin: 24,
+      padding: 24,
+      alignItems: 'center',
+      gap: 14,
+      alignSelf: 'center',
+      maxWidth: 400,
+      width: '90%',
+    },
+    confirmModalTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    confirmModalText: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    confirmModalActions: {
+      width: '100%',
+      gap: 10,
+      marginTop: 6,
+    },
+  });

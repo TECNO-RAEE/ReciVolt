@@ -6,6 +6,7 @@ import {
   canManageCompany,
   resolveRole,
   roleHome,
+  shouldRedirectToPendingInvitations,
 } from '../src/models/Access.ts';
 
 const membership = {
@@ -59,4 +60,38 @@ test('invitados acceden al shell ciudadano y roles empresa/admin no lo habilitan
   assert.equal(canAccessCitizen('company_worker', true), false);
   assert.equal(canAccessCitizen('company_owner', true), false);
   assert.equal(canAccessCitizen('platform_admin', true), false);
+});
+test('ciudadano con invitación pendiente redirige salvo que la haya pospuesto', () => {
+  assert.equal(
+    shouldRedirectToPendingInvitations({
+      role: 'citizen',
+      hasPendingInvitations: true,
+      invitationsPostponed: false,
+    }),
+    true
+  );
+  assert.equal(
+    shouldRedirectToPendingInvitations({
+      role: 'citizen',
+      hasPendingInvitations: true,
+      invitationsPostponed: true,
+    }),
+    false
+  );
+  assert.equal(
+    shouldRedirectToPendingInvitations({
+      role: 'citizen',
+      hasPendingInvitations: false,
+      invitationsPostponed: false,
+    }),
+    false
+  );
+  assert.equal(
+    shouldRedirectToPendingInvitations({
+      role: 'company_owner',
+      hasPendingInvitations: true,
+      invitationsPostponed: false,
+    }),
+    false
+  );
 });

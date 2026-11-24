@@ -11,7 +11,7 @@ import {
   InfoSection,
   PointsBadge,
   RewardPhoto,
-  rewardStyles as s,
+  useRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { rewardExamples } from '@/data/rewardExamples';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
@@ -20,7 +20,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { getReward, rewardCommand } from '@/services/reward.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function RewardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,6 +28,9 @@ export default function RewardDetailScreen() {
   return <RewardDetail key={`${id}:${user?.id ?? 'guest'}`} id={id} />;
 }
 function RewardDetail({ id }: Readonly<{ id: string }>) {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
   const wallet = useWallet();
   const { now } = useDiscovery();
@@ -61,9 +64,13 @@ function RewardDetail({ id }: Readonly<{ id: string }>) {
           : 'Premio no disponible'
         : !session
           ? 'Ingresá para canjear'
-          : !enough && !wallet.loading
-            ? 'Te faltan puntos'
-            : `Canjear por ${pointsLabel(reward.pointsCost)}`;
+          : wallet.loading
+            ? `Canjear por ${pointsLabel(reward.pointsCost)}`
+            : wallet.error || wallet.data == null
+              ? 'Saldo no disponible'
+              : !enough
+                ? 'Te faltan puntos'
+                : `Canjear por ${pointsLabel(reward.pointsCost)}`;
   return (
     <CitizenPage
       title="Detalle del premio"
@@ -95,7 +102,12 @@ function RewardDetail({ id }: Readonly<{ id: string }>) {
       }
     >
       <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
-      {!loading && !error && !reward && <InfoNote>Este premio ya no está disponible.</InfoNote>}
+      {!loading && !error && !reward && (
+        <>
+          <InfoNote>Este premio ya no está disponible.</InfoNote>
+          <ActionButton title="Ver otros premios" onPress={() => router.replace('/rewards')} />
+        </>
+      )}
       {reward && (
         <>
           <View style={styles.hero}>
@@ -141,8 +153,11 @@ function RewardDetail({ id }: Readonly<{ id: string }>) {
                 <Text style={s.body}>Costo: {pointsLabel(reward.pointsCost)}</Text>
                 <Text style={s.body}>
                   Tu saldo:{' '}
-                  {wallet.loading ? 'Actualizando…' : (wallet.data?.points ?? 'No disponible')}{' '}
-                  puntos
+                  {wallet.loading
+                    ? 'Actualizando…'
+                    : wallet.data != null
+                      ? pointsLabel(wallet.data.points)
+                      : 'No disponible'}
                 </Text>
                 {wallet.data && (
                   <Text style={s.label}>
@@ -187,22 +202,23 @@ function RewardDetail({ id }: Readonly<{ id: string }>) {
     </CitizenPage>
   );
 }
-const styles = StyleSheet.create({
-  hero: { borderRadius: 18, overflow: 'hidden' },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10,30,20,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modal: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    gap: 14,
-  },
-  cancel: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    hero: { borderRadius: 18, overflow: 'hidden' },
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    modal: {
+      width: '100%',
+      maxWidth: 400,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 24,
+      gap: 14,
+    },
+    cancel: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  });

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
@@ -10,32 +10,26 @@ import type { CompanyPortalData } from '@/models/Portal';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
 import { portalCommand, sendCompanyInvitation } from '@/services/portal.service';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import {
   OrganizationCard,
   PortalFeedback,
   PortalField,
   PortalLink,
-  PortalSelect,
-  portalStyles as s,
+  usePortalStyles,
 } from './PortalUI';
 
-const formCard = {
-  gap: 16,
-  padding: 16,
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  backgroundColor: colors.surface,
-} as const;
-
 export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
   const { user, profile } = useAuth();
   const { refresh } = useCompanyPortal();
   const [name, setName] = useState(''),
     [email, setEmail] = useState('');
   const [limit, setLimit] = useState(String(data.company.workerLimit + 10)),
     [reason, setReason] = useState('');
+  const [confirmingDisableId, setConfirmingDisableId] = useState<string | null>(null);
   const action = usePortalAction(),
     invite = usePortalAction(),
     request = usePortalAction();
@@ -71,20 +65,57 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
           }`}
           right={m.userId === user?.id ? <CodePill code="Tú" /> : undefined}
         >
-          {m.role === 'company_worker' && (
-            <PortalLink
-              title={m.status === 'DISABLED' ? 'Reactivar acceso' : 'Deshabilitar acceso'}
-              disabled={action.busy}
-              onPress={() =>
-                void action.run(() =>
-                  command('set_member_status', {
-                    id: m.id,
-                    status: m.status === 'DISABLED' ? 'ACTIVE' : 'DISABLED',
-                  })
-                )
-              }
-            />
-          )}
+          {m.role === 'company_worker' &&
+            (m.status === 'DISABLED' ? (
+              <PortalLink
+                title="Reactivar acceso"
+                disabled={action.busy}
+                onPress={() =>
+                  void action.run(() =>
+                    command('set_member_status', {
+                      id: m.id,
+                      status: 'ACTIVE',
+                    })
+                  )
+                }
+              />
+            ) : confirmingDisableId === m.id ? (
+              <View style={[styles.dangerBox, { marginTop: 12 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                  <Ionicons name="alert-circle-outline" size={20} color={colors.danger} />
+                  <Text style={[s.body, { flex: 1, minWidth: 0, color: colors.danger }]}>
+                    Si deshabilitás este acceso, la persona dejará de recibir entregas y validar
+                    premios en la empresa.
+                  </Text>
+                </View>
+                <ActionButton
+                  title="Confirmar deshabilitación"
+                  destructive
+                  loading={action.busy}
+                  onPress={() =>
+                    void action.run(async () => {
+                      await command('set_member_status', {
+                        id: m.id,
+                        status: 'DISABLED',
+                      });
+                      setConfirmingDisableId(null);
+                    })
+                  }
+                />
+                <ActionButton
+                  title="Cancelar"
+                  secondary
+                  disabled={action.busy}
+                  onPress={() => setConfirmingDisableId(null)}
+                />
+              </View>
+            ) : (
+              <PortalLink
+                title="Deshabilitar acceso"
+                disabled={action.busy}
+                onPress={() => setConfirmingDisableId(m.id)}
+              />
+            ))}
         </InfoCard>
       ))}
       {data.invitations
@@ -116,7 +147,7 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
       <Text accessibilityRole="header" style={s.heading}>
         Invitar nuevo miembro
       </Text>
-      <View style={formCard}>
+      <View style={styles.formCard}>
         <PortalField
           label="Nombre"
           labelStyle={s.label}
@@ -135,13 +166,7 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
           autoComplete="email"
           editable={!invite.busy}
         />
-        <PortalSelect
-          label="Rol en la organización"
-          value="company_worker"
-          options={[{ value: 'company_worker', label: 'Trabajador' }]}
-          onChange={() => undefined}
-          disabled
-        />
+        <Text style={s.label}>Rol asignado: Trabajador</Text>
         <Text style={s.hint}>
           Los trabajadores reciben entregas y validan premios. Para sumar otro responsable, contactá
           al equipo de {brand.name}.
@@ -191,8 +216,9 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
             <PortalField
               label="Límite solicitado"
               value={limit}
-              onChangeText={setLimit}
+              onChangeText={(value) => setLimit(value.replace(/\D/g, ''))}
               keyboardType="number-pad"
+              maxLength={6}
               editable={!request.busy}
             />
             <PortalField
@@ -208,15 +234,33 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
               secondary
               loading={request.busy}
               onPress={() =>
-                void request.run(
-                  () =>
-                    command('request_limit', {
-                      companyId: data.company.id,
-                      limit: Number(limit),
-                      reason,
-                    }),
-                  'Solicitud enviada al administrador.'
-                )
+                void request.run(async () => {
+                  const trimmedLimit = limit.trim();
+                  if (!/^\d+$/.test(trimmedLimit)) {
+                    throw new Error('Ingresá un número entero para el límite solicitado.');
+                  }
+                  const parsedLimit = Number(trimmedLimit);
+                  if (
+                    !Number.isSafeInteger(parsedLimit) ||
+                    parsedLimit <= data.company.workerLimit ||
+                    parsedLimit > 1000000
+                  ) {
+                    throw new Error(
+                      `Indicá un límite mayor al actual (${data.company.workerLimit} cupos).`
+                    );
+                  }
+                  if (reason.trim().length < 10) {
+                    throw new Error(
+                      'Contanos el motivo de la ampliación (al menos 10 caracteres).'
+                    );
+                  }
+                  await command('request_limit', {
+                    companyId: data.company.id,
+                    limit: parsedLimit,
+                    reason: reason.trim(),
+                  });
+                  setReason('');
+                }, 'Solicitud enviada al administrador.')
               }
             />
           </>
@@ -225,3 +269,23 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
     </>
   );
 }
+
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    formCard: {
+      gap: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+    },
+    dangerBox: {
+      gap: 12,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      backgroundColor: colors.dangerBackground,
+    },
+  });

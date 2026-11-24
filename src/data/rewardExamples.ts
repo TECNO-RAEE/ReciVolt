@@ -1,4 +1,4 @@
-import type { Reward } from '@/models/Reward';
+import { rewardUnsplashPhotoUrl, type Reward } from '@/models/Reward';
 // Used only in the explicitly labelled preview when no businesses have published rewards.
 export const rewardExamples: Reward[] = [
   [
@@ -49,7 +49,7 @@ export const rewardExamples: Reward[] = [
   businessName: String(businessName),
   category: category as Reward['category'],
   pointsCost: Number(pointsCost),
-  imageUrl: `https://images.unsplash.com/${photo}?auto=format&fit=crop&w=800&q=85`,
+  imageUrl: rewardUnsplashPhotoUrl(String(photo)),
   description:
     id === 'cafe'
       ? 'Premio de ejemplo: un café en Cafe del Pellegrini por 100 puntos globales. Esta muestra no permite canjes reales.'

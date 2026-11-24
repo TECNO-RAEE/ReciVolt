@@ -10,8 +10,17 @@ import {
   View,
 } from 'react-native';
 import { AccountRequired } from '@/components/auth/AccountRequired';
+import { PortalFeedback } from '@/components/portal/PortalUI';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { rewardStyles as s } from '@/components/rewards/RewardsUI';
+import { useRewardStyles } from '@/components/rewards/RewardsUI';
+import {
+  activityFilters,
+  filterActivityEntries,
+  getActivityPresentationState,
+  resolveActivityFilter,
+  type ActivityFilter,
+} from '@/models/ActivityFilter';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   getActivityHistoryPage,
@@ -19,15 +28,8 @@ import {
   type ActivityEntry,
   type ActivityPageCursor,
 } from '@/services/activity.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
-const filters = ['Todos', 'Entregas', 'Retiros', 'Canjes'] as const;
-type Filter = (typeof filters)[number];
-const kindForFilter: Record<Exclude<Filter, 'Todos'>, ActivityEntry['kind']> = {
-  Entregas: 'DELIVERY',
-  Retiros: 'PICKUP',
-  Canjes: 'REDEMPTION',
-};
 const initialCursor = (): ActivityPageCursor => ({ deliveries: 0, pickups: 0, redemptions: 0 });
 
 export default function MyActivityScreen() {
@@ -36,10 +38,17 @@ export default function MyActivityScreen() {
 }
 
 function MyActivity() {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ tab?: string }>();
-  const initialFilter =
-    filters.find((filter) => filter.toLowerCase() === params.tab?.toLowerCase()) ?? 'Todos';
-  const [filter, setFilter] = useState<Filter>(initialFilter);
+  const requestedFilter = resolveActivityFilter(params.tab);
+  const [filter, setFilter] = useState<ActivityFilter>(requestedFilter);
+
+  useEffect(() => {
+    const syncFilter = setTimeout(() => setFilter(requestedFilter), 0);
+    return () => clearTimeout(syncFilter);
+  }, [requestedFilter]);
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [nextCursor, setNextCursor] = useState<ActivityPageCursor>(initialCursor);
   const [hasMore, setHasMore] = useState(true);
@@ -113,29 +122,36 @@ function MyActivity() {
     }
   }, [hasMore, nextCursor]);
 
-  const visible = useMemo(
-    () =>
-      entries.filter((entry) => filter === 'Todos' || entry.kind === kindForFilter[filter]),
-    [entries, filter]
-  );
+  const visible = useMemo(() => filterActivityEntries(entries, filter), [entries, filter]);
   const hasPickups = entries.some((entry) => entry.kind === 'PICKUP');
   const mayHaveMorePickups = nextCursor.pickups !== null;
-  const showRetirementInfo =
-    !hasPickups &&
-    !mayHaveMorePickups &&
-    (filter === 'Retiros' || filter === 'Todos');
+  const presentation = getActivityPresentationState({
+    filter,
+    visibleCount: visible.length,
+    totalCount: entries.length,
+    hasPickups,
+    mayHaveMorePickups,
+    loading,
+    error,
+  });
+  const { showRetirementInfo } = presentation;
 
   const listHeader = (
     <View style={styles.listHeader}>
       <View style={styles.filters} accessibilityRole="tablist">
-        {filters.map((item) => {
+        {activityFilters.map((item) => {
           const selected = filter === item;
           return (
             <Pressable
               key={item}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
-              onPress={() => setFilter(item)}
+              onPress={() => {
+                setFilter(item);
+                if (params.tab !== undefined || item !== 'Todos') {
+                  router.setParams({ tab: item === 'Todos' ? undefined : item });
+                }
+              }}
               style={[styles.filter, selected && styles.selectedFilter]}
             >
               <Text style={[styles.filterText, selected && styles.selectedFilterText]}>{item}</Text>
@@ -147,15 +163,18 @@ function MyActivity() {
   );
 
   const listEmpty = () => {
-    if (loading) return <ActivityIndicator accessibilityLabel="Cargando actividad" color={colors.primary} />;
-    if (error && entries.length === 0) {
+    if (presentation.showLoading) {
+      return <ActivityIndicator accessibilityLabel="Cargando actividad" color={colors.primary} />;
+    }
+    if (presentation.showInitialError) {
       return (
-        <Pressable onPress={() => void reload()} style={s.card} accessibilityRole="button">
-          <Text style={s.body}>No pudimos cargar tu actividad. Tocá para reintentar.</Text>
-        </Pressable>
+        <View style={s.card}>
+          <PortalFeedback error="No pudimos cargar tu actividad." />
+          <ActionButton title="Reintentar" secondary onPress={() => void reload()} />
+        </View>
       );
     }
-    if (filter !== 'Retiros' && !showRetirementInfo) {
+    if (presentation.showEmptySectionMessage) {
       return (
         <View style={s.card}>
           <Text style={s.body}>Todavía no hay actividad en esta sección.</Text>
@@ -178,12 +197,18 @@ function MyActivity() {
       )}
       {loadingMore && <ActivityIndicator accessibilityLabel="Cargando más actividad" color={colors.primary} />}
       {!!error && entries.length > 0 && (
-        <Pressable onPress={() => void loadMore()} style={s.card} accessibilityRole="button">
-          <Text style={s.body}>No pudimos cargar más actividad. Tocá para reintentar.</Text>
-        </Pressable>
+        <View style={s.card}>
+          <PortalFeedback error="No pudimos cargar más actividad." />
+          <ActionButton title="Reintentar" secondary onPress={() => void loadMore()} />
+        </View>
       )}
       {!loading && !loadingMore && hasMore && visible.length === 0 && (
-        <Pressable onPress={() => void loadMore()} style={styles.loadMoreButton} accessibilityRole="button">
+        <Pressable
+          onPress={() => void loadMore()}
+          style={({ pressed }) => [styles.loadMoreButton, pressed && { opacity: 0.75 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Cargar más movimientos"
+        >
           <Text style={styles.loadMoreText}>Cargar más movimientos</Text>
         </Pressable>
       )}
@@ -218,6 +243,9 @@ function ActivitySeparator() {
 }
 
 function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <Pressable
@@ -238,10 +266,10 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
         )}
       </View>
       <View style={styles.description}>
-        <Text style={s.label} numberOfLines={1}>{entry.source}</Text>
-        <Text style={s.body}>{entry.title}</Text>
+        <Text style={styles.source} numberOfLines={1}>{entry.source}</Text>
+        <Text style={styles.entryTitle}>{entry.title}</Text>
         {!!entry.detail && <Text style={s.body} numberOfLines={1}>{entry.detail}</Text>}
-        <Text style={s.body}>{new Date(entry.createdAt).toLocaleDateString('es-AR')}</Text>
+        <Text style={styles.date}>{new Date(entry.createdAt).toLocaleDateString('es-AR')}</Text>
       </View>
       <View style={styles.amountBlock}>
         {entry.amount !== null && (
@@ -260,21 +288,76 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
   );
 }
 
-const styles = StyleSheet.create({
-  listHeader: { paddingBottom: 16 },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  filter: { minHeight: 44, minWidth: 72, paddingHorizontal: 14, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  selectedFilter: { backgroundColor: colors.primary, borderColor: colors.primary },
-  filterText: { color: colors.textSecondary, fontFamily: fonts.semiBold, fontSize: 14 },
-  selectedFilterText: { color: colors.textOnPrimary },
-  row: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16, backgroundColor: colors.surface, boxShadow: '0 4px 16px rgba(22,65,39,0.05)' },
-  eventIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  description: { flex: 1, gap: 3 },
-  amountBlock: { alignItems: 'flex-end', minWidth: 56 },
-  amount: { fontFamily: fonts.bold, fontSize: 18 },
-  listFooter: { gap: 12, paddingTop: 16 },
-  emptyRetirements: { minHeight: 190, padding: 20, gap: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  truckIcon: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  loadMoreButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  loadMoreText: { color: colors.primaryDark, fontFamily: fonts.semiBold, fontSize: 14 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    listHeader: { paddingBottom: 16 },
+    filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    filter: {
+      minHeight: 44,
+      minWidth: 72,
+      paddingHorizontal: 14,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    selectedFilter: { backgroundColor: colors.primaryAction, borderColor: colors.primaryAction },
+    filterText: { color: colors.textSecondary, fontFamily: fonts.semiBold, fontSize: 14 },
+    selectedFilterText: { color: colors.textOnPrimary },
+    row: {
+      minHeight: 96,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      padding: 14,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      boxShadow: '0 4px 16px rgba(22,65,39,0.05)',
+    },
+    eventIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    description: { flex: 1, gap: 3 },
+    source: { fontFamily: fonts.semiBold, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+    entryTitle: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 22, color: colors.text },
+    date: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+    amountBlock: { alignItems: 'flex-end', minWidth: 56 },
+    amount: { fontFamily: fonts.bold, fontSize: 18 },
+    listFooter: { gap: 12, paddingTop: 16 },
+    emptyRetirements: {
+      minHeight: 190,
+      padding: 20,
+      gap: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    truckIcon: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadMoreButton: {
+      minHeight: 44,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadMoreText: { color: colors.primaryDark, fontFamily: fonts.semiBold, fontSize: 14 },
+  });

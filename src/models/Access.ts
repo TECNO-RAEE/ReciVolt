@@ -38,3 +38,14 @@ export function canManageCompany(role: AppRole | null): boolean {
 export function canAccessCitizen(role: AppRole | null, guest: boolean): boolean {
   return role === 'citizen' || (role === null && guest);
 }
+export function shouldRedirectToPendingInvitations(input: {
+  role: AppRole | null;
+  hasPendingInvitations?: boolean;
+  invitationsPostponed?: boolean;
+}): boolean {
+  return (
+    input.role === 'citizen' &&
+    Boolean(input.hasPendingInvitations) &&
+    !input.invitationsPostponed
+  );
+}

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -8,18 +8,22 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  type TextInputInstance,
   View,
 } from 'react-native';
 
 import { AuthTextField } from '@/components/auth/AuthTextField';
+import { InfoNote } from '@/components/rewards/RewardsUI';
 import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { brand } from '@/config/brand';
 import { termsUrl } from '@/config/legal';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { register } from '@/services/auth.service';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
 import { useAuth } from '@/providers/AuthProvider';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getAuthErrorCode(error: unknown) {
   if (typeof error === 'object' && error !== null && 'code' in error) {
@@ -43,6 +47,18 @@ function getRegisterErrorMessage(error: unknown) {
     return 'Ya existe una cuenta con ese correo. Iniciá sesión o recuperá tu contraseña.';
   }
 
+  if (code === 'weak_password') {
+    return 'Elegí una contraseña más segura, de al menos 6 caracteres.';
+  }
+
+  if (code === 'email_address_invalid') {
+    return 'Ingresá un correo electrónico válido.';
+  }
+
+  if (code === 'validation_failed') {
+    return 'Revisá el formato del correo y que la contraseña tenga al menos 6 caracteres.';
+  }
+
   if (
     code === 'over_request_rate_limit' ||
     code === 'over_email_send_rate_limit' ||
@@ -63,10 +79,14 @@ function getRegisterErrorMessage(error: unknown) {
 }
 
 export default function CreateAccountScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ intent?: string }>();
   const intent = parseAuthIntent(params.intent);
   const registrationIntent = intent === 'invitations' ? intent : null;
   const { prepareAuth } = useAuth();
+  const emailInputRef = useRef<TextInputInstance>(null);
+  const passwordInputRef = useRef<TextInputInstance>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -83,8 +103,14 @@ export default function CreateAccountScreen() {
       return;
     }
 
-    if (!email.trim()) {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
       setError('Ingresá tu correo electrónico.');
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setError('Ingresá un correo electrónico válido.');
       return;
     }
 
@@ -98,7 +124,7 @@ export default function CreateAccountScreen() {
       return;
     }
 
-    if (!acceptedTerms) {
+    if (termsUrl && !acceptedTerms) {
       setError('Aceptá los Términos de uso para crear tu cuenta.');
       return;
     }
@@ -109,9 +135,9 @@ export default function CreateAccountScreen() {
 
       const { session } = await register({
         name,
-        email,
+        email: normalizedEmail,
         password,
-        termsAcceptedAt: new Date().toISOString(),
+        termsAcceptedAt: termsUrl ? new Date().toISOString() : null,
         termsUrl,
       });
       if (session) {
@@ -122,9 +148,9 @@ export default function CreateAccountScreen() {
           params: { ...(registrationIntent ? { intent: registrationIntent } : {}), confirm: '1' },
         });
       }
-    } catch (error) {
+    } catch (err) {
       prepareAuth(null);
-      setError(getRegisterErrorMessage(error));
+      setError(getRegisterErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -143,9 +169,6 @@ export default function CreateAccountScreen() {
         <View style={styles.screen}>
           <View style={styles.hero}>
             <AuthArtwork kind="account" />
-            <Text accessibilityRole="header" style={styles.title}>
-              Creá tu cuenta
-            </Text>
             <Text style={styles.subtitle}>
               Unite a {brand.name} y empezá a reciclar tus electrónicos de forma simple.
             </Text>
@@ -156,11 +179,17 @@ export default function CreateAccountScreen() {
               label="Nombre y apellido"
               iconName="person-outline"
               value={name}
-              onChangeText={setName}
+              onChangeText={(value) => {
+                setName(value);
+                setError(null);
+              }}
               placeholder="Ej.: Ana Pérez"
               autoCapitalize="words"
               autoCorrect={false}
               autoComplete="name"
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => emailInputRef.current?.focus()}
               editable={!loading}
             />
           </View>
@@ -169,13 +198,20 @@ export default function CreateAccountScreen() {
             <AuthTextField
               label="Correo electrónico"
               iconName="mail-outline"
+              inputRef={emailInputRef}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(value) => {
+                setEmail(value);
+                setError(null);
+              }}
               placeholder="nombre@correo.com"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="email"
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
               editable={!loading}
             />
           </View>
@@ -184,48 +220,67 @@ export default function CreateAccountScreen() {
             <AuthTextField
               label="Contraseña"
               iconName="lock-closed-outline"
+              inputRef={passwordInputRef}
               value={password}
-              onChangeText={setPassword}
-              placeholder="Mínimo 6 caracteres"
+              onChangeText={(value) => {
+                setPassword(value);
+                setError(null);
+              }}
+              placeholder="Creá una contraseña"
               passwordToggle
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="new-password"
+              returnKeyType="done"
               editable={!loading}
-              onSubmitEditing={handleRegister}
+              onSubmitEditing={() => void handleRegister()}
             />
+            <Text style={styles.hint}>Mínimo 6 caracteres</Text>
           </View>
 
-          <View style={styles.terms}>
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityLabel="Acepto los Términos de uso"
-              accessibilityState={{ checked: acceptedTerms, disabled: loading }}
-              disabled={loading}
-              onPress={() => setAcceptedTerms(!acceptedTerms)}
-              style={styles.checkbox}
-            >
-              <Ionicons
-                name={acceptedTerms ? 'checkbox' : 'square-outline'}
-                size={26}
-                color={acceptedTerms ? colors.primary : colors.textSecondary}
-              />
-            </Pressable>
-            <Text style={styles.termsText}>
-              Acepto los{' '}
-              <Text
-                accessibilityRole="link"
-                style={styles.inlineLink}
-                onPress={() => router.push('/terms')}
+          {termsUrl ? (
+            <View style={styles.termsBlock}>
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityLabel={`Acepto los Términos de uso de ${brand.name}`}
+                accessibilityState={{ checked: acceptedTerms, disabled: loading }}
+                disabled={loading}
+                onPress={() => {
+                  setAcceptedTerms((value) => !value);
+                  setError(null);
+                }}
+                style={({ pressed }) => [styles.termsRow, pressed && styles.pressed]}
               >
-                Términos de uso
-              </Text>{' '}
-              de {brand.name}.
-            </Text>
-          </View>
+                <Ionicons
+                  name={acceptedTerms ? 'checkbox' : 'square-outline'}
+                  size={26}
+                  color={acceptedTerms ? colors.primary : colors.textSecondary}
+                />
+                <Text style={styles.termsText}>Acepto los Términos de uso de {brand.name}.</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Términos de uso"
+                disabled={loading}
+                onPress={() => router.push('/terms')}
+                style={({ pressed }) => [
+                  styles.termsLinkButton,
+                  pressed && styles.pressed,
+                  loading && styles.disabled,
+                ]}
+              >
+                <Text style={styles.inlineLink}>Términos de uso</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <InfoNote>
+              Los Términos de uso de ReciVolt se encuentran en preparación. Podrás consultarlos desde
+              Configuraciones cuando estén publicados.
+            </InfoNote>
+          )}
 
           {error && (
-            <Text accessibilityRole="alert" style={styles.error}>
+            <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>
               {error}
             </Text>
           )}
@@ -238,7 +293,11 @@ export default function CreateAccountScreen() {
 
           <Pressable
             accessibilityRole="link"
-            style={styles.textLink}
+            style={({ pressed }) => [
+              styles.textLink,
+              pressed && styles.pressed,
+              loading && styles.disabled,
+            ]}
             disabled={loading}
             onPress={() => router.replace(authRoute('/login', registrationIntent))}
           >
@@ -247,7 +306,11 @@ export default function CreateAccountScreen() {
 
           <Pressable
             accessibilityRole="link"
-            style={styles.textLink}
+            style={({ pressed }) => [
+              styles.textLink,
+              pressed && styles.pressed,
+              loading && styles.disabled,
+            ]}
             disabled={loading}
             onPress={() => router.push({ pathname: '/contact', params: { topic: 'point' } })}
           >
@@ -259,45 +322,67 @@ export default function CreateAccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
-  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
-  hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 26,
-    lineHeight: 34,
-    textAlign: 'center',
-    color: colors.text,
-  },
-  subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  field: { width: '100%' },
-  terms: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  checkbox: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  termsText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 21,
-    color: colors.textSecondary,
-  },
-  inlineLink: { color: colors.primaryDark, textDecorationLine: 'underline' },
-  textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
-  textLinkLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.primaryDark,
-    textDecorationLine: 'underline',
-  },
-  pointLink: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
-  pressed: { opacity: 0.75 },
-  disabled: { opacity: 0.6 },
-  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
+    screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
+    hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
+    subtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    field: { width: '100%', gap: 6 },
+    hint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.textSecondary,
+    },
+    termsBlock: { gap: 4 },
+    termsRow: {
+      minHeight: 44,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 4,
+    },
+    termsText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 21,
+      color: colors.text,
+    },
+    termsLinkButton: {
+      minHeight: 44,
+      alignSelf: 'flex-start',
+      justifyContent: 'center',
+      paddingLeft: 36,
+    },
+    inlineLink: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.primaryDark,
+      textDecorationLine: 'underline',
+    },
+    textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
+    textLinkLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.primaryDark,
+      textDecorationLine: 'underline',
+    },
+    pointLink: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: colors.primaryDark,
+      textDecorationLine: 'underline',
+    },
+    pressed: { opacity: 0.75 },
+    disabled: { opacity: 0.6 },
+    error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
+  });

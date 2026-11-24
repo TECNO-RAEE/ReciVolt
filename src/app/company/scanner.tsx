@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { PortalPage } from '@/components/portal/PortalUI';
 import {
   DeliveryConfirmationView,
   RedemptionConfirmationView,
@@ -10,9 +11,7 @@ import {
   ScannerLookupView,
 } from '@/components/scanner';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { usePortalAction } from '@/hooks/usePortalData';
-import { useScrollReset } from '@/hooks/useScrollReset';
 import {
   deliveryQuantity,
   effectiveDeliveryStatus,
@@ -22,37 +21,41 @@ import {
 import type { Redemption } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { deliveryCommand } from '@/services/delivery.service';
+import { getPickupByCode } from '@/services/pickup.service';
 import { rewardCommand } from '@/services/reward.service';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function ScannerScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { company } = useAuth();
-  const { code: initialCode } = useLocalSearchParams<{ code?: string }>();
+  const { code: rawInitialCode } = useLocalSearchParams<{ code?: string | string[] }>();
+  const initialCode = Array.isArray(rawInitialCode) ? rawInitialCode[0] : rawInitialCode;
 
   if (!company) {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Validar código" back="/company" />
+      <PortalPage title="Validar código" back="/company">
         <View style={styles.centerContainer}>
           <View style={styles.emptyIconCircle}>
             <Ionicons name="business-outline" size={36} color={colors.textSecondary} />
           </View>
           <Text style={styles.emptyTitle}>Seleccioná una empresa activa</Text>
           <Text style={styles.emptySubtitle}>
-            Para escanear y validar entregas o premios debés tener una empresa activa asignada.
+            Para escanear y validar entregas, retiros o premios debés tener una empresa activa
+            asignada.
           </Text>
           <ActionButton
             title="Ir al panel de empresa"
             onPress={() => router.replace('/company')}
           />
         </View>
-      </View>
+      </PortalPage>
     );
   }
 
   return (
     <Scanner
-      key={company.companyId}
+      key={`${company.companyId}:${initialCode?.trim().toUpperCase() ?? ''}`}
       companyId={company.companyId}
       companyName={company.companyName}
       initialCode={initialCode}
@@ -65,16 +68,19 @@ function Scanner({
   companyName,
   initialCode,
 }: Readonly<{ companyId: string; companyName: string; initialCode?: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [permission, requestPermission] = useCameraPermissions();
   const [camera, setCamera] = useState(false);
   const scanLock = useRef(false);
-  const [code, setCode] = useState(initialCode ?? '');
+  const autoLookupCode = useRef<string | null>(null);
+  const [resolvingInitial, setResolvingInitial] = useState(() => Boolean(initialCode?.trim()));
+  const [code, setCode] = useState(() => initialCode?.trim().toUpperCase() ?? '');
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [redemption, setRedemption] = useState<Redemption | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [helpModalVisible, setHelpModalVisible] = useState(false);
 
-  const scroll = useScrollReset();
   const action = usePortalAction();
 
   useFocusEffect(
@@ -86,6 +92,15 @@ function Scanner({
     )
   );
 
+  async function openPickupByCode(pickupCode: string) {
+    const found = await getPickupByCode(companyId, pickupCode);
+    if (!found) {
+      throw new Error('Código no encontrado para esta empresa.');
+    }
+    setCode(pickupCode);
+    router.push({ pathname: '/company/pickups/[id]/receive', params: { id: found.id } });
+  }
+
   async function lookup(raw: string) {
     setDelivery(null);
     setRedemption(null);
@@ -96,22 +111,44 @@ function Scanner({
       setRedemption(found);
       return;
     }
-    if (parsed.type !== 'DELIVERY') {
-      throw new Error(
-        parsed.type === 'PICKUP'
-          ? 'Este código es de retiro. Ese flujo todavía no está habilitado.'
-          : 'Este código es de recompensa. Ese flujo todavía no está habilitado.'
-      );
+    if (parsed.type === 'PICKUP') {
+      await openPickupByCode(parsed.code);
+      return;
     }
-    const found = await deliveryCommand('lookup', { companyId, code: parsed.code });
-    setCode(parsed.code);
-    setDelivery(found);
-    setQuantities(
-      Object.fromEntries(
-        found.items.map((i) => [i.categoryId, i.confirmedQuantity ?? i.declaredQuantity])
-      )
-    );
+    try {
+      const found = await deliveryCommand('lookup', { companyId, code: parsed.code });
+      setCode(parsed.code);
+      setDelivery(found);
+      setQuantities(
+        Object.fromEntries(
+          found.items.map((i) => [i.categoryId, i.confirmedQuantity ?? i.declaredQuantity])
+        )
+      );
+    } catch (err) {
+      const message =
+        err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : '';
+      // Manual TR- codes default to DELIVERY in parseOperationCode; fall back to pickups if not found.
+      if (message.includes('Código no encontrado')) {
+        const pickup = await getPickupByCode(companyId, parsed.code);
+        if (pickup) {
+          setCode(parsed.code);
+          router.push({ pathname: '/company/pickups/[id]/receive', params: { id: pickup.id } });
+          return;
+        }
+      }
+      throw err;
+    }
   }
+
+  useEffect(() => {
+    const trimmed = initialCode?.trim().toUpperCase();
+    if (!trimmed || autoLookupCode.current === trimmed) return;
+    autoLookupCode.current = trimmed;
+    void action.run(() => lookup(trimmed), '').finally(() => setResolvingInitial(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Auto-run lookup once per initialCode/companyId.
+  }, [companyId, initialCode]);
 
   const handleToggleCamera = () => {
     void action.run(async () => {
@@ -190,15 +227,16 @@ function Scanner({
   }
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader title={title} back="/company" action={headerAction} />
-      <ScrollView
-        ref={scroll}
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {!delivery && !redemption && (
+    <>
+      <PortalPage title={title} back="/company" action={headerAction}>
+        {resolvingInitial && !delivery && !redemption && (
+          <View style={styles.resolvingBox}>
+            <ActivityIndicator color={colors.primary} accessibilityLabel="Buscando código" />
+            <Text style={styles.emptySubtitle}>Consultando código…</Text>
+          </View>
+        )}
+
+        {!resolvingInitial && !delivery && !redemption && (
           <ScannerLookupView
             camera={camera}
             permissionGranted={Boolean(permission?.granted)}
@@ -260,65 +298,59 @@ function Scanner({
             onReset={handleReset}
           />
         )}
-      </ScrollView>
+      </PortalPage>
 
       <ScannerHelpModal
         visible={helpModalVisible}
         onClose={() => setHelpModalVisible(false)}
       />
-    </View>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    width: '100%',
-    maxWidth: 600,
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 14,
-  },
-  emptyIconCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: colors.surfaceSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 320,
-    marginBottom: 10,
-  },
-  headerHelpBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    centerContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      gap: 14,
+    },
+    emptyIconCircle: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: colors.surfaceSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    emptyTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    emptySubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      maxWidth: 320,
+      marginBottom: 10,
+    },
+    headerHelpBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    resolvingBox: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 48,
+      gap: 12,
+    },
+  });
