@@ -34,6 +34,7 @@ type AuthContextValue = {
   accessError: string | null;
   recoveringPassword: boolean;
   completePasswordRecovery: (password: string) => Promise<void>;
+  cancelPasswordRecovery: () => Promise<void>;
   guest: boolean;
   onboardingComplete: boolean;
   logout: () => Promise<void>;
@@ -148,6 +149,11 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     prepareAuth(null);
     setRecoveringPassword(false);
   }, []);
+  const cancelPasswordRecovery = useCallback(async () => {
+    await logoutService();
+    prepareAuth(null);
+    setRecoveringPassword(false);
+  }, []);
   const completeOnboarding = useCallback(async () => {
     await saveOnboardingComplete();
     setOnboardingComplete(true);
@@ -193,6 +199,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       accessError: currentAccount?.error ?? null,
       recoveringPassword,
       completePasswordRecovery,
+      cancelPasswordRecovery,
       guest,
       onboardingComplete,
       logout,
@@ -215,6 +222,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       loading,
       recoveringPassword,
       completePasswordRecovery,
+      cancelPasswordRecovery,
       guest,
       onboardingComplete,
       logout,

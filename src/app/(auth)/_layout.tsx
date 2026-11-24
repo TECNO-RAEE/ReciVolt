@@ -18,7 +18,7 @@ export default function AuthLayout() {
       <Stack.Screen name="register" options={{ title: 'Crear cuenta' }} />
       <Stack.Screen name="forgot-password" options={{ title: 'Recuperar contraseña' }} />
       <Stack.Protected guard={Boolean(session) && recoveringPassword}>
-        <Stack.Screen name="new-password" options={{ title: 'Nueva contraseña' }} />
+        <Stack.Screen name="new-password" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Screen
         name="welcome"
