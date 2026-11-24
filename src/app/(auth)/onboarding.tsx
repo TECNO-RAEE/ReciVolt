@@ -28,13 +28,21 @@ export default function OnboardingScreen() {
   const { replay } = useLocalSearchParams<{ replay?: string }>();
   const { onboardingComplete, continueAsGuest } = useAuth();
   const [index, setIndex] = useState(0);
-  const [saving, setSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'guest' | 'register' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  if (onboardingComplete && replay !== '1') return <Redirect href="/" />;
+  const [leavingToAuth, setLeavingToAuth] = useState(false);
+  const saving = pendingAction !== null;
+
+  if (onboardingComplete && replay !== '1' && !leavingToAuth) {
+    return <Redirect href="/" />;
+  }
+
   const slide = slides[index];
+  const canGoBack = router.canGoBack();
+
   async function finish() {
     if (saving) return;
-    setSaving(true);
+    setPendingAction('guest');
     setError(null);
     try {
       await continueAsGuest();
@@ -42,19 +50,36 @@ export default function OnboardingScreen() {
     } catch {
       setError('No pudimos guardar tu preferencia. Intentá nuevamente.');
     } finally {
-      setSaving(false);
+      setPendingAction(null);
     }
   }
+
+  async function handleCreateAccount() {
+    if (saving) return;
+    setPendingAction('register');
+    setError(null);
+    setLeavingToAuth(true);
+    try {
+      await continueAsGuest();
+      router.push('/register');
+    } catch {
+      setLeavingToAuth(false);
+      setError('No pudimos guardar tu preferencia. Intentá nuevamente.');
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <ScreenHeader
         title={`Conocé ${brand.name}`}
         back="/"
+        hideBack={index === 0 && !canGoBack}
         onBack={() => {
           if (saving) return;
           if (index > 0) setIndex(index - 1);
-          else if (router.canGoBack()) router.back();
-          else void finish();
+          else if (canGoBack) router.back();
         }}
         action={
           <Pressable
@@ -139,14 +164,29 @@ export default function OnboardingScreen() {
               {error}
             </Text>
           )}
-          <ActionButton
-            title={index === 2 ? 'Comenzar' : 'Siguiente'}
-            loading={saving}
-            onPress={() => {
-              if (index === 2) void finish();
-              else setIndex(index + 1);
-            }}
-          />
+          {index === 2 ? (
+            <>
+              <ActionButton
+                title="Crear cuenta"
+                loading={pendingAction === 'register'}
+                disabled={saving}
+                onPress={() => void handleCreateAccount()}
+              />
+              <ActionButton
+                title="Explorar sin cuenta"
+                secondary
+                loading={pendingAction === 'guest'}
+                disabled={saving}
+                onPress={() => void finish()}
+              />
+            </>
+          ) : (
+            <ActionButton
+              title="Siguiente"
+              disabled={saving}
+              onPress={() => setIndex(index + 1)}
+            />
+          )}
           <Pressable
             accessibilityRole="button"
             style={styles.skip}
