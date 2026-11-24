@@ -29,9 +29,10 @@ Test runner: `npx tsc --noEmit && npm run lint && node --test tests/*.test.mjs`.
 | T1 | S1 (Missing reward photos + unified thumbnail) | inline | 0a7d37c |
 | T2 | S2 (Theme infrastructure + HIG dark tokens + DESIGN.md/design.json + shared UI) | inline | a7b0294 |
 | T3 | S2 (Migrate screen/component `@/theme` consumers to `useColors()`) | delegated parallel writers (disjoint surfaces) | a7b0294 |
-| T4 | S3 (QR confirmation watcher, silent polling, ScanSuccessModal) | inline | committing (verified 96/96 unit + tsc + lint) |
+| T4 | S3 (QR confirmation watcher, silent polling, ScanSuccessModal) | inline | da34b95 |
 
 ## Log
 
 - L1: User requested in follow-up messages (after Blocks 1–5): (1) "otra cosa, algunos premios no tienen foto, revisa y agregales si falta", (2) "hace un modo oscuro luego de que tengas todas los bloques hechosm recorda modo oscuro que respete apple design", (3) "otra cosa, si estas en la pagina de qr y la empresa te escanea y confirma te tiene que aparecer un modal de exito con un boton de volver al inicio". Orca resume directive (`msg_9c8b97be4811`) confirmed executing them in this exact order.
-- L2 (2026-11-24): Implemented S1 (`0a7d37c`), S2 across 94 files (`a7b0294`, 3 parallel writers + `tests/theme.test.mjs` WCAG AA audit + `DESIGN.md` & `.impeccable/design.json` synced), and S3 QR polling/modal (`ConfirmationWatcher`, `useStatusPolling`, `ScanSuccessModal`, `delivery/[id]`, `redemption/[id]`, `pickup/[id]`). Verified `tsc` (0), `lint` (0), `node --test` (96/96).
+- L2 (2026-11-24): Implemented S1 (`0a7d37c`), S2 across 94 files (`a7b0294`, 3 parallel writers + `tests/theme.test.mjs` WCAG AA audit + `DESIGN.md` & `.impeccable/design.json` synced), and S3 QR polling/modal (`da34b95`, `ConfirmationWatcher`, `useStatusPolling`, `ScanSuccessModal`, `delivery/[id]`, `redemption/[id]`, `pickup/[id]`). Verified `tsc` (0), `lint` (0), `node --test tests/*.test.mjs` (96/96), and local Supabase integration tests (5/5).
+- L3 (2026-11-24): Independent `odd-verifier` verified `da34b95` vs `817ba33` across S1, S2, and S3 with verdict PASS (0 blockers). Live OS/browser screenshot checks remain pending outside CLI scope.
