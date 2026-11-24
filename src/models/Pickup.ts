@@ -85,6 +85,10 @@ export function canCoordinatePickup(status: PickupStatus): boolean {
   return status === 'REQUESTED';
 }
 
+export function canEditPickupSchedule(status: PickupStatus): boolean {
+  return status === 'REQUESTED' || status === 'COORDINATED';
+}
+
 export function canMarkPickupInTransit(status: PickupStatus): boolean {
   return status === 'COORDINATED';
 }

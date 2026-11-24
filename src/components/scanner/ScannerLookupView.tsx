@@ -54,7 +54,7 @@ export function ScannerLookupView({
                 <Ionicons name="qr-code-outline" size={64} color={colors.primaryDark} />
               </View>
               <Text style={styles.cameraInstructions}>
-                Escaneá el código de entrega o canje
+                Escaneá el código de entrega, retiro o canje
               </Text>
               <Text style={styles.cameraHint}>
                 Apuntá la cámara al código presentado por el ciudadano.
@@ -104,8 +104,9 @@ export function ScannerLookupView({
         <View style={styles.inputBox}>
           <Ionicons name="barcode-outline" size={22} color={colors.textSecondary} />
           <TextInput
+            accessibilityLabel="Ingresar código manual"
             style={styles.manualInput}
-            placeholder="TR-… o código manual"
+            placeholder="TR-… o TRR-…"
             placeholderTextColor={colors.textSecondary}
             value={code}
             onChangeText={onChangeCode}

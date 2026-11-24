@@ -25,6 +25,7 @@ const tabs = [
   { key: 'COORDINATED', label: 'Coordinados' },
   { key: 'IN_TRANSIT', label: 'En camino' },
   { key: 'COMPLETED', label: 'Recibidos' },
+  { key: 'CANCELLED', label: 'Cancelados' },
 ] as const;
 
 type TabKey = (typeof tabs)[number]['key'];

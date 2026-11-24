@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   DeliveryConfirmationView,
   RedemptionConfirmationView,
@@ -22,12 +22,14 @@ import {
 import type { Redemption } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { deliveryCommand } from '@/services/delivery.service';
+import { getPickupByCode } from '@/services/pickup.service';
 import { rewardCommand } from '@/services/reward.service';
 import { colors, fonts } from '@/theme';
 
 export default function ScannerScreen() {
   const { company } = useAuth();
-  const { code: initialCode } = useLocalSearchParams<{ code?: string }>();
+  const { code: rawInitialCode } = useLocalSearchParams<{ code?: string | string[] }>();
+  const initialCode = Array.isArray(rawInitialCode) ? rawInitialCode[0] : rawInitialCode;
 
   if (!company) {
     return (
@@ -39,7 +41,8 @@ export default function ScannerScreen() {
           </View>
           <Text style={styles.emptyTitle}>Seleccioná una empresa activa</Text>
           <Text style={styles.emptySubtitle}>
-            Para escanear y validar entregas o premios debés tener una empresa activa asignada.
+            Para escanear y validar entregas, retiros o premios debés tener una empresa activa
+            asignada.
           </Text>
           <ActionButton
             title="Ir al panel de empresa"
@@ -52,7 +55,7 @@ export default function ScannerScreen() {
 
   return (
     <Scanner
-      key={company.companyId}
+      key={`${company.companyId}:${initialCode?.trim().toUpperCase() ?? ''}`}
       companyId={company.companyId}
       companyName={company.companyName}
       initialCode={initialCode}
@@ -68,7 +71,9 @@ function Scanner({
   const [permission, requestPermission] = useCameraPermissions();
   const [camera, setCamera] = useState(false);
   const scanLock = useRef(false);
-  const [code, setCode] = useState(initialCode ?? '');
+  const autoLookupCode = useRef<string | null>(null);
+  const [resolvingInitial, setResolvingInitial] = useState(() => Boolean(initialCode?.trim()));
+  const [code, setCode] = useState(() => initialCode?.trim().toUpperCase() ?? '');
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [redemption, setRedemption] = useState<Redemption | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -86,6 +91,15 @@ function Scanner({
     )
   );
 
+  async function openPickupByCode(pickupCode: string) {
+    const found = await getPickupByCode(companyId, pickupCode);
+    if (!found) {
+      throw new Error('Código no encontrado para esta empresa.');
+    }
+    setCode(pickupCode);
+    router.push({ pathname: '/company/pickups/[id]/receive', params: { id: found.id } });
+  }
+
   async function lookup(raw: string) {
     setDelivery(null);
     setRedemption(null);
@@ -96,22 +110,44 @@ function Scanner({
       setRedemption(found);
       return;
     }
-    if (parsed.type !== 'DELIVERY') {
-      throw new Error(
-        parsed.type === 'PICKUP'
-          ? 'Este código es de retiro. Ese flujo todavía no está habilitado.'
-          : 'Este código es de recompensa. Ese flujo todavía no está habilitado.'
-      );
+    if (parsed.type === 'PICKUP') {
+      await openPickupByCode(parsed.code);
+      return;
     }
-    const found = await deliveryCommand('lookup', { companyId, code: parsed.code });
-    setCode(parsed.code);
-    setDelivery(found);
-    setQuantities(
-      Object.fromEntries(
-        found.items.map((i) => [i.categoryId, i.confirmedQuantity ?? i.declaredQuantity])
-      )
-    );
+    try {
+      const found = await deliveryCommand('lookup', { companyId, code: parsed.code });
+      setCode(parsed.code);
+      setDelivery(found);
+      setQuantities(
+        Object.fromEntries(
+          found.items.map((i) => [i.categoryId, i.confirmedQuantity ?? i.declaredQuantity])
+        )
+      );
+    } catch (err) {
+      const message =
+        err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : '';
+      // Manual TR- codes default to DELIVERY in parseOperationCode; fall back to pickups if not found.
+      if (message.includes('Código no encontrado')) {
+        const pickup = await getPickupByCode(companyId, parsed.code);
+        if (pickup) {
+          setCode(parsed.code);
+          router.push({ pathname: '/company/pickups/[id]/receive', params: { id: pickup.id } });
+          return;
+        }
+      }
+      throw err;
+    }
   }
+
+  useEffect(() => {
+    const trimmed = initialCode?.trim().toUpperCase();
+    if (!trimmed || autoLookupCode.current === trimmed) return;
+    autoLookupCode.current = trimmed;
+    void action.run(() => lookup(trimmed), '').finally(() => setResolvingInitial(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Auto-run lookup once per initialCode/companyId.
+  }, [companyId, initialCode]);
 
   const handleToggleCamera = () => {
     void action.run(async () => {
@@ -198,7 +234,14 @@ function Scanner({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {!delivery && !redemption && (
+        {resolvingInitial && !delivery && !redemption && (
+          <View style={styles.resolvingBox}>
+            <ActivityIndicator color={colors.primary} accessibilityLabel="Buscando código" />
+            <Text style={styles.emptySubtitle}>Consultando código…</Text>
+          </View>
+        )}
+
+        {!resolvingInitial && !delivery && !redemption && (
           <ScannerLookupView
             camera={camera}
             permissionGranted={Boolean(permission?.granted)}
@@ -320,5 +363,11 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  resolvingBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    gap: 12,
   },
 });

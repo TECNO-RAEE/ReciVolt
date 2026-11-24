@@ -134,8 +134,9 @@ export function DeliveryConfirmationView({
             <View style={styles.zeroUnitsAlertCard}>
               <Ionicons name="information-circle-outline" size={22} color={colors.danger} />
               <Text style={styles.zeroUnitsAlertText}>
-                No se puede confirmar la recepción con 0 unidades. Si el ciudadano no entregó ningún
-                dispositivo, utilizá &quot;Cancelar y volver&quot;.
+                No se puede confirmar la recepción con 0 unidades. Si no recibiste ningún
+                dispositivo, usá &quot;Escanear otro código&quot; para salir; la entrega quedará
+                pendiente y sin puntos acreditados.
               </Text>
             </View>
           )}
@@ -160,7 +161,7 @@ export function DeliveryConfirmationView({
               onPress={onConfirmDelivery}
             />
             <ActionButton
-              title="Cancelar y volver"
+              title="Escanear otro código"
               secondary
               disabled={busy}
               onPress={onReset}

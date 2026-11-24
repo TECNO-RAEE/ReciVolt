@@ -38,7 +38,7 @@ export function DeliveryHistory({ companyId = null }: Readonly<{ companyId?: str
           </Text>
           {d.status === 'CONFIRMED' && <Text style={s.body}>+{d.points} puntos globales</Text>}
           <PortalLink
-            title={companyId ? 'Ver recepción' : 'Ver entrega / QR'}
+            title={companyId ? 'Ver entrega' : 'Ver entrega / QR'}
             onPress={() =>
               companyId
                 ? router.push({ pathname: '/company/scanner', params: { code: d.code } })

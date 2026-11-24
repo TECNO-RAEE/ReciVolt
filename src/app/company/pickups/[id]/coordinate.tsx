@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { CompanyPage } from '@/components/portal/CompanyPage';
 import {
   PortalFeedback,
@@ -21,8 +21,9 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { colors } from '@/theme';
 import {
-  canCoordinatePickup,
+  canEditPickupSchedule,
   canReceivePickup,
+  formatPickupDate,
   pickupScheduleDays,
   pickupTimeSlots,
 } from '@/models/Pickup';
@@ -33,15 +34,37 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
   const { data: pickup, loading, error, refresh } = usePortalData(loader);
   const action = usePortalAction();
   const days = useMemo(() => pickupScheduleDays(new Date(), 14), []);
-  const [date, setDate] = useState<string>(days[0].value);
-  const [slot, setSlot] = useState<string>(pickupTimeSlots[0]);
-  const [driver, setDriver] = useState('');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [editedDriver, setEditedDriver] = useState<string | null>(null);
   const [confirmingReject, setConfirmingReject] = useState(false);
+
+  const scheduledDate = pickup?.scheduledDate;
+  const date = selectedDate ?? scheduledDate ?? days[0].value;
+  const defaultSlot =
+    pickup?.scheduledTimeSlot &&
+    (pickupTimeSlots as readonly string[]).includes(pickup.scheduledTimeSlot)
+      ? pickup.scheduledTimeSlot
+      : pickupTimeSlots[0];
+  const slot = selectedSlot ?? defaultSlot;
+  const driver = editedDriver ?? pickup?.driverName ?? '';
+
+  const dayOptions = useMemo(() => {
+    const base = days.map((d) => ({ value: d.value, label: d.label }));
+    if (scheduledDate && !base.some((d) => d.value === scheduledDate)) {
+      base.unshift({
+        value: scheduledDate,
+        label: formatPickupDate(scheduledDate) ?? scheduledDate,
+      });
+    }
+    return base;
+  }, [days, scheduledDate]);
 
   async function reject() {
     await action.run(async () => {
       await pickupCommand('cancel', { id: pickup!.id });
-      router.back();
+      if (router.canGoBack()) router.back();
+      else router.replace('/company/pickups');
     });
   }
 
@@ -49,7 +72,7 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
     return <PortalLoading loading={loading} error={error} retry={() => void refresh()} />;
   }
 
-  if (!canCoordinatePickup(pickup.status)) {
+  if (!canEditPickupSchedule(pickup.status)) {
     return (
       <>
         <PortalFeedback error={action.error} notice={action.notice} />
@@ -66,11 +89,14 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
     );
   }
 
+  const isRescheduling = pickup.status === 'COORDINATED';
+
   return (
     <>
       <Text style={s.body}>
-        Confirmá la fecha y el responsable del retiro. El ciudadano verá la coordinación en su
-        seguimiento.
+        {isRescheduling
+          ? 'Actualizá la fecha, el horario o el responsable del retiro. El ciudadano verá los cambios en su seguimiento.'
+          : 'Confirmá la fecha y el responsable del retiro. El ciudadano verá la coordinación en su seguimiento.'}
       </Text>
       <PickupCitizenCard pickup={pickup} />
       <PickupMaterialCard pickup={pickup} />
@@ -81,22 +107,22 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
         <PortalSelect
           label="Fecha de retiro"
           value={date}
-          options={days.map((d) => ({ value: d.value, label: d.label }))}
-          onChange={setDate}
+          options={dayOptions}
+          onChange={setSelectedDate}
           disabled={action.busy}
         />
         <PortalSelect
           label="Horario de retiro"
           value={slot}
           options={pickupTimeSlots.map((t) => ({ value: t, label: t }))}
-          onChange={setSlot}
+          onChange={setSelectedSlot}
           disabled={action.busy}
         />
         <PortalField
-          label="Responsable del retiro"
+          label="Responsable del retiro (opcional)"
           labelStyle={s.label}
           value={driver}
-          onChangeText={setDriver}
+          onChangeText={setEditedDriver}
           placeholder="Nombre de quien retira"
           autoCapitalize="words"
           maxLength={120}
@@ -105,7 +131,7 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
         <PortalFeedback error={action.error} notice={action.notice} />
         {!confirmingReject && (
           <ActionButton
-            title="Confirmar coordinación"
+            title={isRescheduling ? 'Guardar reprogramación' : 'Confirmar coordinación'}
             icon={<Ionicons name="checkmark" size={22} color={colors.textOnPrimary} />}
             loading={action.busy}
             onPress={() =>
@@ -122,17 +148,27 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
           />
         )}
         {confirmingReject ? (
-          <View style={s.actions}>
-            <ActionButton
-              title="Confirmar cancelación"
-              loading={action.busy}
-              onPress={() => void reject()}
-            />
-            <PortalLink title="Volver" onPress={() => setConfirmingReject(false)} />
+          <View style={styles.dangerBox}>
+            <View style={styles.dangerRow}>
+              <Ionicons name="alert-circle-outline" size={20} color={colors.danger} />
+              <Text style={styles.dangerText}>
+                Si cancelás este retiro, la solicitud pasará a estado Cancelado y no podrá volver a
+                coordinarse ni recibirse.
+              </Text>
+            </View>
+            <View style={s.actions}>
+              <ActionButton
+                title="Confirmar cancelación"
+                secondary
+                loading={action.busy}
+                onPress={() => void reject()}
+              />
+              <PortalLink title="Volver" onPress={() => setConfirmingReject(false)} />
+            </View>
           </View>
         ) : (
           <ActionButton
-            title="No podemos realizar este retiro"
+            title={isRescheduling ? 'Cancelar retiro' : 'No podemos realizar este retiro'}
             secondary
             disabled={action.busy}
             onPress={() => setConfirmingReject(true)}
@@ -146,6 +182,29 @@ function CoordinateContent({ pickupId }: Readonly<{ pickupId: string }>) {
 export default function CoordinatePickupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return (
-    <CompanyPage title="Coordinar retiro">{() => <CoordinateContent pickupId={id} />}</CompanyPage>
+    <CompanyPage title="Coordinar retiro" back="/company/pickups">
+      {() => <CoordinateContent pickupId={id} />}
+    </CompanyPage>
   );
 }
+
+const styles = StyleSheet.create({
+  dangerBox: {
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerBackground,
+  },
+  dangerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  dangerText: {
+    ...s.body,
+    flex: 1,
+    color: colors.danger,
+  },
+});

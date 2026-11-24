@@ -58,7 +58,7 @@ export function ScannerHelpModal({ visible, onClose }: ScannerHelpModalProps) {
               <View style={styles.cardTextCol}>
                 <Text style={styles.helpItemTitle}>Ingreso manual de respaldo</Text>
                 <Text style={styles.helpItemBody}>
-                  Si la cámara no está disponible o el código no se lee, podés tipear el código alfanumérico que empieza con TR-…
+                  Si la cámara no está disponible o el código no se lee, podés tipear el código alfanumérico que empieza con TR-… (entregas o retiros) o TRR-… (canjes de premios).
                 </Text>
               </View>
             </View>
@@ -82,7 +82,7 @@ export function ScannerHelpModal({ visible, onClose }: ScannerHelpModalProps) {
               <View style={styles.cardTextCol}>
                 <Text style={styles.helpItemTitle}>Acreditación y premios</Text>
                 <Text style={styles.helpItemBody}>
-                  Los puntos de entrega se acreditan de inmediato al confirmar. En los canjes de beneficios, los puntos ya fueron descontados previamente.
+                  Los puntos de entrega o retiro se acreditan de inmediato al confirmar. En los canjes de beneficios, los puntos ya fueron descontados previamente.
                 </Text>
               </View>
             </View>
