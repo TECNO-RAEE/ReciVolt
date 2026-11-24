@@ -41,7 +41,20 @@ function RedemptionDetail({ id }: Readonly<{ id: string }>) {
   const reserved = data?.status === 'RESERVED';
   return (
     <CitizenPage title={data && !reserved ? 'Detalle del canje' : 'Tu canje'} back="/rewards">
-      {!data && <PortalLoading loading={loading} error={error} retry={() => void refresh()} />}
+      {(loading || error) && (
+        <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
+      )}
+      {!loading && !error && !data && (
+        <View style={s.card}>
+          <Text accessibilityRole="header" style={s.subtitle}>
+            No encontramos este canje
+          </Text>
+          <Text style={s.body}>
+            Es posible que el enlace haya vencido o que el canje pertenezca a otra cuenta.
+          </Text>
+          <ActionButton title="Ver premios" onPress={() => router.replace('/rewards')} />
+        </View>
+      )}
       {data && (reserved ? <Reserved data={data} /> : <Delivered data={data} />)}
     </CitizenPage>
   );
@@ -56,7 +69,7 @@ function Reserved({ data }: Readonly<{ data: Redemption }>) {
         message="Mostrá este código en el local para validar tu canje."
       />
       <View style={[s.card, { alignItems: 'center' }]}>
-        <View accessibilityLabel="Código QR del canje">
+        <View accessibilityRole="image" accessibilityLabel="Código QR del canje">
           <QRCode
             value={rewardQr(data.code)}
             size={Math.max(120, Math.min(180, width - 112))}
@@ -83,6 +96,11 @@ function Reserved({ data }: Readonly<{ data: Redemption }>) {
         Mostrá este código en el local. Los puntos ya se descontaron y el código es válido por única
         vez.
       </InfoNote>
+      <ActionButton
+        title="Ver mis canjes"
+        secondary
+        onPress={() => router.replace('/rewards?tab=canjes')}
+      />
     </>
   );
 }

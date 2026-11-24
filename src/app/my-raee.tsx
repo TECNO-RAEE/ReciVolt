@@ -47,7 +47,7 @@ export default function MyRaeeScreen() {
             <Text accessibilityRole="header" style={s.subtitle}>
               Retiros a domicilio
             </Text>
-            <PickupHistory />
+            <PickupHistory hideEmptyAction />
           </View>
         </>
       )}

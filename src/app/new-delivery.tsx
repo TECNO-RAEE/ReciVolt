@@ -13,14 +13,22 @@ import {
   View,
 } from 'react-native';
 import { AccountRequired } from '@/components/auth/AccountRequired';
+import { PortalFeedback, PortalLink } from '@/components/portal/PortalUI';
+import { CitizenPage, InfoNote } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { NumericStepper } from '@/components/ui/NumericStepper';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
-import { useScrollReset } from '@/hooks/useScrollReset';
 import { deliveryQuantity } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
 import { canRegisterDelivery, isExamplePointId, type GreenPoint } from '@/models/GreenPoint';
+import {
+  addPickupDraftItem,
+  changePickupDraftItemCategory,
+  reconcilePickupDraftItems,
+  remainingPickupCategories,
+  selectableCategoriesForPickupItem,
+  type PickupDraftItem,
+} from '@/models/PickupDraft';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import {
@@ -31,10 +39,10 @@ import {
 } from '@/services/delivery.service';
 import { colors, fonts } from '@/theme';
 
-interface DeliveryDraftItem {
-  id: string; // unique draft item id
-  categoryId: string;
-  quantity: number;
+type DeliveryDraftItem = PickupDraftItem;
+
+function createDraftItemId(): string {
+  return `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
 export default function NewDeliveryScreen() {
@@ -43,8 +51,9 @@ export default function NewDeliveryScreen() {
   const [pointId, setPointId] = useState(initialPoint ?? '');
   const { points, loading, error, refresh } = useDiscovery();
   const [search, setSearch] = useState('');
-  const scroll = useScrollReset();
 
+  const [rawItems, setRawItems] = useState<DeliveryDraftItem[]>([]);
+  const [notes, setNotes] = useState('');
   const [photo, setPhoto] = useState<{ path: string; uri: string } | null>(null);
   const submittedRef = useRef(false);
   const dispatchedRequestRef = useRef(false);
@@ -82,31 +91,49 @@ export default function NewDeliveryScreen() {
   const point = points.find((p) => p.id === pointId);
   const deliveryPoints = useMemo(() => points.filter(canRegisterDelivery), [points]);
 
+  const items = useMemo(
+    () =>
+      point
+        ? reconcilePickupDraftItems(rawItems, point.categories, () => `item-${point.id}`)
+        : rawItems,
+    [rawItems, point]
+  );
+
+  const handleSelectPoint = useCallback(
+    (newPointId: string) => {
+      const nextPoint = deliveryPoints.find((p) => p.id === newPointId);
+      setPointId(newPointId);
+      if (nextPoint) {
+        setRawItems((current) =>
+          reconcilePickupDraftItems(current, nextPoint.categories, () => `item-${nextPoint.id}`)
+        );
+      }
+    },
+    [deliveryPoints]
+  );
+
   if (!session) {
     return <AccountRequired title="Nueva entrega" />;
   }
 
   if (isExamplePointId(pointId) || point?.demo) {
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Nueva entrega" back="/green-points" />
-        <ScrollView ref={scroll} contentContainerStyle={styles.container}>
-          <View style={styles.card}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="information" size={24} color={colors.primaryDark} />
-            </View>
-            <Text style={styles.cardTitle}>Punto verde de ejemplo</Text>
-            <Text style={styles.cardSubtitle}>
-              Podés explorar este punto, pero no registrar entregas reales. Elegí un punto publicado
-              para entregar tus dispositivos.
-            </Text>
-            <ActionButton
-              title="Ver puntos verdes"
-              onPress={() => router.replace('/green-points')}
-            />
+      <CitizenPage title="Nueva entrega" back="/green-points">
+        <View style={styles.card}>
+          <View style={styles.iconCircle}>
+            <Ionicons name="information" size={24} color={colors.primaryDark} />
           </View>
-        </ScrollView>
-      </View>
+          <Text style={styles.cardTitle}>Punto verde de ejemplo</Text>
+          <Text style={styles.cardSubtitle}>
+            Podés explorar este punto, pero no registrar entregas reales. Elegí un punto publicado
+            para entregar tus dispositivos.
+          </Text>
+          <ActionButton
+            title="Ver puntos verdes"
+            onPress={() => router.replace('/green-points')}
+          />
+        </View>
+      </CitizenPage>
     );
   }
 
@@ -119,91 +146,84 @@ export default function NewDeliveryScreen() {
     );
 
     return (
-      <View style={styles.screen}>
-        <ScreenHeader title="Nueva entrega" back="/my-raee" />
-        <ScrollView
-          ref={scroll}
-          contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Only show warning after loading completes and point is missing */}
-          {!loading && !error && Boolean(pointId) && !point && (
-            <View style={styles.noticeBanner}>
-              <Ionicons name="information-circle-outline" size={22} color={colors.primaryDark} />
-              <Text style={styles.noticeBannerText}>
-                El punto seleccionado dejó de estar disponible. Elegí otro punto para continuar.
-              </Text>
-            </View>
-          )}
+      <CitizenPage title="Nueva entrega" back="/my-raee">
+        {/* Only show warning after loading completes and point is missing */}
+        {!loading && !error && Boolean(pointId) && !point && (
+          <InfoNote>
+            El punto seleccionado dejó de estar disponible. Elegí otro punto para continuar.
+          </InfoNote>
+        )}
 
-          <Text style={styles.sectionHeader}>Elegí la organización receptora</Text>
-          <View style={styles.searchBox}>
-            <Ionicons name="search-outline" size={20} color={colors.textSecondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar por punto, dirección o empresa"
-              placeholderTextColor={colors.textSecondary}
-              value={search}
-              onChangeText={setSearch}
-              autoCorrect={false}
-            />
-            {search.length > 0 && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Borrar búsqueda"
-                style={styles.clearSearchBtn}
-                onPress={() => setSearch('')}
-              >
-                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-              </Pressable>
-            )}
+        <Text accessibilityRole="header" style={styles.sectionHeader}>
+          Elegí la organización receptora
+        </Text>
+        <View style={styles.searchBox}>
+          <Ionicons name="search-outline" size={20} color={colors.textSecondary} />
+          <TextInput
+            accessibilityLabel="Buscar por punto, dirección o empresa"
+            style={styles.searchInput}
+            placeholder="Buscar por punto, dirección o empresa"
+            placeholderTextColor={colors.textSecondary}
+            value={search}
+            onChangeText={setSearch}
+            autoCorrect={false}
+          />
+          {search.length > 0 && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Borrar búsqueda"
+              style={styles.clearSearchBtn}
+              onPress={() => setSearch('')}
+            >
+              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+            </Pressable>
+          )}
+        </View>
+
+        {loading ? (
+          <Text style={styles.loadingText}>Cargando puntos verdes…</Text>
+        ) : error ? (
+          <View style={styles.card}>
+            <Text style={styles.errorText}>{error}</Text>
+            <ActionButton title="Reintentar" secondary onPress={() => void refresh()} />
           </View>
-
-          {loading ? (
-            <Text style={styles.loadingText}>Cargando puntos verdes…</Text>
-          ) : error ? (
-            <View style={styles.card}>
-              <Text style={styles.errorText}>{error}</Text>
-              <ActionButton title="Reintentar" secondary onPress={() => void refresh()} />
-            </View>
-          ) : (
-            <>
-              {filteredPoints.map((p) => (
-                <Pressable
-                  key={p.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Entregar en ${p.name}`}
-                  style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-                  onPress={() => setPointId(p.id)}
-                >
-                  <View style={styles.cardRow}>
-                    <View style={styles.iconCircle}>
-                      <Ionicons name="business" size={22} color={colors.primaryDark} />
-                    </View>
-                    <View style={styles.cardTextCol}>
-                      <Text style={styles.cardTitle}>{p.name}</Text>
-                      <Text style={styles.cardSubtitle}>
-                        {p.companyName} · {p.address}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        ) : (
+          <>
+            {filteredPoints.map((p) => (
+              <Pressable
+                key={p.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Entregar en ${p.name}`}
+                style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+                onPress={() => handleSelectPoint(p.id)}
+              >
+                <View style={styles.cardRow}>
+                  <View style={styles.iconCircle}>
+                    <Ionicons name="business" size={22} color={colors.primaryDark} />
                   </View>
-                </Pressable>
-              ))}
-
-              {filteredPoints.length === 0 && (
-                <View style={styles.card}>
-                  <Text style={styles.emptyText}>
-                    {deliveryPoints.length === 0
-                      ? 'Todavía no hay puntos publicados para registrar una entrega.'
-                      : 'No encontramos puntos verdes con ese nombre.'}
-                  </Text>
+                  <View style={styles.cardTextCol}>
+                    <Text style={styles.cardTitle}>{p.name}</Text>
+                    <Text style={styles.cardSubtitle}>
+                      {p.companyName} · {p.address}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
                 </View>
-              )}
-            </>
-          )}
-        </ScrollView>
-      </View>
+              </Pressable>
+            ))}
+
+            {filteredPoints.length === 0 && (
+              <View style={styles.card}>
+                <Text style={styles.emptyText}>
+                  {deliveryPoints.length === 0
+                    ? 'Todavía no hay puntos publicados para registrar una entrega.'
+                    : 'No encontramos puntos verdes con ese nombre.'}
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+      </CitizenPage>
     );
   }
 
@@ -213,7 +233,11 @@ export default function NewDeliveryScreen() {
       point={point}
       userId={session.user.id}
       deliveryPoints={deliveryPoints}
-      onChangePoint={(newPointId) => setPointId(newPointId)}
+      items={items}
+      onItemsChange={setRawItems}
+      notes={notes}
+      onNotesChange={setNotes}
+      onChangePoint={handleSelectPoint}
       photo={photo}
       onPhotoChange={setPhoto}
       onRequestDispatched={handleRequestDispatched}
@@ -226,6 +250,10 @@ function DeliveryForm({
   point,
   userId,
   deliveryPoints,
+  items,
+  onItemsChange,
+  notes,
+  onNotesChange,
   onChangePoint,
   photo,
   onPhotoChange,
@@ -235,54 +263,41 @@ function DeliveryForm({
   point: GreenPoint;
   userId: string;
   deliveryPoints: GreenPoint[];
+  items: DeliveryDraftItem[];
+  onItemsChange: (
+    next: DeliveryDraftItem[] | ((prev: DeliveryDraftItem[]) => DeliveryDraftItem[])
+  ) => void;
+  notes: string;
+  onNotesChange: (value: string) => void;
   onChangePoint: (pointId: string) => void;
   photo: { path: string; uri: string } | null;
   onPhotoChange: (newPhoto: { path: string; uri: string } | null) => void;
   onRequestDispatched: () => void;
   onSubmitSuccess: () => void;
 }>) {
-  const scroll = useScrollReset();
   const loader = useCallback(() => getDeliveryRates(point.companyId), [point.companyId]);
-  const { data: rates } = usePortalData(loader);
-
-  // Initialize with the first category of the point if available
-  const [items, setItems] = useState<DeliveryDraftItem[]>(() => {
-    if (point.categories.length > 0) {
-      return [{ id: 'item-0', categoryId: point.categories[0].id, quantity: 1 }];
-    }
-    return [];
-  });
-
-  const [notes, setNotes] = useState('');
+  const { data: rates, error: ratesError, refresh: refreshRates } = usePortalData(loader);
 
   // Modal states
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [pointModalVisible, setPointModalVisible] = useState(false);
+  const [lastActionSource, setLastActionSource] = useState<'photo' | 'submit' | null>(null);
 
   const request = useRef<{ id: string; signature: string } | null>(null);
   const action = usePortalAction();
 
-  // Categories already selected across all items
-  const selectedCategoryIds = useMemo(() => new Set(items.map((it) => it.categoryId)), [items]);
-
   // Categories still available to add as a new item
   const remainingCategories = useMemo(
-    () => point.categories.filter((cat) => !selectedCategoryIds.has(cat.id)),
-    [point.categories, selectedCategoryIds]
+    () => remainingPickupCategories(point.categories, items),
+    [point.categories, items]
   );
 
   // Categories that can be picked in the modal when editing an existing item:
   // Excludes categories selected by OTHER items, so no category is ever duplicated
-  const otherSelectedCategoryIds = useMemo(() => {
-    if (!editingItemId) return new Set<string>();
-    return new Set(
-      items.filter((it) => it.id !== editingItemId).map((it) => it.categoryId)
-    );
-  }, [items, editingItemId]);
-
-  const selectableCategoriesForModal = useMemo(() => {
-    return point.categories.filter((cat) => !otherSelectedCategoryIds.has(cat.id));
-  }, [point.categories, otherSelectedCategoryIds]);
+  const selectableCategoriesForModal = useMemo(
+    () => selectableCategoriesForPickupItem(point.categories, items, editingItemId),
+    [point.categories, items, editingItemId]
+  );
 
   // Points estimation: total sum across all items
   const estimatedPoints = useMemo(() => {
@@ -293,28 +308,33 @@ function DeliveryForm({
   }, [items, rates]);
 
   const handleAddItem = () => {
-    const nextCat = remainingCategories[0];
-    if (!nextCat) return;
-    setItems((prev) => [
-      ...prev,
-      { id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, categoryId: nextCat.id, quantity: 1 },
-    ]);
+    onItemsChange((prev) => {
+      const base = reconcilePickupDraftItems(prev, point.categories, () => `item-${point.id}`);
+      return addPickupDraftItem(base, point.categories, createDraftItemId());
+    });
   };
 
   const handleRemoveItem = (id: string) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
+    onItemsChange((prev) => {
+      const base = reconcilePickupDraftItems(prev, point.categories, () => `item-${point.id}`);
+      return base.filter((it) => it.id !== id);
+    });
   };
 
   const handleUpdateQuantity = (id: string, qty: number) => {
-    setItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, quantity: deliveryQuantity(String(qty)) } : it))
-    );
+    onItemsChange((prev) => {
+      const base = reconcilePickupDraftItems(prev, point.categories, () => `item-${point.id}`);
+      return base.map((it) =>
+        it.id === id ? { ...it, quantity: deliveryQuantity(String(qty)) } : it
+      );
+    });
   };
 
   const handleChangeCategoryForItem = (id: string, newCatId: string) => {
-    setItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, categoryId: newCatId } : it))
-    );
+    onItemsChange((prev) => {
+      const base = reconcilePickupDraftItems(prev, point.categories, () => `item-${point.id}`);
+      return changePickupDraftItemCategory(base, id, newCatId, point.categories);
+    });
     setEditingItemId(null);
   };
 
@@ -324,6 +344,7 @@ function DeliveryForm({
   };
 
   const handlePickPhoto = () => {
+    setLastActionSource('photo');
     void action.run(async () => {
       const chosen = await pickDeliveryPhoto(userId);
       if (chosen) {
@@ -342,6 +363,7 @@ function DeliveryForm({
 
   const handleRemovePhoto = () => {
     if (!photo) return;
+    setLastActionSource('photo');
     void action.run(async () => {
       await removeDeliveryPhoto(photo.path);
       onPhotoChange(null);
@@ -349,6 +371,7 @@ function DeliveryForm({
   };
 
   const handleGenerateCode = () => {
+    setLastActionSource('submit');
     void action.run(async () => {
       if (items.length === 0) {
         throw new Error('Seleccioná al menos un dispositivo para entregar.');
@@ -381,14 +404,8 @@ function DeliveryForm({
   const hasCategories = point.categories.length > 0;
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader title="Nueva entrega" back="/my-raee" />
-      <ScrollView
-        ref={scroll}
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+    <>
+      <CitizenPage title="Nueva entrega" back="/my-raee">
         {/* Card 1: Organización receptora */}
         <View style={styles.fieldSection}>
           <Text style={styles.fieldLabel}>Organización receptora</Text>
@@ -547,6 +564,13 @@ function DeliveryForm({
               )}
             </View>
 
+            {ratesError && (
+              <View style={styles.ratesErrorBox}>
+                <PortalFeedback error="No pudimos cargar los puntos estimados por categoría. Igual podés generar el código." />
+                <PortalLink title="Reintentar tarifas" onPress={() => void refreshRates()} />
+              </View>
+            )}
+
             {/* Card: Estimación de puntos si hay tarifas */}
             {rates && estimatedPoints > 0 && (
               <View style={styles.estimateCallout}>
@@ -567,13 +591,14 @@ function DeliveryForm({
               <Text style={styles.fieldLabel}>Notas (opcional)</Text>
               <View style={[styles.card, styles.notesCard]}>
                 <TextInput
+                  accessibilityLabel="Notas adicionales sobre tu entrega (opcional)"
                   style={styles.notesInput}
                   placeholder="Agregá información adicional sobre tu entrega (opcional)."
                   placeholderTextColor={colors.textSecondary}
                   multiline
                   maxLength={2000}
                   value={notes}
-                  onChangeText={setNotes}
+                  onChangeText={onNotesChange}
                   editable={!action.busy}
                   textAlignVertical="top"
                 />
@@ -584,6 +609,9 @@ function DeliveryForm({
             {/* Card: Foto (opcional) */}
             <View style={styles.fieldSection}>
               <Text style={styles.fieldLabel}>Foto (opcional)</Text>
+              {lastActionSource === 'photo' && action.error ? (
+                <PortalFeedback error={action.error} />
+              ) : null}
               {photo ? (
                 <View style={styles.photoContainer}>
                   <Image
@@ -641,17 +669,12 @@ function DeliveryForm({
             </View>
 
             {/* Info callout */}
-            <View style={styles.infoCallout}>
-              <Ionicons name="information-circle-outline" size={20} color={colors.primaryDark} />
-              <Text style={styles.infoCalloutText}>
-                Los puntos se acreditan cuando el receptor confirma lo recibido en el punto verde.
-              </Text>
-            </View>
+            <InfoNote>
+              Los puntos se acreditan cuando el receptor confirma lo recibido en el punto verde.
+            </InfoNote>
 
-            {action.error ? (
-              <Text accessibilityRole="alert" style={styles.errorText}>
-                {action.error}
-              </Text>
+            {lastActionSource === 'submit' && action.error ? (
+              <PortalFeedback error={action.error} />
             ) : null}
 
             {/* Action Button: Generar código */}
@@ -665,7 +688,7 @@ function DeliveryForm({
             </View>
           </>
         )}
-      </ScrollView>
+      </CitizenPage>
 
       {/* Modal: Selector de categoría para un item específico (sin categorías duplicadas) */}
       <Modal
@@ -675,9 +698,15 @@ function DeliveryForm({
         onRequestClose={() => setEditingItemId(null)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setEditingItemId(null)}>
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
+          <View
+            accessibilityViewIsModal
+            style={styles.modalSheet}
+            onStartShouldSetResponder={() => true}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Categorías aceptadas</Text>
+              <Text accessibilityRole="header" style={styles.modalTitle}>
+                Categorías aceptadas
+              </Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar selector de categorías"
@@ -741,9 +770,15 @@ function DeliveryForm({
         onRequestClose={() => setPointModalVisible(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setPointModalVisible(false)}>
-          <View style={styles.modalSheet} onStartShouldSetResponder={() => true}>
+          <View
+            accessibilityViewIsModal
+            style={styles.modalSheet}
+            onStartShouldSetResponder={() => true}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Cambiar organización receptora</Text>
+              <Text accessibilityRole="header" style={styles.modalTitle}>
+                Cambiar organización receptora
+              </Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar selector de organización"
@@ -766,7 +801,7 @@ function DeliveryForm({
                       isSelected && styles.modalItemSelected,
                       pressed && styles.pressed,
                     ]}
-                    onPress={() => void handleChangePoint(p.id)}
+                    onPress={() => handleChangePoint(p.id)}
                   >
                     <View style={styles.iconCircle}>
                       <Ionicons name="business" size={20} color={colors.primaryDark} />
@@ -789,7 +824,7 @@ function DeliveryForm({
           </View>
         </Pressable>
       </Modal>
-    </View>
+    </>
   );
 }
 
@@ -1079,6 +1114,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  ratesErrorBox: {
+    gap: 4,
   },
   modalOverlay: {
     flex: 1,

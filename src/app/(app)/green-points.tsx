@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
@@ -17,7 +17,6 @@ import { SearchBar } from '@/components/discovery/SearchBar';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { useScrollReset } from '@/hooks/useScrollReset';
 import { colors, fonts } from '@/theme';
 
 function ViewToggle({
@@ -50,7 +49,7 @@ function GreenPointsExplorer({
   initialSearch,
   initialCategory,
 }: Readonly<{ initialSearch: string; initialCategory: string }>) {
-  const scroll = useScrollReset();
+  const listRef = useRef<FlatList<GreenPoint>>(null);
   const {
     points,
     categories,
@@ -66,6 +65,7 @@ function GreenPointsExplorer({
   useFocusEffect(
     useCallback(() => {
       refresh();
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
     }, [refresh])
   );
   const [search, setSearch] = useState(initialSearch);
@@ -76,6 +76,7 @@ function GreenPointsExplorer({
   const [view, setView] = useState<'map' | 'list'>('map');
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dismissedNoticeKey, setDismissedNoticeKey] = useState<string | null>(null);
   const companies = useMemo(
     () =>
       [...new Map(points.map((p) => [p.companyId, p.companyName])).entries()].sort((a, b) =>
@@ -110,6 +111,28 @@ function GreenPointsExplorer({
     (filters.pickupOnly ? 1 : 0) +
     (filters.openOnly ? 1 : 0) +
     (filters.nearbyOnly ? 1 : 0);
+  const hasDemoPoints = points.some((p) => p.demo);
+  const mapNoticeText = [
+    locationError,
+    hasDemoPoints
+      ? 'Todavía no hay puntos publicados. Explorá este punto verde de ejemplo; no permite registrar entregas reales.'
+      : null,
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(' ');
+  const showMapNotice = Boolean(mapNoticeText) && dismissedNoticeKey !== mapNoticeText;
+  const countLabel =
+    filtered.length === 0 && points.length > 0
+      ? '0 resultados'
+      : `${filtered.length} ${
+          filtered.some((p) => p.demo)
+            ? filtered.length === 1
+              ? 'punto de ejemplo'
+              : 'puntos de ejemplo'
+            : filtered.length === 1
+              ? 'punto disponible'
+              : 'puntos disponibles'
+        }`;
   const openPoint = useCallback(
     (point: GreenPoint) => router.push({ pathname: '/point/[id]', params: { id: point.id } }),
     []
@@ -179,21 +202,19 @@ function GreenPointsExplorer({
               color={colors.primary}
             />
           </Pressable>
-          {(locationError || points.some((p) => p.demo)) && (
+          {showMapNotice && (
             <View style={styles.mapNotices}>
-              {locationError && (
-                <View style={styles.mapNotice}>
-                  <Text style={styles.mapNoticeText}>{locationError}</Text>
-                </View>
-              )}
-              {points.some((p) => p.demo) && (
-                <View style={styles.mapNotice}>
-                  <Text style={styles.mapNoticeText}>
-                    Todavía no hay puntos publicados. Explorá este punto verde de ejemplo; no
-                    permite registrar entregas reales.
-                  </Text>
-                </View>
-              )}
+              <View style={styles.mapNotice}>
+                <Text style={styles.mapNoticeText}>{mapNoticeText}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Cerrar aviso"
+                  onPress={() => setDismissedNoticeKey(mapNoticeText)}
+                  style={({ pressed }) => [styles.dismissNoticeBtn, pressed && { opacity: 0.7 }]}
+                >
+                  <Ionicons name="close" size={18} color={colors.textSecondary} />
+                </Pressable>
+              </View>
             </View>
           )}
           <View style={styles.floatingCard}>
@@ -216,7 +237,7 @@ function GreenPointsExplorer({
             ) : (
               <PointCardPreview
                 count={filtered.length}
-                demo={points.some((p) => p.demo)}
+                demo={hasDemoPoints}
                 point={selectedPoint}
                 location={location}
                 now={now}
@@ -227,32 +248,35 @@ function GreenPointsExplorer({
           </View>
         </View>
       ) : (
-        <ScrollView
-          ref={scroll}
+        <FlatList
+          ref={listRef}
+          style={{ flex: 1 }}
+          data={filtered}
+          keyExtractor={(point) => point.id}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-        >
-          {points.some((p) => p.demo) && (
-            <InfoNote>
-              Todavía no hay puntos publicados. Explorá este punto verde de ejemplo; no permite
-              registrar entregas reales.
-            </InfoNote>
+          renderItem={({ item }) => (
+            <PointRow
+              point={item}
+              location={location}
+              now={now}
+              onPress={() => openPoint(item)}
+            />
           )}
-          <Text style={styles.label}>
-            {filtered.length === 0 && points.length > 0
-              ? '0 resultados'
-              : `${filtered.length} ${
-                  filtered.some((p) => p.demo)
-                    ? filtered.length === 1
-                      ? 'punto de ejemplo'
-                      : 'puntos de ejemplo'
-                    : filtered.length === 1
-                      ? 'punto disponible'
-                      : 'puntos disponibles'
-                }`}
-          </Text>
-          {filtered.length === 0 ? (
-            <>
+          ListHeaderComponent={
+            <View style={styles.listHeader}>
+              {hasDemoPoints && (
+                <InfoNote>
+                  Todavía no hay puntos publicados. Explorá este punto verde de ejemplo; no permite
+                  registrar entregas reales.
+                </InfoNote>
+              )}
+              <Text style={styles.label}>{countLabel}</Text>
+            </View>
+          }
+          ListEmptyComponent={
+            <View style={styles.listEmpty}>
               <DiscoveryState
                 loading={false}
                 error={null}
@@ -266,19 +290,9 @@ function GreenPointsExplorer({
               {points.length > 0 && (
                 <ActionButton title="Limpiar filtros" secondary onPress={clear} />
               )}
-            </>
-          ) : (
-            filtered.map((point) => (
-              <PointRow
-                key={point.id}
-                point={point}
-                location={location}
-                now={now}
-                onPress={() => openPoint(point)}
-              />
-            ))
-          )}
-        </ScrollView>
+            </View>
+          }
+        />
       )}
       <PointFilterSheet
         visible={filterSheetOpen}
@@ -367,12 +381,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   mapNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: 10,
+    paddingVertical: 8,
+    paddingLeft: 12,
+    paddingRight: 6,
     boxShadow: '0 5px 16px rgba(22,65,39,0.08)',
   },
-  mapNoticeText: { fontFamily: fonts.regular, fontSize: 13, color: colors.text },
+  mapNoticeText: { flex: 1, fontFamily: fonts.regular, fontSize: 13, color: colors.text },
+  dismissNoticeBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   floatingCard: {
     position: 'absolute',
     left: 16,
@@ -395,5 +420,7 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingBottom: 32,
   },
+  listHeader: { gap: 12 },
+  listEmpty: { gap: 12 },
   label: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
 });

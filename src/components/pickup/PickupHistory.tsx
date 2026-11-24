@@ -7,7 +7,10 @@ import { usePortalData } from '@/hooks/usePortalData';
 import { formatPickupDate, pickupStatusNames } from '@/models/Pickup';
 import { getPickupHistory } from '@/services/pickup.service';
 
-export function PickupHistory({ companyId = null }: Readonly<{ companyId?: string | null }>) {
+export function PickupHistory({
+  companyId = null,
+  hideEmptyAction = false,
+}: Readonly<{ companyId?: string | null; hideEmptyAction?: boolean }>) {
   const [page, setPage] = useState(0);
   const loader = useCallback(() => getPickupHistory(companyId, page), [companyId, page]);
   const { data, loading, error, refresh } = usePortalData(loader);
@@ -29,7 +32,7 @@ export function PickupHistory({ companyId = null }: Readonly<{ companyId?: strin
               ? 'Todavía no solicitaste retiros a domicilio.'
               : 'No hay más retiros.'}
           </Text>
-          {page === 0 && !companyId && (
+          {page === 0 && !companyId && !hideEmptyAction && (
             <ActionButton
               title="Solicitar un retiro"
               onPress={() => router.push('/pickup/new')}

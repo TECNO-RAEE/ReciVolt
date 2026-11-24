@@ -10,6 +10,8 @@ import {
   View,
 } from 'react-native';
 import { AccountRequired } from '@/components/auth/AccountRequired';
+import { PortalFeedback } from '@/components/portal/PortalUI';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { rewardStyles as s } from '@/components/rewards/RewardsUI';
 import {
@@ -163,9 +165,10 @@ function MyActivity() {
     }
     if (presentation.showInitialError) {
       return (
-        <Pressable onPress={() => void reload()} style={s.card} accessibilityRole="button">
-          <Text style={s.body}>No pudimos cargar tu actividad. Tocá para reintentar.</Text>
-        </Pressable>
+        <View style={s.card}>
+          <PortalFeedback error="No pudimos cargar tu actividad." />
+          <ActionButton title="Reintentar" secondary onPress={() => void reload()} />
+        </View>
       );
     }
     if (presentation.showEmptySectionMessage) {
@@ -191,12 +194,18 @@ function MyActivity() {
       )}
       {loadingMore && <ActivityIndicator accessibilityLabel="Cargando más actividad" color={colors.primary} />}
       {!!error && entries.length > 0 && (
-        <Pressable onPress={() => void loadMore()} style={s.card} accessibilityRole="button">
-          <Text style={s.body}>No pudimos cargar más actividad. Tocá para reintentar.</Text>
-        </Pressable>
+        <View style={s.card}>
+          <PortalFeedback error="No pudimos cargar más actividad." />
+          <ActionButton title="Reintentar" secondary onPress={() => void loadMore()} />
+        </View>
       )}
       {!loading && !loadingMore && hasMore && visible.length === 0 && (
-        <Pressable onPress={() => void loadMore()} style={styles.loadMoreButton} accessibilityRole="button">
+        <Pressable
+          onPress={() => void loadMore()}
+          style={({ pressed }) => [styles.loadMoreButton, pressed && { opacity: 0.75 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Cargar más movimientos"
+        >
           <Text style={styles.loadMoreText}>Cargar más movimientos</Text>
         </Pressable>
       )}
@@ -251,10 +260,10 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
         )}
       </View>
       <View style={styles.description}>
-        <Text style={s.label} numberOfLines={1}>{entry.source}</Text>
-        <Text style={s.body}>{entry.title}</Text>
+        <Text style={styles.source} numberOfLines={1}>{entry.source}</Text>
+        <Text style={styles.entryTitle}>{entry.title}</Text>
         {!!entry.detail && <Text style={s.body} numberOfLines={1}>{entry.detail}</Text>}
-        <Text style={s.body}>{new Date(entry.createdAt).toLocaleDateString('es-AR')}</Text>
+        <Text style={styles.date}>{new Date(entry.createdAt).toLocaleDateString('es-AR')}</Text>
       </View>
       <View style={styles.amountBlock}>
         {entry.amount !== null && (
@@ -283,11 +292,23 @@ const styles = StyleSheet.create({
   row: { minHeight: 96, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16, backgroundColor: colors.surface, boxShadow: '0 4px 16px rgba(22,65,39,0.05)' },
   eventIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   description: { flex: 1, gap: 3 },
+  source: { fontFamily: fonts.semiBold, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+  entryTitle: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 22, color: colors.text },
+  date: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
   amountBlock: { alignItems: 'flex-end', minWidth: 56 },
   amount: { fontFamily: fonts.bold, fontSize: 18 },
   listFooter: { gap: 12, paddingTop: 16 },
   emptyRetirements: { minHeight: 190, padding: 20, gap: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   truckIcon: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  loadMoreButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  loadMoreButton: {
+    minHeight: 44,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   loadMoreText: { color: colors.primaryDark, fontFamily: fonts.semiBold, fontSize: 14 },
 });

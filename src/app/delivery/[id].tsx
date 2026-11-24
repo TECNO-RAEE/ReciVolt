@@ -302,7 +302,7 @@ export default function DeliveryDetailScreen() {
                 Si cancelás esta entrega, el código quedará inhabilitado y no se acreditarán puntos.
               </Text>
               <View style={styles.modalAlertActions}>
-                <ActionButton title="Sí, cancelar" onPress={handleConfirmCancel} />
+                <ActionButton title="Sí, cancelar" destructive onPress={handleConfirmCancel} />
                 <ActionButton
                   title="Volver"
                   secondary
