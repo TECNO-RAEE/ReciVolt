@@ -55,6 +55,7 @@ export function PortalPage({
   onBack,
   action,
   onRefresh,
+  refreshing = false,
 }: Readonly<{
   title: string;
   subtitle?: string;
@@ -63,6 +64,7 @@ export function PortalPage({
   onBack?: () => void;
   action?: ReactNode;
   onRefresh?: () => void;
+  refreshing?: boolean;
 }>) {
   const scroll = useScrollReset();
   return (
@@ -73,7 +75,11 @@ export function PortalPage({
         keyboardShouldPersistTaps="handled"
         refreshControl={
           onRefresh && (
-            <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.primary} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+            />
           )
         }
         contentContainerStyle={{
@@ -282,7 +288,7 @@ export function OrganizationCard({ name, role }: Readonly<{ name: string; role: 
 }
 export const portalFieldStyle = {
   borderWidth: 1,
-  borderColor: colors.border,
+  borderColor: colors.borderControl,
   borderRadius: 8,
   backgroundColor: colors.surface,
   minHeight: 48,
@@ -303,16 +309,24 @@ export function PortalField({
   suffix?: string;
   labelStyle?: TextInputProps['style'];
 }) {
+  const defaultAutoCapitalize =
+    props.secureTextEntry || props.keyboardType === 'email-address' || props.keyboardType === 'url'
+      ? 'none'
+      : 'sentences';
   const input = (
     <TextInput
       accessibilityLabel={suffix ? `${label}, ${suffix}` : label}
-      autoCapitalize="none"
       placeholderTextColor={colors.textSecondary}
       {...props}
+      autoCapitalize={props.autoCapitalize ?? defaultAutoCapitalize}
       style={[
         portalFieldStyle,
         props.multiline && { minHeight: 90, textAlignVertical: 'top' },
-        compact && { width: suffix ? 64 : 96, textAlign: suffix ? 'left' : 'right' },
+        compact && {
+          width: suffix ? 104 : 96,
+          flexShrink: 0,
+          textAlign: suffix ? 'left' : 'right',
+        },
         suffix && { borderWidth: 0, borderRadius: 0 },
         props.style,
       ]}
@@ -323,24 +337,36 @@ export function PortalField({
       style={{
         gap: compact ? 16 : 8,
         flexDirection: compact ? 'row' : 'column',
+        flexWrap: compact ? 'wrap' : undefined,
         alignItems: compact ? 'center' : undefined,
       }}
     >
-      <Text style={[portalStyles.body, compact && { flex: 1 }, labelStyle]}>{label}</Text>
+      <Text
+        style={[
+          portalStyles.body,
+          compact && { flexGrow: 1, flexShrink: 1, flexBasis: 110, minWidth: 0 },
+          labelStyle,
+        ]}
+      >
+        {label}
+      </Text>
       {suffix ? (
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'center',
+            maxWidth: '100%',
             borderWidth: 1,
-            borderColor: colors.border,
+            borderColor: colors.borderControl,
             borderRadius: 8,
             overflow: 'hidden',
             backgroundColor: colors.surfaceSoft,
           }}
         >
           {input}
-          <Text style={[portalStyles.hint, { paddingHorizontal: 10 }]}>{suffix}</Text>
+          <Text style={[portalStyles.hint, { paddingHorizontal: 10, flexShrink: 1 }]}>
+            {suffix}
+          </Text>
         </View>
       ) : (
         input
@@ -404,7 +430,7 @@ export function PortalSelect<T extends string>({
           <View
             style={{
               borderWidth: 1,
-              borderColor: colors.border,
+              borderColor: colors.borderControl,
               borderRadius: 8,
               backgroundColor: colors.surface,
               overflow: 'hidden',
@@ -453,7 +479,12 @@ export function PortalToggle({
   disabled?: boolean;
 }>) {
   return (
-    <View
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityState={{ checked: value, disabled }}
+      disabled={disabled}
+      onPress={() => onChange(!value)}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -462,15 +493,21 @@ export function PortalToggle({
         minHeight: 44,
       }}
     >
-      <Text style={[portalStyles.body, { flex: 1 }]}>{label}</Text>
-      <Switch
-        accessibilityLabel={label}
-        value={value}
-        onValueChange={onChange}
-        disabled={disabled}
-        trackColor={{ true: colors.primary }}
-      />
-    </View>
+      <Text style={[portalStyles.body, { flex: 1, minWidth: 0 }]}>{label}</Text>
+      <View
+        pointerEvents="none"
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+      >
+        <Switch
+          value={value}
+          onValueChange={onChange}
+          disabled={disabled}
+          trackColor={{ true: colors.primary }}
+          accessible={false}
+        />
+      </View>
+    </Pressable>
   );
 }
 export function PortalChoice({
@@ -478,21 +515,42 @@ export function PortalChoice({
   selected,
   onPress,
   disabled = false,
-}: Readonly<{ label: string; selected: boolean; onPress: () => void; disabled?: boolean }>) {
+  role = 'checkbox',
+}: Readonly<{
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  disabled?: boolean;
+  role?: 'checkbox' | 'radio' | 'button';
+}>) {
+  const iconName =
+    role === 'radio'
+      ? selected
+        ? 'radio-button-on'
+        : 'radio-button-off'
+      : role === 'button'
+        ? selected
+          ? 'checkmark-circle'
+          : 'chevron-forward'
+        : selected
+          ? 'checkbox'
+          : 'square-outline';
   return (
     <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: selected, disabled }}
+      accessibilityRole={role}
+      accessibilityState={
+        role === 'button' ? { selected, disabled } : { checked: selected, disabled }
+      }
       disabled={disabled}
       onPress={onPress}
       style={{ flexDirection: 'row', gap: 12, alignItems: 'center', minHeight: 44 }}
     >
       <Ionicons
-        name={selected ? 'checkbox' : 'square-outline'}
+        name={iconName}
         size={24}
         color={selected ? colors.primary : colors.textSecondary}
       />
-      <Text style={portalStyles.body}>{label}</Text>
+      <Text style={[portalStyles.body, { flex: 1, minWidth: 0 }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -502,15 +560,39 @@ export function PortalFeedback({
 }: Readonly<{ error?: string | null; notice?: string | null }>) {
   return (
     <>
-      {error && (
-        <Text accessibilityRole="alert" style={portalStyles.error}>
-          {error}
-        </Text>
+      {Boolean(error) && (
+        <View
+          accessibilityRole="alert"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: 12,
+            borderRadius: 12,
+            backgroundColor: colors.dangerBackground,
+          }}
+        >
+          <Ionicons name="alert-circle-outline" size={20} color={colors.danger} />
+          <Text style={[portalStyles.error, { flex: 1, minWidth: 0 }]}>{error}</Text>
+        </View>
       )}
-      {notice && (
-        <Text accessibilityLiveRegion="polite" style={portalStyles.body}>
-          {notice}
-        </Text>
+      {Boolean(notice) && (
+        <View
+          accessibilityLiveRegion="polite"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: 12,
+            borderRadius: 12,
+            backgroundColor: colors.primarySoft,
+          }}
+        >
+          <Ionicons name="checkmark-circle-outline" size={20} color={colors.primaryDark} />
+          <Text style={[portalStyles.body, { flex: 1, minWidth: 0, color: colors.primaryDark }]}>
+            {notice}
+          </Text>
+        </View>
       )}
     </>
   );

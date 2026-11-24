@@ -28,6 +28,13 @@ function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
     )
   );
   const action = usePortalAction();
+  if (data.categories.length === 0) {
+    return (
+      <InfoNote>
+        Todavía no hay categorías de dispositivos activas para configurar puntos por unidad.
+      </InfoNote>
+    );
+  }
   return (
     <>
       <InfoNote>
@@ -56,7 +63,8 @@ function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
               compact
               suffix="puntos por unidad"
               keyboardType="number-pad"
-              value={values[c.id]}
+              maxLength={7}
+              value={values[c.id] ?? ''}
               editable={!action.busy}
               onChangeText={(value) => setValues({ ...values, [c.id]: value.replace(/\D/g, '') })}
             />
@@ -71,12 +79,12 @@ function CategoryPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
           void action.run(async () => {
             const categories = data.categories.map((c) => ({
               id: c.id,
-              points: Number(values[c.id]),
+              points: Number(values[c.id] ?? ''),
             }));
             if (
               categories.some(
                 (c) =>
-                  !values[c.id].trim() ||
+                  !(values[c.id] ?? '').trim() ||
                   !Number.isSafeInteger(c.points) ||
                   c.points < 0 ||
                   c.points > 1000000

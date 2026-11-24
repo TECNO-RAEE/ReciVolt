@@ -71,25 +71,32 @@ export function AuthTextField({
 
 const styles = StyleSheet.create({
   label: {
-    height: 24,
+    minHeight: 24,
+    paddingVertical: 2,
     fontFamily: fonts.semiBold,
     fontSize: 14,
-    lineHeight: 17,
+    lineHeight: 20,
     color: colors.text,
   },
 
   inputContainer: {
-    height: 52,
+    minHeight: 52,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderControl,
     borderRadius: 10,
   },
 
-  toggle: { width: 45, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  toggle: {
+    minWidth: 45,
+    minHeight: 44,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   inputIcon: {
     marginLeft: 11,
@@ -99,8 +106,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     minWidth: 0,
-    height: '100%',
-    paddingVertical: 0,
+    minHeight: 50,
+    paddingVertical: 12,
     paddingRight: 14,
     fontFamily: fonts.regular,
     fontSize: 15,
