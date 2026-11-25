@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   ReduceMotion,
@@ -20,16 +20,30 @@ export function RewardCard({
   reward,
   onPress,
   status,
-}: Readonly<{ reward: Reward; onPress: () => void; status?: string }>) {
+  userPoints,
+  style,
+}: Readonly<{
+  reward: Reward;
+  onPress: () => void;
+  status?: string;
+  userPoints?: number | null;
+  style?: StyleProp<ViewStyle>;
+}>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const canRedeemHint =
+    !status && typeof userPoints === 'number' && !reward.demo && reward.stock !== 0;
+  const redeemable = canRedeemHint && userPoints >= reward.pointsCost;
+  const missingPoints = canRedeemHint && !redeemable ? reward.pointsCost - userPoints : 0;
+  const lowStock = reward.stock !== null && reward.stock > 0 && reward.stock <= 5;
+
   return (
     <SpringPressable
       accessibilityRole="button"
       accessibilityLabel={`${reward.title}, ${reward.businessName}, ${status ?? pointsLabel(reward.pointsCost)}. Ver detalle`}
       onPress={onPress}
       pressScale={motion.scale.card}
-      style={styles.card}
+      style={[styles.card, style]}
     >
       <View style={styles.photo}>
         <RewardPhoto reward={reward} height={104} />
@@ -49,10 +63,27 @@ export function RewardCard({
         {status ? (
           <Text style={styles.status}>{status}</Text>
         ) : (
-          <PointsBadge points={reward.pointsCost} />
+          <View style={styles.metaRow}>
+            <PointsBadge points={reward.pointsCost} />
+            {redeemable ? (
+              <View style={styles.redeemablePill}>
+                <Ionicons name="checkmark-circle" size={12} color={colors.primaryDark} />
+                <Text style={styles.redeemableText}>Disponible</Text>
+              </View>
+            ) : canRedeemHint ? (
+              <Text style={styles.missingText}>Faltan {missingPoints.toLocaleString('es-AR')}</Text>
+            ) : null}
+            {lowStock ? (
+              <View style={styles.lowStockPill}>
+                <Text style={styles.lowStockText}>
+                  {reward.stock === 1 ? 'Último' : `Quedan ${reward.stock}`}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         )}
       </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.text} />
+      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
     </SpringPressable>
   );
 }
@@ -111,25 +142,70 @@ const makeStyles = (colors: ThemeColors) =>
     card: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 16,
-      padding: 8,
+      gap: 14,
+      padding: 10,
       paddingRight: 12,
-      borderRadius: 15,
+      borderRadius: 16,
       backgroundColor: colors.surface,
-      boxShadow: '0 3px 12px rgba(22,65,39,0.06)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      boxShadow: '0 3px 12px rgba(22,65,39,0.05)',
     },
-    photo: { width: 112, borderRadius: 12, overflow: 'hidden' },
+    photo: { width: 104, borderRadius: 12, overflow: 'hidden', flexShrink: 0 },
     stockBadge: {
       position: 'absolute',
       left: 6,
       top: 6,
-      padding: 4,
+      paddingHorizontal: 6,
+      paddingVertical: 3,
       backgroundColor: colors.surface,
       borderRadius: 6,
     },
-    stockText: { color: colors.textSecondary, fontFamily: fonts.semiBold, fontSize: 12 },
-    body: { flex: 1, gap: 6 },
+    stockText: { color: colors.textSecondary, fontFamily: fonts.semiBold, fontSize: 11 },
+    body: { flex: 1, minWidth: 0, gap: 5 },
     title: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, color: colors.text },
     status: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.primaryDark },
     business: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
+    metaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: 6,
+      marginTop: 2,
+    },
+    redeemablePill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 999,
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.borderPrimary,
+    },
+    redeemableText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 11,
+      color: colors.primaryDark,
+    },
+    missingText: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontVariant: ['tabular-nums'],
+    },
+    lowStockPill: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 999,
+      backgroundColor: colors.warningSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    lowStockText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 11,
+      color: colors.warning,
+    },
   });

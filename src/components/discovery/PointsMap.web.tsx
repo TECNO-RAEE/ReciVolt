@@ -16,6 +16,7 @@ export function PointsMap({
   points,
   location,
   preview = false,
+  previewHeight = 230,
   fill = false,
   selectedId = null,
   onSelect,
@@ -152,9 +153,9 @@ export function PointsMap({
         ref={element}
         aria-label="Mapa de puntos verdes"
         style={{
-          height: fill ? '100%' : preview ? 230 : 380,
+          height: fill ? '100%' : preview ? previewHeight : 380,
           width: '100%',
-          borderRadius: fill ? 0 : 14,
+          borderRadius: fill ? 0 : 12,
           overflow: 'hidden',
           zIndex: 0,
           backgroundColor: colors.surfaceSoft,

@@ -120,6 +120,7 @@ export function PointsCard({
   label = 'Tus puntos',
   hint,
   showPointsUnit = false,
+  compact = false,
 }: Readonly<{
   points: number | null;
   guest?: boolean;
@@ -129,6 +130,7 @@ export function PointsCard({
   label?: string;
   hint?: string;
   showPointsUnit?: boolean;
+  compact?: boolean;
 }>) {
   const colors = useColors();
   const rewardStyles = useRewardStyles();
@@ -174,18 +176,28 @@ export function PointsCard({
       disabled={!onPress}
       onPress={onPress}
       pressScale={motion.scale.card}
-      style={styles.pointsCard}
+      style={[styles.pointsCard, compact && styles.pointsCardCompact]}
     >
-      <PointsCoin />
-      <View style={{ flex: 1, gap: 3 }}>
+      <PointsCoin size={compact ? 56 : 80} />
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <Text style={rewardStyles.label}>{label}</Text>
         {loading ? (
           <Animated.View
             accessibilityLabel="Cargando saldo"
-            style={[styles.balanceSkeleton, skeletonStyle]}
+            style={[
+              styles.balanceSkeleton,
+              compact && styles.balanceSkeletonCompact,
+              skeletonStyle,
+            ]}
           />
         ) : (
-          <Text style={[styles.balance, guest && styles.guestBalance]}>
+          <Text
+            style={[
+              styles.balance,
+              compact && styles.balanceCompact,
+              guest && (compact ? styles.guestBalanceCompact : styles.guestBalance),
+            ]}
+          >
             {guest
               ? 'Empezá hoy'
               : error || points == null
@@ -193,12 +205,17 @@ export function PointsCard({
                 : `${points.toLocaleString('es-AR')}${showPointsUnit ? ` ${points === 1 ? 'punto' : 'puntos'}` : ''}`}
           </Text>
         )}
-        <Text style={styles.pointsHint}>
+        <Text style={styles.pointsHint} numberOfLines={compact ? 2 : undefined}>
           {guest
-            ? 'Registrá tus entregas y disfrutá premios.'
+            ? compact
+              ? 'Registrá tus entregas y canjeá premios.'
+              : 'Registrá tus entregas y disfrutá premios.'
             : error
               ? 'No pudimos cargar tu saldo. Tocá para reintentar.'
-              : (hint ?? 'Sumás puntos por tus entregas confirmadas en toda la red.')}
+              : (hint ??
+                (compact
+                  ? 'Sumás puntos en cada entrega confirmada.'
+                  : 'Sumás puntos por tus entregas confirmadas en toda la red.'))}
         </Text>
       </View>
       {onPress ? <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} /> : null}
@@ -336,6 +353,7 @@ export function RewardsBalance({
   error: string | null;
   onPress?: () => void;
 }>) {
+  const colors = useColors();
   const rewardStyles = useRewardStyles();
   const styles = useThemedStyles(makeStyles);
   const accessibilityLabel = error
@@ -352,22 +370,28 @@ export function RewardsBalance({
       pressScale={motion.scale.card}
       style={styles.balanceCard}
     >
-      <PointsCoin size={64} />
+      <PointsCoin size={44} />
       <View style={styles.balanceText}>
-        <Text style={rewardStyles.label}>Tus puntos</Text>
-        {loading ? (
-          <View accessibilityLabel="Cargando saldo" style={styles.balanceSkeleton} />
-        ) : (
-          <Text style={styles.compactBalance}>
-            {error || points == null ? '—' : pointsLabel(points)}
-          </Text>
-        )}
-        <Text style={styles.pointsHint}>
-          {error
-            ? 'No pudimos cargar tu saldo. Tocá para reintentar.'
-            : 'Canjeá tus puntos por beneficios en comercios adheridos.'}
-        </Text>
+        <View style={styles.balanceHeader}>
+          <Text style={rewardStyles.label}>Tus puntos</Text>
+          {loading ? (
+            <View accessibilityLabel="Cargando saldo" style={styles.compactSkeleton} />
+          ) : (
+            <Text style={styles.compactBalance}>
+              {error || points == null ? '—' : pointsLabel(points)}
+            </Text>
+          )}
+        </View>
+        {error ? (
+          <Text style={styles.pointsHint}>No pudimos cargar tu saldo. Tocá para reintentar.</Text>
+        ) : null}
       </View>
+      {onPress ? (
+        <View style={styles.balanceAction}>
+          <Text style={styles.balanceActionText}>Movimientos</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.primaryDark} />
+        </View>
+      ) : null}
     </SpringPressable>
   );
 }
@@ -528,7 +552,15 @@ const makeStyles = (colors: ThemeColors) =>
       borderColor: colors.cardBorderSubtle,
       boxShadow: '0 7px 20px rgba(22,65,39,0.10)',
     },
+    pointsCardCompact: {
+      borderRadius: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      minHeight: 92,
+      gap: 12,
+    },
     guestBalance: { fontSize: 25, lineHeight: 32 },
+    guestBalanceCompact: { fontSize: 21, lineHeight: 26 },
     balance: {
       fontFamily: fonts.bold,
       fontSize: 40,
@@ -536,12 +568,21 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.text,
       fontVariant: ['tabular-nums'],
     },
+    balanceCompact: {
+      fontSize: 28,
+      lineHeight: 32,
+    },
     balanceSkeleton: {
       width: 100,
       height: 38,
       marginVertical: 3,
       borderRadius: 8,
       backgroundColor: colors.skeletonHighlight,
+    },
+    balanceSkeletonCompact: {
+      width: 84,
+      height: 28,
+      marginVertical: 2,
     },
     pointsHint: {
       fontFamily: fonts.regular,
@@ -583,20 +624,45 @@ const makeStyles = (colors: ThemeColors) =>
     },
     balanceCard: {
       backgroundColor: colors.primarySoft,
-      borderRadius: 18,
-      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.cardBorderSubtle,
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    balanceText: { flex: 1, minWidth: 0, gap: 2 },
+    balanceHeader: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      alignItems: 'center',
-      gap: 14,
+      alignItems: 'baseline',
+      gap: 8,
     },
-    balanceText: { flexGrow: 1, flexShrink: 1, flexBasis: 180, minWidth: 0, gap: 2 },
     compactBalance: {
       fontFamily: fonts.bold,
-      fontSize: 24,
-      lineHeight: 30,
+      fontSize: 20,
+      lineHeight: 26,
       color: colors.text,
       fontVariant: ['tabular-nums'],
+    },
+    compactSkeleton: {
+      width: 84,
+      height: 22,
+      borderRadius: 6,
+      backgroundColor: colors.skeletonHighlight,
+    },
+    balanceAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+      flexShrink: 0,
+    },
+    balanceActionText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.primaryDark,
     },
     badge: {
       alignSelf: 'flex-start',
