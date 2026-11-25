@@ -439,9 +439,9 @@
         "purpose": "Resumen de puntos."
       },
       {
-        "name": "quick-access",
-        "value": "0 5px 16px rgba(22,65,39,0.08)",
-        "purpose": "Acceso rápido de Inicio."
+        "name": "home-search-trigger",
+        "value": "0 4px 16px rgba(22,65,39,0.05)",
+        "purpose": "Buscador de dispositivos en Inicio."
       },
       {
         "name": "home-map",
@@ -449,7 +449,18 @@
         "purpose": "Mapa en Inicio."
       }
     ],
-    "motion": [],
+    "motion": [
+      {
+        "name": "press-spring",
+        "value": "damping 22, stiffness 420, mass 0.7 (scale 0.96–0.99, opacity 0.82)",
+        "purpose": "Compresión táctil inmediata en UI thread para botones, tarjetas y chips; se degrada a fundido en 110 ms con movimiento reducido."
+      },
+      {
+        "name": "sheet-spring",
+        "value": "damping 28, stiffness 320, mass 0.9 (entrada resorte, salida 160–180 ms)",
+        "purpose": "Presentación y cierre de hojas y diálogos modales en AnimatedSheetModal."
+      }
+    ],
     "breakpoints": [],
     "previewNotes": "Muestras HTML estáticas del lenguaje documentado, no componentes de producción. Las rampas tonales se sintetizan sólo para visualizar los colores; no amplían la paleta aprobada. El foco web se ilustra como criterio recomendado, no como certificación de la implementación actual. Roboto usa la fuente del entorno si está disponible; los iconos de navegación ilustran su significado, mientras la app reutiliza Ionicons."
   },

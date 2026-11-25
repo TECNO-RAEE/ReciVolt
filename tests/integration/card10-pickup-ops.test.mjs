@@ -79,10 +79,9 @@ async function citizenRequestPickup(page) {
     await page.getByRole('button', { name: 'Volver', exact: true }).click();
     await page.waitForURL(/\/my-raee$/);
   } else {
-    await page
-      .getByRole('button', { name: /Entregas/ })
-      .first()
-      .click();
+    await page.getByRole('tab', { name: /Perfil/ }).click();
+    await page.waitForURL(/\/profile$/);
+    await page.getByRole('button', { name: 'Mis entregas', exact: true }).click();
     await page.waitForURL(/\/my-raee$/);
   }
   await page.getByRole('tab', { name: 'Retiros', exact: true }).click();
