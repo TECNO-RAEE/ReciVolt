@@ -1,7 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   ReduceMotion,
@@ -11,7 +18,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { HomeBotanical, ImpactPlant, LeafMark } from '@/components/ui/EcoArtwork';
-import { ActionButton } from '@/components/ui/ActionButton';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { PortalFeedback, PortalLink } from '@/components/portal/PortalUI';
 import { InfoNote, PointsCard } from '@/components/rewards/RewardsUI';
@@ -39,6 +45,8 @@ export default function HomeScreen() {
   const { scheme, setPreference } = useThemePreference();
   const isDark = scheme === 'dark';
   const styles = useThemedStyles(makeStyles);
+  const { width } = useWindowDimensions();
+  const isWide = width >= 760;
   const reducedMotion = useReducedMotion();
   const isInitialThemeMount = useRef(true);
   const themeIconScale = useSharedValue(1);
@@ -97,6 +105,8 @@ export default function HomeScreen() {
     (point: GreenPoint) => router.push({ pathname: '/point/[id]', params: { id: point.id } }),
     []
   );
+  const firstName = profile?.fullName.split(' ')[0] || 'visitante';
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
@@ -129,49 +139,61 @@ export default function HomeScreen() {
             </Animated.View>
           </SpringPressable>
         </View>
+
         <View style={styles.intro}>
-          <View style={{ flex: 1, zIndex: 1 }}>
-            <Text style={styles.greeting}>
-              ¡Hola, {profile?.fullName.split(' ')[0] || 'visitante'}!
-            </Text>
-            <Text style={styles.description}>
-              Gracias por ser parte de un{'\n'}mundo más limpio y responsable.
+          <View style={styles.introText}>
+            <Text style={styles.greeting}>¡Hola, {firstName}!</Text>
+            <Text style={styles.description} numberOfLines={2}>
+              Reciclá tus equipos en la red de puntos.
             </Text>
           </View>
           <View pointerEvents="none" style={styles.ecology}>
-            <HomeBotanical />
+            <HomeBotanical size={86} />
           </View>
         </View>
-        <PointsCard
-          guest={!session}
-          points={wallet.data?.points ?? null}
-          loading={!!session && wallet.loading}
-          error={wallet.error}
-          onPress={() => (wallet.error ? void refreshWallet() : router.push('/(app)/my-points'))}
-        />
-        <SpringPressable
-          accessibilityRole="button"
-          accessibilityLabel="¿Qué tenés para reciclar? Buscá puntos verdes cercanos"
-          accessibilityHint="Abre el buscador de dispositivos para ver qué puntos verdes los reciben"
-          onPress={() => setFinderOpen(true)}
-          pressScale={motion.scale.card}
-          style={styles.recycleSearch}
-        >
-          <View style={styles.recycleSearchIcon}>
-            <Ionicons name="search-outline" size={20} color={colors.primaryDark} />
+
+        <View style={[styles.heroGrid, isWide && styles.heroGridWide]}>
+          <SpringPressable
+            accessibilityRole="button"
+            accessibilityLabel="¿Qué tenés para reciclar? Buscá puntos verdes cercanos"
+            accessibilityHint="Abre el buscador de dispositivos para ver qué puntos verdes los reciben"
+            onPress={() => setFinderOpen(true)}
+            pressScale={motion.scale.card}
+            style={[styles.recycleSearch, isWide && styles.heroCell]}
+          >
+            <View style={styles.recycleSearchIcon}>
+              <Ionicons name="search-outline" size={20} color={colors.primaryDark} />
+            </View>
+            <View style={styles.recycleSearchCopy}>
+              <Text style={styles.recycleSearchPlaceholder}>¿Qué tenés para reciclar?</Text>
+              <Text style={styles.recycleSearchHint} numberOfLines={2}>
+                Elegí un dispositivo y mirá los puntos cercanos
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.primaryDark} />
+          </SpringPressable>
+
+          <View style={isWide ? styles.heroCell : undefined}>
+            <PointsCard
+              compact
+              guest={!session}
+              points={wallet.data?.points ?? null}
+              loading={!!session && wallet.loading}
+              error={wallet.error}
+              onPress={() =>
+                wallet.error ? void refreshWallet() : router.push('/(app)/my-points')
+              }
+            />
           </View>
-          <View style={styles.recycleSearchCopy}>
-            <Text style={styles.recycleSearchPlaceholder}>¿Qué tenés para reciclar?</Text>
-            <Text style={styles.recycleSearchHint}>
-              Elegí un dispositivo y mirá los puntos más cercanos
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.primaryDark} />
-        </SpringPressable>
+        </View>
+
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Puntos verdes</Text>
+          <Text style={styles.sectionTitle}>
+            {location ? 'Punto más cercano' : 'Puntos verdes'}
+          </Text>
           <PortalLink title="Ver todos ›" onPress={() => router.push('/green-points')} />
         </View>
+
         {loading || error ? (
           <DiscoveryState loading={loading} error={error} retry={refresh} />
         ) : (
@@ -182,15 +204,44 @@ export default function HomeScreen() {
                 puntos reales publicados.
               </InfoNote>
             )}
-            <PointsMap points={nearest} location={location} preview onSelect={openPoint} />
+            {!location && (
+              <SpringPressable
+                accessibilityRole="button"
+                accessibilityLabel="Encontrar cerca de mí"
+                disabled={locating}
+                onPress={() => void requestLocation()}
+                pressScale={motion.scale.button}
+                style={[styles.locationBar, locating && styles.locationBarDisabled]}
+              >
+                {locating ? (
+                  <ActivityIndicator size="small" color={colors.primaryDark} />
+                ) : (
+                  <Ionicons name="locate-outline" size={18} color={colors.primaryDark} />
+                )}
+                <Text style={styles.locationBarText}>
+                  {locating ? 'Buscando tu ubicación…' : 'Encontrar cerca de mí'}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.primaryDark} />
+              </SpringPressable>
+            )}
+            {locationError && <PortalFeedback error={locationError} />}
             {sorted.length ? (
-              <PointRow
-                point={sorted[0]}
-                location={location}
-                now={now}
-                variant="inset"
-                onPress={() => openPoint(sorted[0])}
-              />
+              <>
+                <PointRow
+                  point={sorted[0]}
+                  location={location}
+                  now={now}
+                  variant="inset"
+                  onPress={() => openPoint(sorted[0])}
+                />
+                <PointsMap
+                  points={nearest}
+                  location={location}
+                  preview
+                  previewHeight={isWide ? 200 : 148}
+                  onSelect={openPoint}
+                />
+              </>
             ) : (
               <DiscoveryState
                 loading={false}
@@ -199,29 +250,25 @@ export default function HomeScreen() {
                 empty="Todavía no hay puntos verdes publicados en la red."
               />
             )}
-            {!location && (
-              <ActionButton
-                title="Encontrar cerca de mí"
-                secondary
-                loading={locating}
-                onPress={() => void requestLocation()}
-              />
-            )}
-            {locationError && <PortalFeedback error={locationError} />}
           </View>
         )}
+
         <SpringPressable
           accessibilityRole="button"
           onPress={() => router.push('/impact')}
           pressScale={motion.scale.card}
-          style={styles.impact}
+          style={styles.guideRow}
         >
-          <ImpactPlant />
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={styles.impactTitle}>Pequeñas acciones,{'\n'}grandes cambios</Text>
-            <Text style={styles.impactHint}>Tus entregas ayudan a un futuro más verde.</Text>
+          <View style={styles.guideIcon}>
+            <ImpactPlant width={34} height={40} />
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} />
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Text style={styles.guideTitle}>Preparar tus dispositivos</Text>
+            <Text style={styles.guideHint}>
+              Copia de seguridad, cierre de sesiones y accesorios antes de entregar.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
         </SpringPressable>
       </ScrollView>
       <RecycleFinderModal
@@ -238,20 +285,21 @@ const makeStyles = (colors: ThemeColors) =>
     container: { flex: 1, backgroundColor: colors.background },
     content: {
       width: '100%',
-      maxWidth: 720,
+      maxWidth: 920,
       alignSelf: 'center',
       padding: 20,
-      gap: 16,
+      paddingTop: 14,
+      gap: 14,
       paddingBottom: 28,
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 8,
+      paddingVertical: 4,
     },
     wordmark: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-    brand: { fontFamily: fonts.bold, color: colors.text, fontSize: 25, letterSpacing: -0.7 },
+    brand: { fontFamily: fonts.bold, color: colors.text, fontSize: 24, letterSpacing: -0.6 },
     themeToggle: {
       width: 44,
       height: 44,
@@ -262,79 +310,147 @@ const makeStyles = (colors: ThemeColors) =>
     },
     intro: {
       flexDirection: 'row',
-      minHeight: 106,
-      paddingTop: 12,
+      alignItems: 'center',
       justifyContent: 'space-between',
+      gap: 12,
     },
-    ecology: { position: 'absolute', right: -20, bottom: -24, opacity: 0.8 },
-    greeting: { fontFamily: fonts.bold, fontSize: 27, color: colors.text, letterSpacing: -0.6 },
+    introText: {
+      flex: 1,
+      minWidth: 0,
+      gap: 3,
+    },
+    ecology: {
+      opacity: 0.85,
+      flexShrink: 0,
+      marginRight: -20,
+    },
+    greeting: {
+      fontFamily: fonts.bold,
+      fontSize: 24,
+      lineHeight: 30,
+      color: colors.text,
+      letterSpacing: -0.5,
+    },
     description: {
       fontFamily: fonts.regular,
-      fontSize: 15,
-      lineHeight: 20,
+      fontSize: 14,
+      lineHeight: 19,
       color: colors.textSecondary,
-      marginTop: 6,
+    },
+    heroGrid: {
+      gap: 12,
+    },
+    heroGridWide: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
+    },
+    heroCell: {
+      flex: 1,
+      minWidth: 0,
+    },
+    recycleSearch: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      minHeight: 62,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.borderPrimary,
+      boxShadow: '0 4px 16px rgba(22,65,39,0.05)',
+    },
+    recycleSearchIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 12,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    recycleSearchCopy: { flex: 1, minWidth: 0, gap: 2 },
+    recycleSearchPlaceholder: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      lineHeight: 21,
+      color: colors.text,
+    },
+    recycleSearchHint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
     },
     sectionHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: -10,
+      marginBottom: -6,
     },
-    sectionTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
-    recycleSearch: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      minHeight: 58,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.borderControl,
-      boxShadow: '0 4px 16px rgba(22,65,39,0.05)',
-    },
-    recycleSearchIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.primarySoft,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    recycleSearchCopy: { flex: 1, minWidth: 0, gap: 2 },
-    recycleSearchPlaceholder: {
-      fontFamily: fonts.semiBold,
-      fontSize: 15,
-      color: colors.text,
-    },
-    recycleSearchHint: {
-      fontFamily: fonts.regular,
-      fontSize: 12,
-      color: colors.textSecondary,
-    },
+    sectionTitle: { fontFamily: fonts.bold, fontSize: 19, color: colors.text },
     mapCard: {
       backgroundColor: colors.surface,
-      padding: 8,
+      padding: 10,
       borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
       gap: 10,
       overflow: 'hidden',
       boxShadow: '0 5px 18px rgba(31,75,48,0.07)',
     },
-    impact: {
+    locationBar: {
+      minHeight: 44,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.borderPrimary,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    locationBarDisabled: {
+      opacity: 0.7,
+    },
+    locationBarText: {
+      flex: 1,
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.primaryDark,
+    },
+    guideRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      backgroundColor: colors.primarySoft,
-      borderRadius: 18,
-      padding: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 12,
+      minHeight: 68,
     },
-    impactTitle: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 20, color: colors.text },
-    impactHint: {
+    guideIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    guideTitle: {
+      fontFamily: fonts.semiBold,
+      fontSize: 15,
+      lineHeight: 20,
+      color: colors.text,
+    },
+    guideHint: {
       fontFamily: fonts.regular,
-      fontSize: 12,
-      lineHeight: 17,
+      fontSize: 13,
+      lineHeight: 18,
       color: colors.textSecondary,
     },
   });

@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { SpringPressable } from '@/components/ui/SpringPressable';
+import { SearchBar } from '@/components/discovery/SearchBar';
 import {
   CitizenPage,
   InfoNote,
@@ -22,19 +23,27 @@ import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { getRewards, getRedemptions } from '@/services/reward.service';
-import {
-  fonts,
-  motion,
-  useColors,
-  useThemedStyles,
-  webInputReset,
-  type ThemeColors,
-} from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+
+const REWARD_CATEGORY_ICONS: Record<
+  RewardCategory | 'all',
+  ComponentProps<typeof Ionicons>['name']
+> = {
+  all: 'apps-outline',
+  food: 'restaurant-outline',
+  wellness: 'heart-outline',
+  education: 'book-outline',
+  shopping: 'home-outline',
+  other: 'gift-outline',
+};
 
 export default function RewardsScreen() {
   const colors = useColors();
   const s = useRewardStyles();
   const styles = useThemedStyles(makeStyles);
+  const { width } = useWindowDimensions();
+  const isWide = width >= 720;
+  const gridCardWidth = isWide ? Math.floor((Math.min(width, 960) - 40 - 12) / 2) : undefined;
   const params = useLocalSearchParams<{ tab?: string }>();
   const [tab, setTab] = useState(params.tab === 'canjes' ? 'Mis canjes' : 'Disponibles');
   useEffect(() => {
@@ -44,7 +53,6 @@ export default function RewardsScreen() {
   }, [params.tab]);
   const [category, setCategory] = useState<RewardCategory | 'all'>('all');
   const [search, setSearch] = useState('');
-  const [searching, setSearching] = useState(false);
   const { session } = useAuth();
   const { now } = useDiscovery();
   const wallet = useWallet();
@@ -87,24 +95,10 @@ export default function RewardsScreen() {
         .toLocaleLowerCase('es-AR')
         .includes(search.trim().toLocaleLowerCase('es-AR'))
   );
+  const userPoints = session ? (wallet.data?.points ?? null) : null;
+
   return (
-    <CitizenPage
-      title="Premios"
-      action={
-        <SpringPressable
-          accessibilityRole="button"
-          accessibilityLabel={searching ? 'Cerrar búsqueda' : 'Buscar premios'}
-          pressScale={motion.scale.icon}
-          style={styles.searchButton}
-          onPress={() => {
-            setSearching(!searching);
-            setSearch('');
-          }}
-        >
-          <Ionicons name={searching ? 'close' : 'search-outline'} size={23} color={colors.text} />
-        </SpringPressable>
-      }
-    >
+    <CitizenPage title="Premios">
       {session && (
         <RewardsBalance
           points={wallet.data?.points ?? null}
@@ -113,84 +107,73 @@ export default function RewardsScreen() {
           onPress={() => (wallet.error ? void refreshWallet() : router.push('/my-points'))}
         />
       )}
-      <View accessibilityRole="tablist" style={styles.tabs}>
-        {['Disponibles', 'Mis canjes'].map((label) => (
-          <SpringPressable
-            key={label}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: tab === label }}
-            onPress={() => {
-              setTab(label);
-              // Clear ?tab=canjes so "Ver mis canjes" can switch tabs again later.
-              if (params.tab) router.setParams({ tab: undefined });
-            }}
-            pressScale={motion.scale.button}
-            style={[styles.tab, tab === label && styles.activeTab]}
-          >
-            <Text style={[styles.tabText, tab === label && { color: colors.primaryDark }]}>
-              {label}
-            </Text>
-          </SpringPressable>
-        ))}
+      <View accessibilityRole="tablist" style={styles.segmentedControl}>
+        {['Disponibles', 'Mis canjes'].map((label) => {
+          const selected = tab === label;
+          return (
+            <SpringPressable
+              key={label}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              onPress={() => {
+                setTab(label);
+                // Clear ?tab=canjes so "Ver mis canjes" can switch tabs again later.
+                if (params.tab) router.setParams({ tab: undefined });
+              }}
+              pressScale={motion.scale.button}
+              style={[styles.segment, selected && styles.segmentActive]}
+            >
+              <Text style={[styles.segmentText, selected && styles.segmentTextActive]}>
+                {label}
+              </Text>
+            </SpringPressable>
+          );
+        })}
       </View>
       {tab === 'Mis canjes' ? (
         session ? (
-          <MyRedemptions key={session.user.id} />
+          <MyRedemptions key={session.user.id} isWide={isWide} gridCardWidth={gridCardWidth} />
         ) : (
           <AccountRequired title="Mis canjes" embedded />
         )
       ) : (
         <>
-          {searching && (
-            <View style={styles.searchBar}>
-              <TextInput
-                autoFocus
-                accessibilityLabel="Buscar por premio o comercio"
-                returnKeyType="search"
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Buscá un premio o comercio"
-                placeholderTextColor={colors.textSecondary}
-                selectionColor={colors.primary}
-                style={styles.searchInput}
-              />
-              {search !== '' && (
-                <SpringPressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Borrar búsqueda"
-                  onPress={() => setSearch('')}
-                  pressScale={motion.scale.icon}
-                  style={styles.clearSearch}
-                >
-                  <Ionicons name="close" size={20} color={colors.text} />
-                </SpringPressable>
-              )}
-            </View>
-          )}
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            label="Buscar por premio o comercio"
+            placeholder="Buscá un premio o comercio"
+          />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chips}
           >
-            {categoryOptions.map(([key, label]) => (
-              <SpringPressable
-                key={key}
-                accessibilityRole="button"
-                accessibilityState={{ selected: activeCategory === key }}
-                onPress={() => setCategory(key)}
-                pressScale={motion.scale.chip}
-                style={[styles.chip, activeCategory === key && styles.selectedChip]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    activeCategory === key && { color: colors.textOnPrimary },
-                  ]}
+            {categoryOptions.map(([key, label]) => {
+              const selected = activeCategory === key;
+              return (
+                <SpringPressable
+                  key={key}
+                  accessibilityRole="button"
+                  accessibilityLabel={label}
+                  accessibilityState={{ selected }}
+                  onPress={() => setCategory(key)}
+                  pressScale={motion.scale.chip}
+                  style={[styles.chip, selected && styles.selectedChip]}
                 >
-                  {label}
-                </Text>
-              </SpringPressable>
-            ))}
+                  <View accessibilityElementsHidden importantForAccessibility="no">
+                    <Ionicons
+                      name={REWARD_CATEGORY_ICONS[key]}
+                      size={15}
+                      color={selected ? colors.textOnPrimary : colors.primaryDark}
+                    />
+                  </View>
+                  <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                    {label}
+                  </Text>
+                </SpringPressable>
+              );
+            })}
           </ScrollView>
           {loading ? (
             <RewardsSkeleton />
@@ -218,11 +201,13 @@ export default function RewardsScreen() {
                   />
                 </View>
               )}
-              <View style={styles.list}>
+              <View style={[styles.list, isWide && styles.listGrid]}>
                 {filtered.map((reward) => (
                   <RewardCard
                     key={reward.id}
                     reward={reward}
+                    userPoints={userPoints}
+                    style={gridCardWidth ? { width: gridCardWidth } : undefined}
                     onPress={() =>
                       router.push({ pathname: '/reward/[id]', params: { id: reward.id } })
                     }
@@ -236,7 +221,10 @@ export default function RewardsScreen() {
     </CitizenPage>
   );
 }
-function MyRedemptions() {
+function MyRedemptions({
+  isWide,
+  gridCardWidth,
+}: Readonly<{ isWide: boolean; gridCardWidth?: number }>) {
   const colors = useColors();
   const s = useRewardStyles();
   const styles = useThemedStyles(makeStyles);
@@ -257,56 +245,58 @@ function MyRedemptions() {
           <Text style={s.body}>Cuando elijas un premio, su código quedará guardado acá.</Text>
         </View>
       )}
-      {data?.map((r) => {
-        const reserved = r.status === 'RESERVED';
-        const statusHint = reserved ? 'Reservado · Ver código' : 'Entregado · Ver detalle';
-        return (
-          <SpringPressable
-            key={r.id}
-            accessibilityRole="button"
-            accessibilityLabel={`${r.reward.title}, ${r.reward.businessName}, ${pointsLabel(r.pointsCost)}, ${statusHint}`}
-            onPress={() => router.push({ pathname: '/redemption/[id]', params: { id: r.id } })}
-            pressScale={motion.scale.card}
-            style={styles.redemptionCard}
-          >
-            <View style={styles.redemptionPhoto}>
-              <RewardPhoto reward={r.reward} height={104} />
-            </View>
-            <View style={styles.redemptionBody}>
-              <Text style={styles.redemptionTitle} numberOfLines={2}>
-                {r.reward.title}
-              </Text>
-              <Text style={styles.redemptionBusiness} numberOfLines={1}>
-                {r.reward.businessName}
-              </Text>
-              <View style={styles.redemptionBadges}>
-                <PointsBadge points={r.pointsCost} />
-                <View
-                  style={[
-                    styles.statusPill,
-                    reserved ? styles.statusPillReserved : styles.statusPillDelivered,
-                  ]}
-                >
-                  <Ionicons
-                    name={reserved ? 'time-outline' : 'checkmark-circle-outline'}
-                    size={14}
-                    color={reserved ? colors.primaryDark : colors.textOnPrimary}
-                  />
-                  <Text
+      <View style={[styles.list, isWide && styles.listGrid]}>
+        {data?.map((r) => {
+          const reserved = r.status === 'RESERVED';
+          const statusHint = reserved ? 'Reservado · Ver código' : 'Entregado · Ver detalle';
+          return (
+            <SpringPressable
+              key={r.id}
+              accessibilityRole="button"
+              accessibilityLabel={`${r.reward.title}, ${r.reward.businessName}, ${pointsLabel(r.pointsCost)}, ${statusHint}`}
+              onPress={() => router.push({ pathname: '/redemption/[id]', params: { id: r.id } })}
+              pressScale={motion.scale.card}
+              style={[styles.redemptionCard, gridCardWidth ? { width: gridCardWidth } : undefined]}
+            >
+              <View style={styles.redemptionPhoto}>
+                <RewardPhoto reward={r.reward} height={104} />
+              </View>
+              <View style={styles.redemptionBody}>
+                <Text style={styles.redemptionTitle} numberOfLines={2}>
+                  {r.reward.title}
+                </Text>
+                <Text style={styles.redemptionBusiness} numberOfLines={1}>
+                  {r.reward.businessName}
+                </Text>
+                <View style={styles.redemptionBadges}>
+                  <PointsBadge points={r.pointsCost} />
+                  <View
                     style={[
-                      styles.statusPillText,
-                      reserved ? styles.statusPillTextReserved : styles.statusPillTextDelivered,
+                      styles.statusPill,
+                      reserved ? styles.statusPillReserved : styles.statusPillDelivered,
                     ]}
                   >
-                    {reserved ? 'Reservado' : 'Entregado'}
-                  </Text>
+                    <Ionicons
+                      name={reserved ? 'time-outline' : 'checkmark-circle-outline'}
+                      size={14}
+                      color={reserved ? colors.primaryDark : colors.textOnPrimary}
+                    />
+                    <Text
+                      style={[
+                        styles.statusPillText,
+                        reserved ? styles.statusPillTextReserved : styles.statusPillTextDelivered,
+                      ]}
+                    >
+                      {reserved ? 'Reservado' : 'Entregado'}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text} />
-          </SpringPressable>
-        );
-      })}
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            </SpringPressable>
+          );
+        })}
+      </View>
       {(page > 0 || (data?.length ?? 0) >= 30) && (
         <View style={s.row}>
           {page > 0 && <PortalLink title="Anterior" onPress={() => setPage(page - 1)} />}
@@ -320,70 +310,74 @@ function MyRedemptions() {
 }
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    searchButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    tabs: { flexDirection: 'row', borderBottomWidth: 1, borderColor: colors.border },
-    tab: {
+    segmentedControl: {
+      flexDirection: 'row',
+      padding: 4,
+      gap: 4,
+      borderRadius: 14,
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    segment: {
       flex: 1,
       minHeight: 44,
+      borderRadius: 10,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingVertical: 12,
-      borderBottomWidth: 2,
+      paddingHorizontal: 12,
+      borderWidth: 1,
       borderColor: 'transparent',
     },
-    activeTab: { borderColor: colors.primaryDark },
-    tabText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.textSecondary },
-    searchBar: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    segmentActive: {
       backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.borderControl,
-      borderRadius: 12,
-      minHeight: 48,
-      paddingLeft: 12,
-      paddingRight: 4,
+      borderColor: colors.border,
+      boxShadow: '0 2px 6px rgba(22,65,39,0.06)',
     },
-    searchInput: {
-      ...webInputReset,
-      flex: 1,
-      minWidth: 0,
-      minHeight: 44,
-      paddingVertical: 10,
-      fontFamily: fonts.regular,
-      fontSize: 16,
-      color: colors.text,
+    segmentText: {
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      color: colors.textSecondary,
     },
-    clearSearch: {
-      width: 44,
-      height: 44,
-      alignItems: 'center',
-      justifyContent: 'center',
+    segmentTextActive: {
+      fontFamily: fonts.bold,
+      color: colors.primaryDark,
     },
     chips: { gap: 8 },
     chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 24,
-      paddingHorizontal: 15,
+      paddingHorizontal: 14,
       minHeight: 44,
       justifyContent: 'center',
       backgroundColor: colors.surfaceSoft,
     },
     selectedChip: { backgroundColor: colors.primaryAction, borderColor: colors.primaryAction },
-    chipText: { fontFamily: fonts.regular, fontSize: 12, color: colors.text },
+    chipText: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.text },
+    chipTextSelected: { color: colors.textOnPrimary },
     list: { gap: 12 },
+    listGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'stretch',
+    },
     redemptionCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 16,
-      padding: 8,
+      gap: 14,
+      padding: 10,
       paddingRight: 12,
-      borderRadius: 15,
+      borderRadius: 16,
       backgroundColor: colors.surface,
-      boxShadow: '0 3px 12px rgba(22,65,39,0.06)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      boxShadow: '0 3px 12px rgba(22,65,39,0.05)',
     },
-    redemptionPhoto: { width: 112, borderRadius: 12, overflow: 'hidden' },
+    redemptionPhoto: { width: 104, borderRadius: 12, overflow: 'hidden', flexShrink: 0 },
     redemptionBody: { flex: 1, minWidth: 0, gap: 6 },
     redemptionTitle: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 20, color: colors.text },
     redemptionBusiness: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },

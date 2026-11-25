@@ -79,11 +79,11 @@ export function PointsCoin({
   );
 }
 
-export function HomeBotanical() {
+export function HomeBotanical({ size = 154 }: Readonly<{ size?: number }>) {
   const id = useId().replace(/:/g, '');
   const dark = useColorSchemeName() === 'dark';
   return (
-    <Svg width={154} height={154} viewBox="0 0 154 154" {...decorativeAccessibility}>
+    <Svg width={size} height={size} viewBox="0 0 154 154" {...decorativeAccessibility}>
       <Defs>
         <LinearGradient id={`${id}-earth`} x1="0" y1="0" x2="1" y2="1">
           <Stop stopColor={dark ? '#3F8660' : '#BDDCC9'} />
@@ -119,11 +119,14 @@ export function HomeBotanical() {
   );
 }
 
-export function ImpactPlant() {
+export function ImpactPlant({
+  width = 54,
+  height = 64,
+}: Readonly<{ width?: number; height?: number }>) {
   const id = useId().replace(/:/g, '');
   const colors = useColors();
   return (
-    <Svg width={54} height={64} viewBox="0 0 54 64" {...decorativeAccessibility}>
+    <Svg width={width} height={height} viewBox="0 0 54 64" {...decorativeAccessibility}>
       <Defs>
         <LinearGradient id={id} x1="0" y1="0" x2="1" y2="1">
           <Stop stopColor="#9ECD64" />

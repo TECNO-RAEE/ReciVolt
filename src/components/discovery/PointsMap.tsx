@@ -20,6 +20,7 @@ function NativePointsMap({
   points,
   location,
   preview = false,
+  previewHeight = 230,
   fill = false,
   selectedId = null,
   onSelect,
@@ -43,9 +44,9 @@ function NativePointsMap({
         fill
           ? { flex: 1, overflow: 'hidden', backgroundColor: colors.surfaceSoft }
           : {
-              height: preview ? 230 : 380,
+              height: preview ? previewHeight : 380,
               overflow: 'hidden',
-              borderRadius: 8,
+              borderRadius: 12,
               backgroundColor: colors.surfaceSoft,
             }
       }
