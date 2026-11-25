@@ -31,7 +31,14 @@ import {
   pickDeliveryPhoto,
   removeDeliveryPhoto,
 } from '@/services/delivery.service';
-import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 
 type DeliveryDraftItem = PickupDraftItem;
 
@@ -154,9 +161,10 @@ export default function NewDeliveryScreen() {
           <Ionicons name="search-outline" size={20} color={colors.textSecondary} />
           <TextInput
             accessibilityLabel="Buscar por punto, dirección o empresa"
-            style={styles.searchInput}
+            style={[styles.searchInput, webInputReset]}
             placeholder="Buscar por punto, dirección o empresa"
             placeholderTextColor={colors.textSecondary}
+            selectionColor={colors.primary}
             value={search}
             onChangeText={setSearch}
             autoCorrect={false}
@@ -974,6 +982,7 @@ const makeStyles = (colors: ThemeColors) =>
       padding: 14,
     },
     notesInput: {
+      ...webInputReset,
       fontFamily: fonts.regular,
       fontSize: 16,
       lineHeight: 22,

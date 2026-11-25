@@ -1,7 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { SpringPressable } from '@/components/ui/SpringPressable';
-import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 export function SearchBar({
   value,
   onChangeText,
@@ -10,6 +17,7 @@ export function SearchBar({
   placeholder = 'Nombre, dirección o dispositivo',
   autoFocus = false,
   accessibilityHint,
+  variant = 'default',
 }: Readonly<{
   value: string;
   onChangeText: (text: string) => void;
@@ -18,11 +26,12 @@ export function SearchBar({
   placeholder?: string;
   autoFocus?: boolean;
   accessibilityHint?: string;
+  variant?: 'default' | 'sheet';
 }>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, variant === 'sheet' && styles.barSheet]}>
       <Ionicons name="search-outline" size={20} color={colors.brandDark} />
       <TextInput
         autoFocus={autoFocus}
@@ -32,6 +41,7 @@ export function SearchBar({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary}
+        selectionColor={colors.primary}
         style={styles.input}
         returnKeyType="search"
         onSubmitEditing={onSubmit}
@@ -72,8 +82,12 @@ const makeStyles = (colors: ThemeColors) =>
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.borderControl,
-      borderRadius: 8,
+      borderRadius: 12,
       minHeight: 50,
+    },
+    barSheet: {
+      backgroundColor: colors.surfaceSoft,
+      borderColor: colors.border,
     },
     iconButton: {
       minWidth: 44,
@@ -82,6 +96,7 @@ const makeStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
     },
     input: {
+      ...webInputReset,
       flex: 1,
       paddingVertical: 12,
       fontFamily: fonts.regular,

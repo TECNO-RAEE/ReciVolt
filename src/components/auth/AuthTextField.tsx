@@ -10,7 +10,14 @@ import {
 } from 'react-native';
 
 import { SpringPressable } from '@/components/ui/SpringPressable';
-import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -44,6 +51,7 @@ export function AuthTextField({
         <TextInput
           ref={inputRef}
           accessibilityLabel={label}
+          selectionColor={colors.primary}
           style={[styles.input, style]}
           placeholderTextColor={colors.textSecondary}
           {...inputProps}
@@ -108,6 +116,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
 
     input: {
+      ...webInputReset,
       flex: 1,
       minWidth: 0,
       minHeight: 50,

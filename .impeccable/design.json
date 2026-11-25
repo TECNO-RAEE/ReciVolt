@@ -479,9 +479,9 @@
       "name": "Campo de gestión",
       "kind": "input",
       "refersTo": "field",
-      "description": "Etiqueta persistente y campo de PortalField (texto de entrada 16px para evitar zoom automático en Safari iOS).",
+      "description": "Etiqueta persistente y campo de PortalField (texto de entrada 16px para evitar zoom automático en Safari iOS y sin recuadro de highlight al seleccionar).",
       "html": "<label class=\"ds-field-label\">Nombre del punto verde<input class=\"ds-field\" type=\"text\" placeholder=\"Nombre del lugar\"></label>",
-      "css": ".ds-field-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:400 15px/23px Roboto,sans-serif}.ds-field{min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #748591;border-radius:8px;font:400 16px Roboto,sans-serif}.ds-field::placeholder{color:#53676D}.ds-field:hover{border-color:#246440}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+      "css": ".ds-field-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:400 15px/23px Roboto,sans-serif}.ds-field{min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #748591;border-radius:8px;font:400 16px Roboto,sans-serif;outline:none}.ds-field::placeholder{color:#53676D}.ds-field:hover{border-color:#246440}"
     },
     {
       "name": "Tarjeta ciudadana",

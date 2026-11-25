@@ -17,3 +17,4 @@ export {
 } from './ThemeContext';
 export { fonts } from './typography';
 export { motion } from './motion';
+export { webInputReset } from './input';

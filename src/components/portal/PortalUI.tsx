@@ -28,7 +28,14 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoCard } from '@/components/ui/InfoCard';
 import { SpringPressable } from '@/components/ui/SpringPressable';
-import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export function createPortalStyles(colors: ThemeColors) {
@@ -326,6 +333,7 @@ export function usePortalFieldStyle() {
   const colors = useColors();
   return useMemo(
     () => ({
+      ...webInputReset,
       borderWidth: 1,
       borderColor: colors.borderControl,
       borderRadius: 8,
@@ -362,6 +370,7 @@ export function PortalField({
     <TextInput
       accessibilityLabel={suffix ? `${label}, ${suffix}` : label}
       placeholderTextColor={colors.textSecondary}
+      selectionColor={colors.primary}
       {...props}
       autoCapitalize={props.autoCapitalize ?? defaultAutoCapitalize}
       style={[

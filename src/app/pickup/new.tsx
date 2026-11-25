@@ -46,7 +46,14 @@ import {
   pickupCommand,
   removePickupPhoto,
 } from '@/services/pickup.service';
-import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 
 function createDraftItemId(): string {
   return `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -976,6 +983,7 @@ const makeStyles = (colors: ThemeColors) =>
       gap: 8,
     },
     searchInput: {
+      ...webInputReset,
       flex: 1,
       minWidth: 0,
       fontFamily: fonts.regular,
@@ -1137,6 +1145,7 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.text,
     },
     input: {
+      ...webInputReset,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.border,
