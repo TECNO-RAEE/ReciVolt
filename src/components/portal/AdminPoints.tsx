@@ -14,11 +14,7 @@ import {
   usePortalStyles,
 } from './PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
-import {
-  pointWorkspaceBackTarget,
-  type ManagedPoint,
-  type PortalCompany,
-} from '@/models/Portal';
+import { pointWorkspaceBackTarget, type ManagedPoint, type PortalCompany } from '@/models/Portal';
 import { splitPointAddress } from '@/models/PointAddress';
 import { getActiveRewardCompanyIds } from '@/services/reward.service';
 import {
@@ -120,11 +116,15 @@ export function AdminPoints({
           Elegí una institución de la red o incorporá una nueva para este punto.
         </Text>
         <ActionButton title="Nueva institución" onPress={() => setSelected(null)} />
-        <PortalField
-          label="Buscar institución por nombre o ID"
-          value={companySearch}
-          onChangeText={setCompanySearch}
-        />
+        <View style={{ gap: 8 }}>
+          <Text style={s.body}>Buscar institución por nombre o ID</Text>
+          <SearchBar
+            value={companySearch}
+            onChangeText={setCompanySearch}
+            label="Buscar institución por nombre o ID"
+            placeholder="Nombre o ID de la institución"
+          />
+        </View>
         {filteredCompanies.length === 0 && (
           <Text style={s.body}>
             {companies.length
@@ -254,8 +254,7 @@ function PointWorkspace({
     onBackChange?.(handleBack);
     return () => onBackChange?.(null);
   }, [handleBack, onBackChange]);
-  const filteredPoints =
-    data?.points.filter((p) => matchesAdminSearch(search, p.name, p.id)) ?? [];
+  const filteredPoints = data?.points.filter((p) => matchesAdminSearch(search, p.name, p.id)) ?? [];
   return (
     <View style={s.stack}>
       {currentPoint === undefined ? (
@@ -305,11 +304,15 @@ function PointWorkspace({
             <Text style={s.subtitle}>{company?.name}</Text>
             <ActionButton title="Agregar punto verde" onPress={() => setEditing(null)} />
             {data.points.length > 0 && (
-              <PortalField
-                label="Buscar puntos por nombre o ID"
-                value={search}
-                onChangeText={setSearch}
-              />
+              <View style={{ gap: 8 }}>
+                <Text style={s.body}>Buscar puntos por nombre o ID</Text>
+                <SearchBar
+                  value={search}
+                  onChangeText={setSearch}
+                  label="Buscar puntos por nombre o ID"
+                  placeholder="Nombre o ID del punto"
+                />
+              </View>
             )}
             {data.points.length === 0 && (
               <Text style={s.body}>Esta institución todavía no tiene puntos verdes.</Text>

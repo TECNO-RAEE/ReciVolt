@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { brand } from '@/config/brand';
 import {
   OrganizationCard,
@@ -13,7 +14,7 @@ import {
 import { activeMemberships } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
-import { useColors } from '@/theme';
+import { motion, useColors } from '@/theme';
 
 export default function CompanyScreen() {
   const colors = useColors();
@@ -27,20 +28,20 @@ export default function CompanyScreen() {
       refreshing={refreshing}
       onRefresh={() => void refresh()}
       action={
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Configuraciones"
+          pressScale={motion.scale.icon}
           onPress={() => router.push('/settings')}
-          style={({ pressed }) => ({
+          style={{
             minWidth: 44,
             minHeight: 44,
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: pressed ? 0.6 : 1,
-          })}
+          }}
         >
           <Ionicons name="settings-outline" size={24} color={colors.text} />
-        </Pressable>
+        </SpringPressable>
       }
     >
       <OrganizationCard

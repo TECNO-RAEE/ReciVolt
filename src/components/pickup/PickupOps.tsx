@@ -67,7 +67,7 @@ export function PickupCitizenCard({ pickup }: Readonly<{ pickup: Pickup }>) {
         </View>
         <View style={styles.dataRow}>
           <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
-          <Text style={s.body}>
+          <Text style={[s.body, { flex: 1, minWidth: 0 }]}>
             {pickup.addressStreet}, {pickup.addressLocality}
           </Text>
         </View>
@@ -101,9 +101,9 @@ export function PickupMaterialCard({
       </Text>
       {pickup.items.map((item: PickupItem) => (
         <View key={item.categoryId} style={styles.materialRow}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={s.body}>{item.categoryName}</Text>
-            <Text style={s.hint}>
+          <View style={styles.materialInfo}>
+            <Text style={[s.body, { minWidth: 0 }]}>{item.categoryName}</Text>
+            <Text style={[s.hint, { minWidth: 0 }]}>
               Declarado: {item.declaredQuantity}
               {item.pointsSnapshot > 0 ? ` · ${item.pointsSnapshot} puntos por unidad` : ''}
             </Text>
@@ -194,9 +194,17 @@ const makeStyles = (colors: ThemeColors) =>
     },
     materialRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       alignItems: 'center',
       gap: 12,
       minHeight: 44,
+    },
+    materialInfo: {
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 140,
+      minWidth: 0,
+      gap: 2,
     },
     quantity: {
       fontFamily: fonts.bold,

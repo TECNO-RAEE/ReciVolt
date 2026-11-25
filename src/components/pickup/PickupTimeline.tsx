@@ -69,14 +69,10 @@ export function PickupTimeline({ steps }: Readonly<PickupTimelineProps>) {
                   >
                     {step.title}
                   </Text>
-                  {step.dateLabel ? (
-                    <Text style={styles.dateLabel}>{step.dateLabel}</Text>
-                  ) : null}
+                  {step.dateLabel ? <Text style={styles.dateLabel}>{step.dateLabel}</Text> : null}
                 </View>
 
-                {step.subtitle ? (
-                  <Text style={styles.subtitle}>{step.subtitle}</Text>
-                ) : null}
+                {step.subtitle ? <Text style={styles.subtitle}>{step.subtitle}</Text> : null}
               </View>
             </View>
           );
@@ -159,6 +155,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     contentCol: {
       flex: 1,
+      minWidth: 0,
       paddingTop: 3,
     },
     contentColWithLine: {
@@ -166,11 +163,14 @@ const makeStyles = (colors: ThemeColors) =>
     },
     titleRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       justifyContent: 'space-between',
       alignItems: 'center',
       gap: 8,
     },
     stepTitle: {
+      flexShrink: 1,
+      minWidth: 0,
       fontFamily: fonts.bold,
       fontSize: 15,
       color: colors.text,
@@ -183,6 +183,8 @@ const makeStyles = (colors: ThemeColors) =>
       fontFamily: fonts.semiBold,
     },
     dateLabel: {
+      flexShrink: 1,
+      minWidth: 0,
       fontFamily: fonts.regular,
       fontSize: 12,
       color: colors.textSecondary,
