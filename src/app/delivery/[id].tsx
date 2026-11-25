@@ -1,30 +1,23 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { CitizenPage, CopyableCode } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { ScanSuccessModal } from '@/components/ui/ScanSuccessModal';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { useStatusPolling } from '@/hooks/useStatusPolling';
 import { deliveryQr, deliveryStatusNames, effectiveDeliveryStatus } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
+import { humanizePortalError } from '@/models/PortalError';
 import { pointsLabel } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { deliveryCommand, getDeliveryPhotoUrl } from '@/services/delivery.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, lightColors, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const PENDING_DELIVERY_STATUSES = ['PENDING_RECEPTION'] as const;
 const CONFIRMED_DELIVERY_STATUSES = ['CONFIRMED'] as const;
@@ -48,6 +41,7 @@ function DeliveryDetail({ id }: Readonly<{ id: string }>) {
   const action = usePortalAction();
 
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [scanSuccessVisible, setScanSuccessVisible] = useState(false);
 
   const currentStatus = session && data ? effectiveDeliveryStatus(data) : null;
@@ -75,33 +69,33 @@ function DeliveryDetail({ id }: Readonly<{ id: string }>) {
   }
 
   const handleConfirmCancel = () => {
-    setCancelModalVisible(false);
+    setCancelError(null);
     void action.run(async () => {
-      await deliveryCommand('cancel', { id });
-      await refresh();
+      try {
+        await deliveryCommand('cancel', { id });
+        await refresh();
+        setCancelModalVisible(false);
+      } catch (err) {
+        setCancelError(humanizePortalError(err, 'No pudimos cancelar la entrega.'));
+        throw err;
+      }
     }, 'Entrega cancelada.');
   };
 
   const handleCancelPress = () => {
-    if (Platform.OS === 'web') {
-      setCancelModalVisible(true);
-    } else {
-      Alert.alert(
-        'Cancelar entrega',
-        '¿Estás seguro de que querés cancelar esta entrega? Los puntos no serán acreditados.',
-        [
-          { text: 'No, conservar', style: 'cancel' },
-          { text: 'Sí, cancelar', style: 'destructive', onPress: handleConfirmCancel },
-        ]
-      );
-    }
+    setCancelError(null);
+    setCancelModalVisible(true);
   };
 
   if (loading) {
     return (
       <CitizenPage title="Tu entrega" back="/my-raee">
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator
+            size="large"
+            color={colors.primary}
+            accessibilityLabel="Cargando información de la entrega"
+          />
           <Text style={styles.loadingText}>Cargando información de la entrega…</Text>
         </View>
       </CitizenPage>
@@ -269,7 +263,7 @@ function DeliveryDetail({ id }: Readonly<{ id: string }>) {
                 size={200}
                 quietZone={12}
                 ecl="M"
-                color="#102530"
+                color={lightColors.text}
                 backgroundColor={colors.qrBackground}
               />
             </View>
@@ -341,33 +335,21 @@ function DeliveryDetail({ id }: Readonly<{ id: string }>) {
           />
         </CitizenPage>
 
-        {/* Modal de confirmación para cancelar en web */}
-        <Modal
+        <ConfirmModal
           visible={cancelModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setCancelModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View accessibilityViewIsModal style={styles.modalAlertCard}>
-              <View style={styles.modalAlertIcon}>
-                <Ionicons name="alert-circle-outline" size={32} color={colors.danger} />
-              </View>
-              <Text style={styles.modalAlertTitle}>¿Cancelar entrega?</Text>
-              <Text style={styles.modalAlertMsg}>
-                Si cancelás esta entrega, el código quedará inhabilitado y no se acreditarán puntos.
-              </Text>
-              <View style={styles.modalAlertActions}>
-                <ActionButton title="Sí, cancelar" destructive onPress={handleConfirmCancel} />
-                <ActionButton
-                  title="Volver"
-                  secondary
-                  onPress={() => setCancelModalVisible(false)}
-                />
-              </View>
-            </View>
-          </View>
-        </Modal>
+          onClose={() => {
+            setCancelModalVisible(false);
+            setCancelError(null);
+          }}
+          onConfirm={handleConfirmCancel}
+          title="¿Cancelar entrega?"
+          message="Si cancelás esta entrega, el código quedará inhabilitado y no se acreditarán puntos."
+          confirmLabel="Cancelar entrega"
+          cancelLabel="Conservar entrega"
+          destructive
+          loading={action.busy}
+          error={cancelError}
+        />
       </>
     );
   }
@@ -459,7 +441,10 @@ function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
   if (loading) {
     return (
       <View style={{ paddingVertical: 12, alignItems: 'center' }}>
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator
+          color={colors.primary}
+          accessibilityLabel="Cargando foto de la entrega"
+        />
       </View>
     );
   }
@@ -522,6 +507,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     cardTextCol: {
       flex: 1,
+      minWidth: 0,
       gap: 2,
     },
     cardTitle: {
@@ -689,48 +675,5 @@ const makeStyles = (colors: ThemeColors) =>
     actionButtonsCol: {
       gap: 12,
       marginTop: 8,
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 24,
-    },
-    modalAlertCard: {
-      width: '100%',
-      maxWidth: 380,
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      padding: 24,
-      alignItems: 'center',
-      gap: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    modalAlertIcon: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: colors.dangerBackground,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    modalAlertTitle: {
-      fontFamily: fonts.bold,
-      fontSize: 18,
-      color: colors.text,
-    },
-    modalAlertMsg: {
-      fontFamily: fonts.regular,
-      fontSize: 14,
-      lineHeight: 20,
-      color: colors.textSecondary,
-      textAlign: 'center',
-    },
-    modalAlertActions: {
-      gap: 8,
-      marginTop: 12,
-      width: '100%',
     },
   });

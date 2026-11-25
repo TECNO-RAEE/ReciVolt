@@ -106,7 +106,7 @@ export default function RewardsScreen() {
           onPress={() => (wallet.error ? void refreshWallet() : router.push('/my-points'))}
         />
       )}
-      <View style={styles.tabs}>
+      <View accessibilityRole="tablist" style={styles.tabs}>
         {['Disponibles', 'Mis canjes'].map((label) => (
           <SpringPressable
             key={label}
@@ -139,6 +139,7 @@ export default function RewardsScreen() {
               <TextInput
                 autoFocus
                 accessibilityLabel="Buscar por premio o comercio"
+                returnKeyType="search"
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Buscá un premio o comercio"
@@ -298,10 +299,14 @@ function MyRedemptions() {
           </SpringPressable>
         );
       })}
-      <View style={s.row}>
-        {page > 0 && <PortalLink title="Anterior" onPress={() => setPage(page - 1)} />}
-        {data?.length === 30 && <PortalLink title="Más canjes" onPress={() => setPage(page + 1)} />}
-      </View>
+      {(page > 0 || (data?.length ?? 0) >= 30) && (
+        <View style={s.row}>
+          {page > 0 && <PortalLink title="Anterior" onPress={() => setPage(page - 1)} />}
+          {(data?.length ?? 0) >= 30 && (
+            <PortalLink title="Más canjes" onPress={() => setPage(page + 1)} />
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -337,6 +342,7 @@ const makeStyles = (colors: ThemeColors) =>
       minHeight: 44,
       paddingVertical: 10,
       fontFamily: fonts.regular,
+      fontSize: 16,
       color: colors.text,
     },
     clearSearch: {

@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState, type ComponentProps, type ReactNode, type Ref } from 'react';
 import {
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -10,7 +9,8 @@ import {
   View,
 } from 'react-native';
 
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -51,11 +51,12 @@ export function AuthTextField({
         />
 
         {passwordToggle && (
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             disabled={inputProps.editable === false}
             onPress={() => setVisible((value) => !value)}
+            pressScale={motion.scale.icon}
             style={styles.toggle}
           >
             <Ionicons
@@ -63,7 +64,7 @@ export function AuthTextField({
               size={25}
               color={colors.text}
             />
-          </Pressable>
+          </SpringPressable>
         )}
         {trailing}
       </View>
@@ -113,7 +114,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingVertical: 12,
       paddingRight: 14,
       fontFamily: fonts.regular,
-      fontSize: 15,
+      fontSize: 16,
       lineHeight: 23,
       color: colors.text,
     },

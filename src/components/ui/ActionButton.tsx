@@ -40,28 +40,22 @@ export function ActionButton({
       pressScale={motion.scale.button}
       style={[
         styles.button,
-        icon != null && styles.withIcon,
+        (icon != null || loading) && styles.withIcon,
         secondary && styles.secondary,
         destructive && (secondary ? styles.destructiveSecondary : styles.destructive),
         (loading || disabled) && styles.pressed,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={spinnerColor} />
-      ) : (
-        <>
-          {icon}
-          <Text
-            style={[
-              styles.text,
-              secondary && styles.secondaryText,
-              destructive && (secondary ? styles.destructiveSecondaryText : styles.destructiveText),
-            ]}
-          >
-            {title}
-          </Text>
-        </>
-      )}
+      {loading ? <ActivityIndicator size="small" color={spinnerColor} /> : icon}
+      <Text
+        style={[
+          styles.text,
+          secondary && styles.secondaryText,
+          destructive && (secondary ? styles.destructiveSecondaryText : styles.destructiveText),
+        ]}
+      >
+        {title}
+      </Text>
     </SpringPressable>
   );
 }

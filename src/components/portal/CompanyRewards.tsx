@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
+import { SearchBar } from '@/components/discovery/SearchBar';
 import { RewardThumbnail } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { brand } from '@/config/brand';
@@ -8,13 +9,7 @@ import { usePortalData } from '@/hooks/usePortalData';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import { pointsLabel } from '@/models/Reward';
 import { getRewards } from '@/services/reward.service';
-import {
-  PortalBadge,
-  PortalField,
-  PortalListItem,
-  PortalLoading,
-  usePortalStyles,
-} from './PortalUI';
+import { PortalBadge, PortalListItem, PortalLoading, usePortalStyles } from './PortalUI';
 
 export function CompanyRewards({ companyId }: Readonly<{ companyId: string }>) {
   const s = usePortalStyles();
@@ -26,11 +21,19 @@ export function CompanyRewards({ companyId }: Readonly<{ companyId: string }>) {
   return (
     <View style={s.stack}>
       <Text style={s.body}>
-        Premios de tu empresa. {brand.name} administra su publicación; tu equipo valida los códigos al
-        entregarlos.
+        Premios de tu empresa. {brand.name} administra su publicación; tu equipo valida los códigos
+        al entregarlos.
       </Text>
       {(data?.length ?? 0) > 0 && (
-        <PortalField label="Buscar premios por nombre" value={search} onChangeText={setSearch} />
+        <View style={{ gap: 8 }}>
+          <Text style={s.body}>Buscar premios por nombre</Text>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            label="Buscar premios por nombre"
+            placeholder="Nombre o ID del premio"
+          />
+        </View>
       )}
       <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
       {!loading && !error && data?.length === 0 && (

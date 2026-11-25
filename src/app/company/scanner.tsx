@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { PortalPage } from '@/components/portal/PortalUI';
 import {
   DeliveryConfirmationView,
@@ -11,6 +11,7 @@ import {
   ScannerLookupView,
 } from '@/components/scanner';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { usePortalAction } from '@/hooks/usePortalData';
 import {
   deliveryQuantity,
@@ -23,7 +24,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { deliveryCommand } from '@/services/delivery.service';
 import { getPickupByCode } from '@/services/pickup.service';
 import { rewardCommand } from '@/services/reward.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function ScannerScreen() {
   const colors = useColors();
@@ -44,10 +45,7 @@ export default function ScannerScreen() {
             Para escanear y validar entregas, retiros o premios debés tener una empresa activa
             asignada.
           </Text>
-          <ActionButton
-            title="Ir al panel de empresa"
-            onPress={() => router.replace('/company')}
-          />
+          <ActionButton title="Ir al panel de empresa" onPress={() => router.replace('/company')} />
         </View>
       </PortalPage>
     );
@@ -176,7 +174,7 @@ function Scanner({
         items: delivery.items.map((i) => ({
           categoryId: i.categoryId,
           quantity: deliveryQuantity(
-            String(quantities[i.categoryId] ?? (i.confirmedQuantity ?? i.declaredQuantity)),
+            String(quantities[i.categoryId] ?? i.confirmedQuantity ?? i.declaredQuantity),
             true
           ),
         })),
@@ -208,14 +206,15 @@ function Scanner({
 
   // Screen header help action button
   const headerAction = (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       accessibilityLabel="Ayuda sobre cómo validar códigos"
+      pressScale={motion.scale.icon}
       style={styles.headerHelpBtn}
       onPress={() => setHelpModalVisible(true)}
     >
       <Ionicons name="help-circle-outline" size={24} color={colors.primaryDark} />
-    </Pressable>
+    </SpringPressable>
   );
 
   let title = 'Validar código';
@@ -243,9 +242,7 @@ function Scanner({
             onMountError={() => {
               setCamera(false);
               void action.run(async () => {
-                throw new Error(
-                  'No pudimos abrir la cámara. Ingresá el código manualmente.'
-                );
+                throw new Error('No pudimos abrir la cámara. Ingresá el código manualmente.');
               });
             }}
             onBarcodeScanned={(data) => {
@@ -300,10 +297,7 @@ function Scanner({
         )}
       </PortalPage>
 
-      <ScannerHelpModal
-        visible={helpModalVisible}
-        onClose={() => setHelpModalVisible(false)}
-      />
+      <ScannerHelpModal visible={helpModalVisible} onClose={() => setHelpModalVisible(false)} />
     </>
   );
 }
@@ -342,8 +336,8 @@ const makeStyles = (colors: ThemeColors) =>
       marginBottom: 10,
     },
     headerHelpBtn: {
-      width: 44,
-      height: 44,
+      minWidth: 44,
+      minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },

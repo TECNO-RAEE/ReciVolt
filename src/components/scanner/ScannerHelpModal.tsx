@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
 import { SpringPressable } from '@/components/ui/SpringPressable';
@@ -21,7 +21,9 @@ export function ScannerHelpModal({ visible, onClose }: ScannerHelpModalProps) {
       containerStyle={styles.helpModalCard}
     >
       <View style={styles.modalHeaderRow}>
-        <Text style={styles.helpModalTitle}>¿Cómo validar códigos?</Text>
+        <Text accessibilityRole="header" style={styles.helpModalTitle}>
+          ¿Cómo validar códigos?
+        </Text>
         <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Cerrar ayuda"
@@ -104,17 +106,7 @@ const makeStyles = (colors: ThemeColors) =>
       borderColor: colors.border,
       padding: 20,
       gap: 16,
-      ...Platform.select({
-        ios: {
-          shadowColor: '#000000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.14,
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: 3,
-        },
-      }),
+      boxShadow: '0 8px 28px rgba(16, 40, 44, 0.14)',
     },
     modalHeaderRow: {
       flexDirection: 'row',

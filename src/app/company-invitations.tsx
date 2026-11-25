@@ -1,13 +1,13 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, type TextInputInstance, View } from 'react-native';
 import { supabase } from '@/config/supabase';
+import { AuthTextField } from '@/components/auth/AuthTextField';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import {
   PortalPage,
-  PortalField,
   PortalFeedback,
   PortalLoading,
   usePortalStyles,
@@ -92,29 +92,47 @@ function Invitations({ needsPassword }: Readonly<{ needsPassword: boolean }>) {
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [password, setPassword] = useState(''),
     [confirm, setConfirm] = useState('');
+  const confirmPasswordRef = useRef<TextInputInstance>(null);
   const showPasswordSetup = needsPassword && Boolean(data?.length);
   return (
     <>
-      {session?.user.email && (
-        <Text style={s.hint}>Sesión iniciada como {session.user.email}</Text>
-      )}
+      {session?.user.email && <Text style={s.hint}>Sesión iniciada como {session.user.email}</Text>}
       <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
       {showPasswordSetup && (
         <View style={s.stack}>
-          <PortalField
-            label="Creá tu contraseña (mínimo 8 caracteres)"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            editable={!action.busy}
-          />
-          <PortalField
-            label="Repetí la contraseña"
-            value={confirm}
-            onChangeText={setConfirm}
-            secureTextEntry
-            editable={!action.busy}
-          />
+          <View style={{ gap: 6 }}>
+            <AuthTextField
+              label="Creá tu contraseña (mínimo 8 caracteres)"
+              iconName="lock-closed-outline"
+              value={password}
+              onChangeText={setPassword}
+              passwordToggle
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+              editable={!action.busy}
+            />
+          </View>
+          <View style={{ gap: 6 }}>
+            <AuthTextField
+              label="Repetí la contraseña"
+              iconName="lock-closed-outline"
+              inputRef={confirmPasswordRef}
+              value={confirm}
+              onChangeText={setConfirm}
+              passwordToggle
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="done"
+              editable={!action.busy}
+            />
+          </View>
         </View>
       )}
       {data?.length === 0 && (

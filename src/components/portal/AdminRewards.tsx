@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import { SearchBar } from '@/components/discovery/SearchBar';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoNote, RewardPhoto, RewardThumbnail } from '@/components/rewards/RewardsUI';
 import {
@@ -61,11 +62,15 @@ export function AdminRewards({
   return (
     <View style={s.stack}>
       {(data?.length ?? 0) > 5 && (
-        <PortalField
-          label="Buscar premios por nombre o ID"
-          value={search}
-          onChangeText={setSearch}
-        />
+        <View style={{ gap: 8 }}>
+          <Text style={s.body}>Buscar premios por nombre o ID</Text>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            label="Buscar premios por nombre o ID"
+            placeholder="Nombre o ID del premio"
+          />
+        </View>
       )}
       <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
       {!loading && !error && data?.length === 0 && (
@@ -163,12 +168,15 @@ export function RewardEditor({
         </Text>
       ) : (
         <>
-          <PortalField
-            label="Buscar comercio"
-            value={companySearch}
-            onChangeText={setCompanySearch}
-            editable={!action.busy}
-          />
+          <View style={{ gap: 8 }}>
+            <Text style={s.body}>Buscar comercio</Text>
+            <SearchBar
+              value={companySearch}
+              onChangeText={setCompanySearch}
+              label="Buscar comercio"
+              placeholder="Nombre o ID del comercio"
+            />
+          </View>
           <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
             {activeCompanies
               .filter((c) => matchesAdminSearch(companySearch, c.id, c.name))
@@ -177,6 +185,7 @@ export function RewardEditor({
                   key={c.id}
                   label={c.name}
                   selected={companyId === c.id}
+                  role="radio"
                   disabled={action.busy}
                   onPress={() => {
                     setCompanyId(c.id);

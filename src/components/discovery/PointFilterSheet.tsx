@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
 import { SpringPressable } from '@/components/ui/SpringPressable';
@@ -46,6 +47,7 @@ export function PointFilterSheet({
 }>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(values);
   // Al abrir la hoja, el borrador vuelve a partir de los filtros aplicados (sin useEffect:
   // se ajusta durante el render, como recomienda React para sincronizar con una prop).
@@ -66,7 +68,7 @@ export function PointFilterSheet({
       visible={visible}
       onClose={onClose}
       presentation="sheet"
-      containerStyle={styles.sheet}
+      containerStyle={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}
     >
       <View style={styles.handle} />
       <View style={styles.headerRow}>
@@ -91,11 +93,12 @@ export function PointFilterSheet({
           categories.map((category) => {
             const checked = draft.categoryIds.includes(category.id);
             return (
-              <Pressable
+              <SpringPressable
                 key={category.id}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked }}
                 accessibilityLabel={category.name}
+                pressScale={motion.scale.row}
                 onPress={() => toggleCategory(category.id)}
                 style={styles.checkboxRow}
               >
@@ -103,16 +106,17 @@ export function PointFilterSheet({
                   {checked && <Ionicons name="checkmark" size={16} color={colors.textOnPrimary} />}
                 </View>
                 <Text style={styles.checkboxLabel}>{category.name}</Text>
-              </Pressable>
+              </SpringPressable>
             );
           })
         )}
         {companies.length > 0 && (
           <>
             <Text style={styles.label}>Organización</Text>
-            <Pressable
+            <SpringPressable
               accessibilityRole="radio"
               accessibilityState={{ checked: draft.companyId === '' }}
+              pressScale={motion.scale.row}
               onPress={() => setDraft((current) => ({ ...current, companyId: '' }))}
               style={styles.optionRow}
             >
@@ -122,12 +126,13 @@ export function PointFilterSheet({
                 color={draft.companyId === '' ? colors.primary : colors.textSecondary}
               />
               <Text style={styles.checkboxLabel}>Todas</Text>
-            </Pressable>
+            </SpringPressable>
             {companies.map(([id, name]) => (
-              <Pressable
+              <SpringPressable
                 key={id}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: draft.companyId === id }}
+                pressScale={motion.scale.row}
                 onPress={() => setDraft((current) => ({ ...current, companyId: id }))}
                 style={styles.optionRow}
               >
@@ -137,14 +142,15 @@ export function PointFilterSheet({
                   color={draft.companyId === id ? colors.primary : colors.textSecondary}
                 />
                 <Text style={styles.checkboxLabel}>{name}</Text>
-              </Pressable>
+              </SpringPressable>
             ))}
           </>
         )}
         <Text style={styles.label}>Servicio</Text>
-        <Pressable
+        <SpringPressable
           accessibilityRole="checkbox"
           accessibilityState={{ checked: draft.pickupOnly }}
+          pressScale={motion.scale.row}
           onPress={() => setDraft((current) => ({ ...current, pickupOnly: !current.pickupOnly }))}
           style={styles.checkboxRow}
         >
@@ -154,10 +160,11 @@ export function PointFilterSheet({
             )}
           </View>
           <Text style={styles.checkboxLabel}>Ofrecen retiro a domicilio</Text>
-        </Pressable>
-        <Pressable
+        </SpringPressable>
+        <SpringPressable
           accessibilityRole="checkbox"
           accessibilityState={{ checked: draft.openOnly }}
+          pressScale={motion.scale.row}
           onPress={() => setDraft((current) => ({ ...current, openOnly: !current.openOnly }))}
           style={styles.checkboxRow}
         >
@@ -165,11 +172,12 @@ export function PointFilterSheet({
             {draft.openOnly && <Ionicons name="checkmark" size={16} color={colors.textOnPrimary} />}
           </View>
           <Text style={styles.checkboxLabel}>Recepción en el lugar ahora</Text>
-        </Pressable>
+        </SpringPressable>
         {hasLocation && (
-          <Pressable
+          <SpringPressable
             accessibilityRole="checkbox"
             accessibilityState={{ checked: draft.nearbyOnly }}
+            pressScale={motion.scale.row}
             onPress={() => setDraft((current) => ({ ...current, nearbyOnly: !current.nearbyOnly }))}
             style={styles.checkboxRow}
           >
@@ -179,7 +187,7 @@ export function PointFilterSheet({
               )}
             </View>
             <Text style={styles.checkboxLabel}>A menos de 10 km</Text>
-          </Pressable>
+          </SpringPressable>
         )}
       </ScrollView>
       <View style={styles.actions}>
@@ -214,7 +222,6 @@ const makeStyles = (colors: ThemeColors) =>
       borderRightWidth: 1,
       borderColor: colors.border,
       paddingTop: 10,
-      paddingBottom: Platform.select({ ios: 24, default: 16 }),
       gap: 12,
     },
     handle: {

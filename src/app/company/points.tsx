@@ -1,19 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { SearchBar } from '@/components/discovery/SearchBar';
 import { CompanyPage } from '@/components/portal/CompanyPage';
-import {
-  PortalBadge,
-  PortalField,
-  PortalLink,
-  usePortalStyles,
-} from '@/components/portal/PortalUI';
+import { PortalBadge, PortalLink, usePortalStyles } from '@/components/portal/PortalUI';
 import { InfoCard } from '@/components/ui/InfoCard';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { brand } from '@/config/brand';
 import { matchesAdminSearch } from '@/models/AdminSearch';
 import type { CompanyPortalData } from '@/models/Portal';
-import { useColors } from '@/theme';
+import { motion, useColors } from '@/theme';
 
 export default function CompanyPointsScreen() {
   return (
@@ -34,11 +31,15 @@ function CompanyPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
         puntos la realiza {brand.name}.
       </Text>
       {data.points.length > 3 && (
-        <PortalField
-          label="Buscar puntos por nombre o ID"
-          value={search}
-          onChangeText={setSearch}
-        />
+        <View style={{ gap: 8 }}>
+          <Text style={s.body}>Buscar puntos por nombre o ID</Text>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            label="Buscar puntos por nombre o ID"
+            placeholder="Nombre o ID del punto"
+          />
+        </View>
       )}
       {data.points.length === 0 && (
         <Text style={s.body}>
@@ -49,13 +50,14 @@ function CompanyPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
         <Text style={s.body}>No encontramos puntos para esta búsqueda.</Text>
       )}
       {filtered.map((p) => (
-        <Pressable
+        <SpringPressable
           key={p.id}
           accessibilityRole="button"
           accessibilityLabel={`${p.name}, ${p.active ? 'Publicado' : 'Borrador'}${p.intakeConfirmed ? '' : ', política pendiente'}`}
           accessibilityHint="Editar punto y horarios"
+          pressScale={motion.scale.card}
+          style={{ minHeight: 44 }}
           onPress={() => router.push(`/company/green-point/${p.id}`)}
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
         >
           <InfoCard
             icon={{ name: 'location-outline' }}
@@ -73,7 +75,7 @@ function CompanyPoints({ data }: Readonly<{ data: CompanyPortalData }>) {
               </Text>
             </View>
           </InfoCard>
-        </Pressable>
+        </SpringPressable>
       ))}
       <PortalLink
         title="Solicitar punto verde"

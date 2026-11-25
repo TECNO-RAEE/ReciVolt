@@ -70,7 +70,7 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       gap: 12,
     },
-    content: { flex: 1, gap: 6 },
+    content: { flex: 1, minWidth: 0, gap: 6 },
     heading: { flexDirection: 'row', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' },
     name: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text, flexShrink: 1 },
     distance: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.primary },

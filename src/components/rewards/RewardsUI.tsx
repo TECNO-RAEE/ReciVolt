@@ -3,8 +3,16 @@ import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import type { Href } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   ReduceMotion,
@@ -75,17 +83,26 @@ export function CitizenPage({
   const scroll = useScrollReset();
   const rewardStyles = useRewardStyles();
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   return (
     <View style={rewardStyles.page}>
       <ScreenHeader title={title} back={back} action={action} />
-      <ScrollView
-        ref={scroll}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={rewardStyles.content}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {children}
-      </ScrollView>
+        <ScrollView
+          ref={scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            rewardStyles.content,
+            !footer && insets.bottom > 0 && { paddingBottom: 32 + insets.bottom },
+          ]}
+        >
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
       {footer && (
         <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.footer}>
           <View style={styles.footerContent}>{footer}</View>
@@ -122,23 +139,25 @@ export function PointsCard({
   useEffect(() => {
     if (!loading || reducedMotion) {
       cancelAnimation(skeletonPulse);
-      skeletonPulse.value = 1;
+      skeletonPulse.set(1);
       return;
     }
-    skeletonPulse.value = withRepeat(
-      withTiming(0.55, {
-        duration: motion.duration.skeletonPulse,
-        easing: Easing.inOut(Easing.ease),
-        reduceMotion: ReduceMotion.System,
-      }),
-      -1,
-      true
+    skeletonPulse.set(
+      withRepeat(
+        withTiming(0.55, {
+          duration: motion.duration.skeletonPulse,
+          easing: Easing.inOut(Easing.ease),
+          reduceMotion: ReduceMotion.System,
+        }),
+        -1,
+        true
+      )
     );
     return () => cancelAnimation(skeletonPulse);
   }, [loading, reducedMotion, skeletonPulse]);
 
   const skeletonStyle = useAnimatedStyle(() => ({
-    opacity: skeletonPulse.value,
+    opacity: skeletonPulse.get(),
   }));
 
   const accessibilityLabel = guest
@@ -325,12 +344,13 @@ export function RewardsBalance({
       ? 'Ver mis puntos'
       : 'Tus puntos';
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={accessibilityLabel}
       disabled={!onPress}
       onPress={onPress}
-      style={({ pressed }) => [styles.balanceCard, pressed && onPress && { opacity: 0.75 }]}
+      pressScale={motion.scale.card}
+      style={styles.balanceCard}
     >
       <PointsCoin size={64} />
       <View style={styles.balanceText}>
@@ -348,7 +368,7 @@ export function RewardsBalance({
             : 'Canjeá tus puntos por beneficios en comercios adheridos.'}
         </Text>
       </View>
-    </Pressable>
+    </SpringPressable>
   );
 }
 export function PointsBadge({

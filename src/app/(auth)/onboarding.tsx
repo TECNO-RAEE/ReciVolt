@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { useAuth } from '@/providers/AuthProvider';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 
 const slides = [
@@ -84,31 +85,33 @@ export default function OnboardingScreen() {
           else if (canGoBack) router.back();
         }}
         action={
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel="Saltar introducción"
             onPress={() => void finish()}
             disabled={saving}
+            pressScale={motion.scale.button}
             style={styles.skip}
           >
             <Text style={styles.link}>Saltar</Text>
-          </Pressable>
+          </SpringPressable>
         }
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.steps} accessibilityLabel="Pasos de la introducción">
           {slides.map((item, step) => (
-            <Pressable
+            <SpringPressable
               key={item.title}
               accessibilityRole="button"
               accessibilityLabel={`Ir al paso ${step + 1} de ${slides.length}`}
               accessibilityState={{ selected: step === index, disabled: saving }}
               disabled={saving}
               onPress={() => setIndex(step)}
+              pressScale={motion.scale.chip}
               style={styles.stepButton}
             >
               <View style={[styles.stepLine, step <= index && styles.stepComplete]} />
-            </Pressable>
+            </SpringPressable>
           ))}
         </View>
         <View style={styles.slide}>
@@ -150,15 +153,16 @@ export default function OnboardingScreen() {
               {index + 1} de {slides.length}
             </Text>
             {index > 0 && (
-              <Pressable
+              <SpringPressable
                 accessibilityRole="button"
                 disabled={saving}
                 onPress={() => setIndex(index - 1)}
+                pressScale={motion.scale.button}
                 style={styles.back}
               >
                 <Ionicons name="arrow-back" size={18} color={colors.primary} />
                 <Text style={styles.link}>Anterior</Text>
-              </Pressable>
+              </SpringPressable>
             )}
           </View>
           {error && (
@@ -183,20 +187,17 @@ export default function OnboardingScreen() {
               />
             </>
           ) : (
-            <ActionButton
-              title="Siguiente"
-              disabled={saving}
-              onPress={() => setIndex(index + 1)}
-            />
+            <ActionButton title="Siguiente" disabled={saving} onPress={() => setIndex(index + 1)} />
           )}
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             style={styles.skip}
             disabled={saving}
+            pressScale={motion.scale.button}
             onPress={() => router.push('/login')}
           >
             <Text style={styles.link}>Ya tengo cuenta · Iniciar sesión</Text>
-          </Pressable>
+          </SpringPressable>
         </View>
       </ScrollView>
     </View>
@@ -206,7 +207,14 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', padding: 24 },
-    skip: { paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center' },
+    skip: {
+      minHeight: 44,
+      minWidth: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     link: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 14 },
     steps: { flexDirection: 'row', gap: 8 },
     stepButton: { flex: 1, minHeight: 44, justifyContent: 'center' },
@@ -228,7 +236,12 @@ const makeStyles = (colors: ThemeColors) =>
     },
     copy: { gap: 12, minHeight: 164 },
     title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 36, color: colors.text },
-    description: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.brandDark },
+    description: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.brandDark,
+    },
     footer: { gap: 12 },
     footerHeading: {
       flexDirection: 'row',
@@ -236,7 +249,16 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       minHeight: 44,
     },
-    back: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
+    back: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      minHeight: 44,
+      minWidth: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 4,
+    },
     progress: { fontFamily: fonts.regular, fontSize: 14, color: colors.brandDark },
     error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
   });

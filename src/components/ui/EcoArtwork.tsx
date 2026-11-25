@@ -157,7 +157,10 @@ export function DevicePreparationArtwork() {
       {...decorativeAccessibility}
     >
       <Ellipse cx="150" cy="124" rx="126" ry="22" fill={colors.primarySoft} />
-      <Path d="M68 45h112a7 7 0 0 1 7 7v58H61V52a7 7 0 0 1 7-7Z" fill="#174F32" />
+      <Path
+        d="M68 45h112a7 7 0 0 1 7 7v58H61V52a7 7 0 0 1 7-7Z"
+        fill={dark ? '#0F3320' : '#174F32'}
+      />
       <Path d="M69 53h110v49H69z" fill={colors.surfaceSoft} />
       <Path d="M48 111h152l-8 12H57z" fill={colors.primaryAction} />
       <Path
@@ -308,7 +311,12 @@ export function AuthArtwork({ kind }: Readonly<{ kind: 'lock' | 'account' | 'rec
             <Path d="M102 46h36M102 56h26" />
           </G>
           <Path d="M72 62h96v62H72z" fill={colors.primaryAction} />
-          <Path d="M72 62l48 36 48-36" fill="none" stroke="#174F32" strokeWidth="4" />
+          <Path
+            d="M72 62l48 36 48-36"
+            fill="none"
+            stroke={dark ? colors.primaryDark : '#174F32'}
+            strokeWidth="4"
+          />
           <Circle
             cx="168"
             cy="118"

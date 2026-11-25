@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
+import { SearchBar } from '@/components/discovery/SearchBar';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import {
@@ -100,16 +101,18 @@ export function AdminSearch({
           setSavedNotice(null);
         }}
       />
-      <PortalField
-        label={`Buscar ${adminKinds[kind].toLowerCase()} por nombre o ID`}
-        value={draft}
-        onChangeText={(value) => {
-          setDraft(value);
-          if (savedNotice) setSavedNotice(null);
-        }}
-        maxLength={150}
-        returnKeyType="search"
-      />
+      <View style={{ gap: 8 }}>
+        <Text style={s.body}>{`Buscar ${adminKinds[kind].toLowerCase()} por nombre o ID`}</Text>
+        <SearchBar
+          value={draft}
+          onChangeText={(value) => {
+            setDraft(value.slice(0, 150));
+            if (savedNotice) setSavedNotice(null);
+          }}
+          label={`Buscar ${adminKinds[kind].toLowerCase()} por nombre o ID`}
+          placeholder="Nombre o ID"
+        />
+      </View>
       <PortalFeedback notice={savedNotice} />
       {!draft.trim() ? (
         <Text style={s.body}>Escribí un nombre o un ID completo o parcial.</Text>
@@ -354,6 +357,20 @@ function CompanyFields({
             onChangeText={(value) => setFields({ ...fields, [key]: value })}
             multiline={key === 'description'}
             editable={!busy}
+            {...(key === 'phone'
+              ? {
+                  keyboardType: 'phone-pad' as const,
+                  autoComplete: 'tel' as const,
+                  textContentType: 'telephoneNumber' as const,
+                }
+              : key === 'website'
+                ? {
+                    keyboardType: 'url' as const,
+                    autoComplete: 'url' as const,
+                    textContentType: 'URL' as const,
+                    autoCapitalize: 'none' as const,
+                  }
+                : {})}
           />
         ))}
       <PortalFeedback error={saveAction.error} notice={saveAction.notice} />

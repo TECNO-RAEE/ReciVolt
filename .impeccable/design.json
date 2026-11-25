@@ -341,18 +341,12 @@
       "primaryAction": {
         "displayName": "Fondo de acción principal",
         "role": "primary",
-        "tonalRamp": [
-          "oklch(15.00% 0.0884 155.53)",
-          "oklch(49.29% 0.0884 155.53)"
-        ]
+        "tonalRamp": ["oklch(15.00% 0.0884 155.53)", "oklch(49.29% 0.0884 155.53)"]
       },
       "dangerAction": {
         "displayName": "Fondo de acción destructiva",
         "role": "danger",
-        "tonalRamp": [
-          "oklch(25.00% 0.1450 25.00)",
-          "oklch(50.00% 0.1450 25.00)"
-        ]
+        "tonalRamp": ["oklch(25.00% 0.1450 25.00)", "oklch(50.00% 0.1450 25.00)"]
       },
       "warning": { "displayName": "Estado pendiente (texto)", "role": "warning" },
       "warningSecondary": { "displayName": "Estado pendiente secundario", "role": "warning" },
@@ -485,9 +479,9 @@
       "name": "Campo de gestión",
       "kind": "input",
       "refersTo": "field",
-      "description": "Etiqueta persistente y campo de PortalField.",
+      "description": "Etiqueta persistente y campo de PortalField (texto de entrada 16px para evitar zoom automático en Safari iOS).",
       "html": "<label class=\"ds-field-label\">Nombre del punto verde<input class=\"ds-field\" type=\"text\" placeholder=\"Nombre del lugar\"></label>",
-      "css": ".ds-field-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:400 15px/23px Roboto,sans-serif}.ds-field{min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #748591;border-radius:8px;font:400 15px Roboto,sans-serif}.ds-field::placeholder{color:#53676D}.ds-field:hover{border-color:#246440}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
+      "css": ".ds-field-label{display:flex;flex-direction:column;gap:8px;color:#102530;font:400 15px/23px Roboto,sans-serif}.ds-field{min-height:48px;padding:12px;background:#fff;color:#102530;border:1px solid #748591;border-radius:8px;font:400 16px Roboto,sans-serif}.ds-field::placeholder{color:#53676D}.ds-field:hover{border-color:#246440}.ds-button:focus-visible,.ds-field:focus-visible,.ds-chip:focus-visible,.ds-header-back:focus-visible,.ds-nav-link:focus-visible{outline:2px solid #246440;outline-offset:3px}"
     },
     {
       "name": "Tarjeta ciudadana",

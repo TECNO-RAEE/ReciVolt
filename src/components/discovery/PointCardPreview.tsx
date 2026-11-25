@@ -67,12 +67,8 @@ export function PointCardPreview({
           style={styles.preview}
         >
           <View style={styles.previewText}>
-            <Text style={styles.name} numberOfLines={1}>
-              {point.name}
-            </Text>
-            <Text style={styles.address} numberOfLines={1}>
-              {point.address}
-            </Text>
+            <Text style={styles.name}>{point.name}</Text>
+            <Text style={styles.address}>{point.address}</Text>
             <Text style={[styles.status, status === 'open' && { color: colors.primary }]}>
               {status === 'open'
                 ? 'Abierto ahora'
@@ -119,8 +115,13 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       gap: 12,
     },
-    previewText: { flex: 1, gap: 2 },
-    name: { fontFamily: fonts.bold, fontSize: 16, color: colors.text },
-    address: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
+    previewText: { flex: 1, minWidth: 0, gap: 2 },
+    name: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 22, color: colors.text },
+    address: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
     status: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.textSecondary },
   });

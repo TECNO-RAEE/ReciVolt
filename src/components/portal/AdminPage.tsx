@@ -3,8 +3,8 @@ import { useState, type ComponentProps, type ReactNode } from 'react';
 import { router, type Href } from 'expo-router';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Platform,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { PortalFeedback, PortalNav, usePortalStyles } from './PortalUI';
-import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export function AdminPage({
@@ -64,14 +65,15 @@ export function AdminPage({
         onBack={onBack}
         hideBack={hideBack}
         action={
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel="Configuraciones"
+            pressScale={motion.scale.icon}
             onPress={() => router.push('/settings')}
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.6 }]}
+            style={styles.iconButton}
           >
             <Ionicons name="settings-outline" size={24} color={colors.text} />
-          </Pressable>
+          </SpringPressable>
         }
       />
       <View style={[styles.frame, styles.navRow]}>
@@ -80,38 +82,40 @@ export function AdminPage({
         </View>
         {/* The pull-to-refresh gesture does not exist with a mouse on web. */}
         {Platform.OS === 'web' && (
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel="Actualizar datos"
             accessibilityState={{ busy: refreshing, disabled: refreshing }}
             disabled={refreshing}
+            pressScale={motion.scale.icon}
             onPress={reload}
-            style={({ pressed }) => [
-              styles.iconButton,
-              styles.navAction,
-              pressed && { opacity: 0.6 },
-            ]}
+            style={[styles.iconButton, styles.navAction]}
           >
             {refreshing ? (
-              <ActivityIndicator color={colors.primary} />
+              <ActivityIndicator color={colors.primary} accessibilityLabel="Actualizando datos" />
             ) : (
               <Ionicons name="refresh-outline" size={22} color={colors.primary} />
             )}
-          </Pressable>
+          </SpringPressable>
         )}
       </View>
-      <ScrollView
-        ref={scroll}
-        key={selected}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={colors.primary} />
-        }
-        contentContainerStyle={styles.content}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {error && hasData !== false && <PortalFeedback error={error} />}
-        {children}
-      </ScrollView>
+        <ScrollView
+          ref={scroll}
+          key={selected}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={colors.primary} />
+          }
+          contentContainerStyle={styles.content}
+        >
+          {error && hasData !== false && <PortalFeedback error={error} />}
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
       {footer && (
         <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.footer}>
           <View style={styles.footerContent}>{footer}</View>

@@ -19,10 +19,10 @@ export default function MyRaeeScreen() {
   const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
   const [tab, setTab] = useState<Tab>('Todos');
-  if (!session) return <AccountRequired title="Entregas" back="/profile" />;
+  if (!session) return <AccountRequired title="Mis entregas" back="/profile" />;
 
   return (
-    <CitizenPage title="Entregas" back="/profile">
+    <CitizenPage title="Mis entregas" back="/profile">
       <DeliveryBalance />
       <View style={styles.actions}>
         {(tab === 'Todos' || tab === 'Entregas') && (

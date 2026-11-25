@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import type { Redemption } from '@/models/Reward';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type RedemptionConfirmationViewProps = {
   readonly redemption: Redemption;
@@ -32,16 +34,10 @@ export function RedemptionConfirmationView({
 
   const statusBadge = (
     <View
-      style={[
-        styles.statusBadge,
-        !isRedemptionReserved && { backgroundColor: colors.surfaceSoft },
-      ]}
+      style={[styles.statusBadge, !isRedemptionReserved && { backgroundColor: colors.surfaceSoft }]}
     >
       <Text
-        style={[
-          styles.statusBadgeText,
-          !isRedemptionReserved && { color: colors.textSecondary },
-        ]}
+        style={[styles.statusBadgeText, !isRedemptionReserved && { color: colors.textSecondary }]}
       >
         {isRedemptionReserved ? 'Reservado' : 'Entregado'}
       </Text>
@@ -107,26 +103,20 @@ export function RedemptionConfirmationView({
           onPress={onReset}
         />
 
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Consultar de nuevo el estado original del código"
+          pressScale={motion.scale.button}
           style={styles.refreshLinkBtn}
           disabled={busy}
           onPress={onRefresh}
         >
           <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
           <Text style={styles.refreshLinkText}>Consultar estado original del código</Text>
-        </Pressable>
+        </SpringPressable>
       </View>
 
-      {/* Mensajes de error y notice siempre visibles */}
-      {error ? (
-        <Text accessibilityRole="alert" style={styles.errorText}>
-          {error}
-        </Text>
-      ) : null}
-
-      {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
+      <PortalFeedback error={error} notice={notice} />
     </>
   );
 }
@@ -179,17 +169,5 @@ const makeStyles = (colors: ThemeColors) =>
       fontFamily: fonts.semiBold,
       fontSize: 13,
       color: colors.textSecondary,
-    },
-    errorText: {
-      fontFamily: fonts.regular,
-      fontSize: 14,
-      color: colors.danger,
-      textAlign: 'center',
-    },
-    noticeText: {
-      fontFamily: fonts.semiBold,
-      fontSize: 14,
-      color: colors.primaryDark,
-      textAlign: 'center',
     },
   });

@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionButton } from '@/components/ui/ActionButton';
@@ -75,6 +77,28 @@ export function RecycleFinderModal({
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const [compactWebHeight, setCompactWebHeight] = useState(false);
+
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'web' || typeof window === 'undefined') {
+      return;
+    }
+    const checkHeight = () => {
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      setCompactWebHeight(h < 560);
+    };
+    checkHeight();
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', checkHeight);
+    window.addEventListener('resize', checkHeight);
+    return () => {
+      vv?.removeEventListener('resize', checkHeight);
+      window.removeEventListener('resize', checkHeight);
+    };
+  }, [visible]);
+
+  const isCompactViewport = compactWebHeight || windowHeight < 560;
   const {
     points,
     categories,
@@ -152,7 +176,11 @@ export function RecycleFinderModal({
       visible={visible}
       onClose={onClose}
       presentation="sheet"
-      containerStyle={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}
+      containerStyle={[
+        styles.sheet,
+        isCompactViewport && styles.sheetCompact,
+        { paddingBottom: Math.max(insets.bottom, isCompactViewport ? 10 : 16) },
+      ]}
     >
       <View style={styles.handle} />
       <View style={styles.headerRow}>
@@ -231,34 +259,6 @@ export function RecycleFinderModal({
         </ScrollView>
       )}
 
-      {!loading && !error && (
-        <View style={styles.statusSection}>
-          <View style={styles.statusRow}>
-            <Text style={styles.summary}>{summaryText}</Text>
-            {!location && (
-              <SpringPressable
-                accessibilityRole="button"
-                accessibilityLabel="Usar mi ubicación para ordenar por cercanía"
-                disabled={locating}
-                onPress={() => void requestLocation()}
-                pressScale={motion.scale.chip}
-                style={[styles.locationPill, locating && styles.pressed]}
-              >
-                {locating ? (
-                  <ActivityIndicator size="small" color={colors.primaryDark} />
-                ) : (
-                  <Ionicons name="locate-outline" size={16} color={colors.primaryDark} />
-                )}
-                <Text style={styles.locationPillText}>
-                  {locating ? 'Ubicando…' : 'Usar mi ubicación'}
-                </Text>
-              </SpringPressable>
-            )}
-          </View>
-          {locationError && <PortalFeedback error={locationError} />}
-        </View>
-      )}
-
       {loading || error ? (
         <View style={styles.stateWrap}>
           <DiscoveryState loading={loading} error={error} retry={refresh} />
@@ -272,14 +272,39 @@ export function RecycleFinderModal({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
-            hasDemoPoints ? (
-              <View style={styles.demoNoteWrap}>
-                <InfoNote>
-                  Explorá un punto verde de ejemplo. Las entregas reales estarán disponibles cuando
-                  haya puntos publicados.
-                </InfoNote>
+            <View style={styles.listHeader}>
+              <View style={styles.statusRow}>
+                <Text style={styles.summary}>{summaryText}</Text>
+                {!location && (
+                  <SpringPressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Usar mi ubicación para ordenar por cercanía"
+                    disabled={locating}
+                    onPress={() => void requestLocation()}
+                    pressScale={motion.scale.chip}
+                    style={[styles.locationPill, locating && styles.pressed]}
+                  >
+                    {locating ? (
+                      <ActivityIndicator size="small" color={colors.primaryDark} />
+                    ) : (
+                      <Ionicons name="locate-outline" size={16} color={colors.primaryDark} />
+                    )}
+                    <Text style={styles.locationPillText}>
+                      {locating ? 'Ubicando…' : 'Usar mi ubicación'}
+                    </Text>
+                  </SpringPressable>
+                )}
               </View>
-            ) : undefined
+              {locationError && <PortalFeedback error={locationError} />}
+              {hasDemoPoints && (
+                <View style={styles.demoNoteWrap}>
+                  <InfoNote>
+                    Explorá un punto verde de ejemplo. Las entregas reales estarán disponibles
+                    cuando haya puntos publicados.
+                  </InfoNote>
+                </View>
+              )}
+            </View>
           }
           renderItem={({ item }) => (
             <PointRow
@@ -330,8 +355,9 @@ const makeStyles = (colors: ThemeColors) =>
     sheet: {
       width: '100%',
       maxWidth: 720,
-      height: '86%',
-      maxHeight: '90%',
+      height: '88%',
+      maxHeight: '100%',
+      overflow: 'hidden',
       backgroundColor: colors.surface,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
@@ -340,7 +366,12 @@ const makeStyles = (colors: ThemeColors) =>
       borderRightWidth: 1,
       borderColor: colors.border,
       paddingTop: 10,
-      gap: 12,
+      gap: 10,
+    },
+    sheetCompact: {
+      height: '98%',
+      paddingTop: 8,
+      gap: 8,
     },
     handle: {
       width: 40,
@@ -402,9 +433,10 @@ const makeStyles = (colors: ThemeColors) =>
     chipTextSelected: {
       color: colors.textOnPrimary,
     },
-    statusSection: {
-      paddingHorizontal: 20,
+    listHeader: {
       gap: 8,
+      paddingTop: 2,
+      paddingBottom: 4,
     },
     statusRow: {
       flexDirection: 'row',

@@ -140,6 +140,7 @@ export default function NewPasswordScreen() {
                 }}
                 placeholder="Ingresá tu nueva contraseña"
                 passwordToggle
+                textContentType="newPassword"
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="new-password"
@@ -164,6 +165,7 @@ export default function NewPasswordScreen() {
                 }}
                 placeholder="Repetí tu nueva contraseña"
                 passwordToggle
+                textContentType="newPassword"
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="new-password"

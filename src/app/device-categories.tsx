@@ -1,17 +1,18 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SearchBar } from '@/components/discovery/SearchBar';
 import { CitizenPage, InfoNote, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import {
   getCategoryVisual,
   getDeviceCategoryGroupKey,
   type DeviceCategory,
 } from '@/models/DeviceCategory';
 import { getDeviceCategories } from '@/services/device-category.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 
 const groupDefinitions = [
@@ -111,7 +112,7 @@ export default function DeviceCategoriesScreen() {
         placeholder="Buscar en el listado"
       />
       {loading ? (
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={colors.primary} accessibilityLabel="Cargando categorías" />
       ) : error ? (
         <View style={styles.error}>
           <Text style={styles.description}>{error}</Text>
@@ -140,7 +141,7 @@ export default function DeviceCategoriesScreen() {
           const open = search.length > 0 || openGroups.has(group.key);
           return (
             <View key={group.key} style={styles.group}>
-              <Pressable
+              <SpringPressable
                 accessibilityRole="button"
                 accessibilityState={{ expanded: open }}
                 onPress={() =>
@@ -154,18 +155,21 @@ export default function DeviceCategoriesScreen() {
                     return next;
                   })
                 }
+                pressScale={motion.scale.row}
                 style={styles.groupHeader}
               >
                 <View style={styles.groupIcon}>
                   <Ionicons name={group.icon} size={22} color={colors.primary} />
                 </View>
-                <Text style={styles.groupTitle}>{group.title}</Text>
+                <Text accessibilityRole="header" style={styles.groupTitle}>
+                  {group.title}
+                </Text>
                 <Ionicons
                   name={open ? 'chevron-up' : 'chevron-down'}
                   size={20}
                   color={colors.textSecondary}
                 />
-              </Pressable>
+              </SpringPressable>
               {open && (
                 <View style={styles.children}>
                   {group.categories
@@ -193,7 +197,7 @@ export default function DeviceCategoriesScreen() {
                           </Text>
                         </View>
                       ) : (
-                        <Pressable
+                        <SpringPressable
                           accessibilityRole="button"
                           accessibilityLabel={`Buscar puntos verdes que reciben ${category.name}`}
                           key={category.id}
@@ -203,6 +207,7 @@ export default function DeviceCategoriesScreen() {
                               params: { category: category.id },
                             })
                           }
+                          pressScale={motion.scale.row}
                           style={styles.categoryRow}
                         >
                           <MaterialCommunityIcons
@@ -212,7 +217,7 @@ export default function DeviceCategoriesScreen() {
                           />
                           <Text style={styles.categoryName}>{category.name}</Text>
                           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                        </Pressable>
+                        </SpringPressable>
                       )
                     )}
                   {!point && group.key === 'especiales' && (
@@ -221,15 +226,16 @@ export default function DeviceCategoriesScreen() {
                         Pilas, baterías y otros residuos especiales requieren un canal habilitado y
                         no todos los puntos los reciben.
                       </InfoNote>
-                      <Pressable
+                      <SpringPressable
                         accessibilityRole="button"
                         accessibilityLabel="Ver qué no reciben los puntos verdes"
                         onPress={() => router.push('/device-unaccepted')}
+                        pressScale={motion.scale.button}
                         style={styles.specialLink}
                       >
                         <Text style={s.link}>Consultar qué no reciben los puntos</Text>
                         <Ionicons name="chevron-forward" size={18} color={colors.primaryDark} />
-                      </Pressable>
+                      </SpringPressable>
                     </View>
                   )}
                 </View>

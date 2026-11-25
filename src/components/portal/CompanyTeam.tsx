@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
 import { brand } from '@/config/brand';
 import { usePortalAction } from '@/hooks/usePortalData';
 import type { CompanyPortalData } from '@/models/Portal';
+import { humanizePortalError } from '@/models/PortalError';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
 import { portalCommand, sendCompanyInvitation } from '@/services/portal.service';
@@ -30,9 +32,12 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
   const [limit, setLimit] = useState(String(data.company.workerLimit + 10)),
     [reason, setReason] = useState('');
   const [confirmingDisableId, setConfirmingDisableId] = useState<string | null>(null);
+  const [cancellingInviteId, setCancellingInviteId] = useState<string | null>(null);
+  const [cancelInviteError, setCancelInviteError] = useState<string | null>(null);
   const action = usePortalAction(),
     invite = usePortalAction(),
     request = usePortalAction();
+  const cancellingInvitation = data.invitations.find((inv) => inv.id === cancellingInviteId);
   const used =
     data.members.filter((m) => m.role === 'company_worker' && m.status !== 'DISABLED').length +
     data.invitations.filter((i) => i.role === 'company_worker' && i.status === 'INVITED').length;
@@ -137,7 +142,10 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
                 <PortalLink
                   title="Cancelar invitación"
                   disabled={action.busy}
-                  onPress={() => void action.run(() => command('cancel_invitation', { id: i.id }))}
+                  onPress={() => {
+                    setCancelInviteError(null);
+                    setCancellingInviteId(i.id);
+                  }}
                 />
               )}
             </View>
@@ -266,6 +274,39 @@ export function CompanyTeam({ data }: Readonly<{ data: CompanyPortalData }>) {
           </>
         )}
       </View>
+      <ConfirmModal
+        visible={cancellingInviteId !== null}
+        onClose={() => {
+          setCancellingInviteId(null);
+          setCancelInviteError(null);
+        }}
+        onConfirm={() => {
+          if (!cancellingInviteId) return;
+          const targetId = cancellingInviteId;
+          setCancelInviteError(null);
+          void action.run(async () => {
+            try {
+              await command('cancel_invitation', { id: targetId });
+              setCancellingInviteId(null);
+            } catch (err) {
+              setCancelInviteError(humanizePortalError(err, 'No pudimos cancelar la invitación.'));
+              throw err;
+            }
+          }, 'Invitación cancelada.');
+        }}
+        title="Cancelar invitación"
+        message={
+          cancellingInvitation
+            ? `¿Querés cancelar la invitación para ${cancellingInvitation.email}? Se liberará el cupo reservado.`
+            : '¿Querés cancelar esta invitación? Se liberará el cupo reservado.'
+        }
+        confirmLabel="Cancelar invitación"
+        cancelLabel="Mantener invitación"
+        icon="close-circle-outline"
+        destructive
+        loading={action.busy}
+        error={cancelInviteError}
+      />
     </>
   );
 }

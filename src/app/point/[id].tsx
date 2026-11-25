@@ -10,6 +10,7 @@ import { DevicePreparationArtwork } from '@/components/ui/EcoArtwork';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { DiscoveryState } from '@/components/discovery/DiscoveryState';
 import { PointsMap } from '@/components/discovery/PointsMap';
+import { PortalFeedback } from '@/components/portal/PortalUI';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import {
   distanceKm,
@@ -258,11 +259,7 @@ export default function PointDetailScreen() {
                 />
               </>
             )}
-            {linkError && (
-              <Text accessibilityRole="alert" style={styles.text}>
-                {linkError}
-              </Text>
-            )}
+            <PortalFeedback error={linkError} />
             {!point.demo && (
               <Text style={styles.text}>
                 {point.intakePolicies.some((policy) => policy.mode === 'pickup')

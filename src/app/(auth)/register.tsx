@@ -184,6 +184,7 @@ export default function CreateAccountScreen() {
                 setError(null);
               }}
               placeholder="Ej.: Ana Pérez"
+              textContentType="name"
               autoCapitalize="words"
               autoCorrect={false}
               autoComplete="name"
@@ -206,6 +207,7 @@ export default function CreateAccountScreen() {
               }}
               placeholder="nombre@correo.com"
               keyboardType="email-address"
+              textContentType="emailAddress"
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="email"
@@ -228,6 +230,7 @@ export default function CreateAccountScreen() {
               }}
               placeholder="Creá una contraseña"
               passwordToggle
+              textContentType="newPassword"
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="new-password"
@@ -274,8 +277,8 @@ export default function CreateAccountScreen() {
             </View>
           ) : (
             <InfoNote>
-              Los Términos de uso de ReciVolt se encuentran en preparación. Podrás consultarlos desde
-              Configuraciones cuando estén publicados.
+              Los Términos de uso de ReciVolt se encuentran en preparación. Podrás consultarlos
+              desde Configuraciones cuando estén publicados.
             </InfoNote>
           )}
 

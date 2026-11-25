@@ -98,7 +98,7 @@ export default function HomeScreen() {
     []
   );
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
         ref={scroll}
         contentContainerStyle={styles.content}
@@ -114,6 +114,7 @@ export default function HomeScreen() {
           </View>
           <SpringPressable
             accessibilityRole="button"
+            accessibilityState={{ selected: isDark }}
             aria-pressed={isDark}
             accessibilityLabel={
               isDark ? 'Modo oscuro. Cambiar a modo claro' : 'Modo claro. Cambiar a modo oscuro'
