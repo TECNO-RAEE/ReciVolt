@@ -11,6 +11,8 @@ import {
 } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -21,6 +23,7 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoCard } from '@/components/ui/InfoCard';
@@ -78,34 +81,43 @@ export function PortalPage({
   const scroll = useScrollReset();
   const colors = useColors();
   const portalStyles = usePortalStyles();
+  const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader title={title} back={back} onBack={onBack} action={action} />
-      <ScrollView
-        ref={scroll}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          onRefresh && (
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          )
-        }
-        contentContainerStyle={{
-          padding: 24,
-          width: '100%',
-          maxWidth: 960,
-          alignSelf: 'center',
-          gap: 24,
-          flexGrow: 1,
-        }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {subtitle && <Text style={portalStyles.body}>{subtitle}</Text>}
-        {children}
-      </ScrollView>
+        <ScrollView
+          ref={scroll}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            onRefresh && (
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            )
+          }
+          contentContainerStyle={{
+            paddingTop: 24,
+            paddingBottom: Math.max(insets.bottom, 16) + 24,
+            paddingLeft: 24 + insets.left,
+            paddingRight: 24 + insets.right,
+            width: '100%',
+            maxWidth: 960,
+            alignSelf: 'center',
+            gap: 24,
+            flexGrow: 1,
+          }}
+        >
+          {subtitle && <Text style={portalStyles.body}>{subtitle}</Text>}
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -321,7 +333,7 @@ export function usePortalFieldStyle() {
       minHeight: 48,
       padding: 12,
       fontFamily: fonts.regular,
-      fontSize: 15,
+      fontSize: 16,
       color: colors.text,
     }),
     [colors]
@@ -449,13 +461,13 @@ export function PortalSelect<T extends string>({
           accessibilityState={{ expanded: open, disabled }}
           disabled={disabled}
           onPress={() => setOpen(!open)}
-          style={[
+          style={({ pressed }) => [
             portalFieldStyle,
             {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
-              opacity: disabled ? 0.7 : 1,
+              opacity: disabled ? 0.7 : pressed ? 0.78 : 1,
             },
           ]}
         >
@@ -523,13 +535,14 @@ export function PortalToggle({
       accessibilityState={{ checked: value, disabled }}
       disabled={disabled}
       onPress={() => onChange(!value)}
-      style={{
+      style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 16,
         minHeight: 44,
-      }}
+        opacity: disabled ? 0.6 : pressed ? 0.78 : 1,
+      })}
     >
       <Text style={[portalStyles.body, { flex: 1, minWidth: 0 }]}>{label}</Text>
       <View
@@ -583,7 +596,13 @@ export function PortalChoice({
       }
       disabled={disabled}
       onPress={onPress}
-      style={{ flexDirection: 'row', gap: 12, alignItems: 'center', minHeight: 44 }}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'center',
+        minHeight: 44,
+        opacity: disabled ? 0.6 : pressed ? 0.72 : 1,
+      })}
     >
       <Ionicons
         name={iconName}
@@ -711,12 +730,13 @@ export function PortalNav({
             accessibilityRole="tab"
             accessibilityState={{ selected: item === selected }}
             onPress={() => onSelect(item)}
-            style={{
+            style={({ pressed }) => ({
               minHeight: 48,
               justifyContent: 'center',
               borderBottomWidth: item === selected ? 2 : 0,
               borderBottomColor: colors.primary,
-            }}
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
             <Text
               style={[

@@ -39,8 +39,8 @@ const makeStyles = (colors: ThemeColors) =>
     },
 
     text: {
+      fontFamily: fonts.bold,
       fontSize: 25,
-      fontWeight: '800',
       color: colors.brandDark,
     },
 

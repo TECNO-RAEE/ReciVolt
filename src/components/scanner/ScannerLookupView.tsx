@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ScannerLookupViewProps = {
   readonly camera: boolean;
@@ -120,25 +121,21 @@ export function ScannerLookupView({
             editable={!busy}
           />
           {code.length > 0 && (
-            <Pressable
+            <SpringPressable
               accessibilityRole="button"
               accessibilityLabel="Borrar código ingresado"
+              pressScale={motion.scale.icon}
               style={styles.clearBtn}
               onPress={onClearCode}
             >
               <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-            </Pressable>
+            </SpringPressable>
           )}
         </View>
 
         <PortalFeedback error={error} notice={notice} />
 
-        <ActionButton
-          title="Buscar"
-          loading={busy}
-          disabled={!code.trim()}
-          onPress={onSearch}
-        />
+        <ActionButton title="Buscar" loading={busy} disabled={!code.trim()} onPress={onSearch} />
       </View>
     </>
   );
@@ -286,8 +283,9 @@ const makeStyles = (colors: ThemeColors) =>
     },
     manualInput: {
       flex: 1,
+      minWidth: 0,
       fontFamily: fonts.regular,
-      fontSize: 15,
+      fontSize: 16,
       color: colors.text,
       paddingVertical: 10,
     },

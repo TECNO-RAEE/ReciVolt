@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-
 import type { ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fonts, useColors } from '@/theme';
 
 type TabIconName = 'home' | 'map' | 'gift' | 'person';
@@ -24,6 +24,8 @@ function tabIcon(name: TabIconName) {
 
 export default function AppLayout() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 10);
   return (
     <Tabs
       screenOptions={{
@@ -34,10 +36,13 @@ export default function AppLayout() {
           fontFamily: fonts.regular,
           fontSize: 11,
         },
+        tabBarItemStyle: {
+          minHeight: 48,
+        },
         tabBarStyle: {
-          minHeight: 72,
+          minHeight: 58 + bottomInset,
           paddingTop: 8,
-          paddingBottom: 12,
+          paddingBottom: bottomInset,
           backgroundColor: colors.tabBarBackground,
           borderTopColor: colors.border,
         },

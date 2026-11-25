@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { CodePill, InfoCard } from '@/components/ui/InfoCard';
 import { NumericStepper } from '@/components/ui/NumericStepper';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import {
   deliveryEstimate,
   deliveryStatusNames,
@@ -13,7 +14,7 @@ import {
   type Delivery,
 } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { DeliveryPhotoPreview } from './DeliveryPhotoPreview';
 
 type DeliveryConfirmationViewProps = {
@@ -72,7 +73,9 @@ export function DeliveryConfirmationView({
         <>
           {/* Tarjetas de residuos con Stepper para ajuste físico */}
           <View style={styles.fieldSection}>
-            <Text style={styles.sectionHeader}>Materiales declarados</Text>
+            <Text accessibilityRole="header" style={styles.sectionHeader}>
+              Materiales declarados
+            </Text>
             <Text style={styles.sectionHint}>
               Ajustá la cantidad efectivamente recibida en el local.
             </Text>
@@ -80,8 +83,7 @@ export function DeliveryConfirmationView({
             {delivery.items.map((item) => {
               const visual = getCategoryVisual({ name: item.categoryName });
               const currentQty =
-                quantities[item.categoryId] ??
-                (item.confirmedQuantity ?? item.declaredQuantity);
+                quantities[item.categoryId] ?? item.confirmedQuantity ?? item.declaredQuantity;
 
               return (
                 <InfoCard
@@ -172,16 +174,17 @@ export function DeliveryConfirmationView({
               onPress={onReset}
             />
 
-            <Pressable
+            <SpringPressable
               accessibilityRole="button"
               accessibilityLabel="Actualizar estado"
+              pressScale={motion.scale.button}
               style={styles.refreshLinkBtn}
               disabled={busy}
               onPress={onRefresh}
             >
               <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
               <Text style={styles.refreshLinkText}>Actualizar estado</Text>
-            </Pressable>
+            </SpringPressable>
           </View>
         </>
       ) : (
@@ -214,16 +217,17 @@ export function DeliveryConfirmationView({
           <View style={styles.actionCol}>
             <ActionButton title="Escanear otro código" onPress={onReset} />
 
-            <Pressable
+            <SpringPressable
               accessibilityRole="button"
               accessibilityLabel="Actualizar estado"
+              pressScale={motion.scale.button}
               style={styles.refreshLinkBtn}
               disabled={busy}
               onPress={onRefresh}
             >
               <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
               <Text style={styles.refreshLinkText}>Actualizar estado</Text>
-            </Pressable>
+            </SpringPressable>
           </View>
         </>
       )}
