@@ -92,6 +92,15 @@ test('configuraciones cambia a modo oscuro, persiste al recargar y premios sin f
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: 'Saltar introducción', exact: true }).click();
     await page.waitForURL(/\/home$/);
+
+    // Smallest compact mobile width (375pt iPhone SE) has zero horizontal overflow.
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.waitForTimeout(150);
+    const compactOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth
+    );
+    assert.equal(compactOverflow, 0, `Overflow horizontal inesperado en 375px: ${compactOverflow}`);
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.getByText('¡Hola, visitante!', { exact: true }).waitFor();
 
     // Light baseline on mobile before toggling Dark Mode from Home top-right button.
@@ -347,7 +356,16 @@ test('al confirmar escaneo QR en /delivery/[id] aparece modal de éxito con Volv
       .first()
       .click();
     await page.waitForURL(/\/login$/);
-    await page.getByPlaceholder('nombre@correo.com', { exact: true }).fill(citizenEmail);
+    const emailInput = page.getByPlaceholder('nombre@correo.com', { exact: true });
+    await emailInput.waitFor();
+    const loginInputSizes = await page
+      .locator('input')
+      .evaluateAll((els) => els.map((el) => parseFloat(getComputedStyle(el).fontSize)));
+    assert.ok(
+      loginInputSizes.length >= 2 && loginInputSizes.every((size) => size >= 16),
+      `Se esperaba fontSize >= 16px en AuthTextField de login, llegó ${JSON.stringify(loginInputSizes)}`
+    );
+    await emailInput.fill(citizenEmail);
     await page.getByPlaceholder('Ingresá tu contraseña', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
     await page.waitForURL(/\/home$/);
@@ -356,6 +374,7 @@ test('al confirmar escaneo QR en /delivery/[id] aparece modal de éxito con Volv
     await page.waitForURL(/\/profile$/);
     await page.getByRole('button', { name: 'Mis entregas', exact: true }).click();
     await page.waitForURL(/\/my-raee$/);
+    await page.getByRole('heading', { name: 'Mis entregas', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Ver entrega / QR', exact: true }).first().click();
     await page.waitForURL(new RegExp(`/delivery/${createdDelivery.id}$`));
     await page.getByText('Pendiente de recepción', { exact: true }).waitFor();
@@ -382,6 +401,16 @@ test('al confirmar escaneo QR en /delivery/[id] aparece modal de éxito con Volv
       .getByRole('button', { name: 'Volver al inicio', exact: true })
       .click();
     await page.waitForURL(/\/home$/);
+
+    // ConfirmModal renders consistently across platforms when signing out on web.
+    await page.getByRole('tab', { name: /Perfil/ }).click();
+    await page.waitForURL(/\/profile$/);
+    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+    const confirmDialog = page.getByRole('dialog');
+    await confirmDialog.getByRole('heading', { name: 'Cerrar sesión', exact: true }).waitFor();
+    await confirmDialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+    await confirmDialog.waitFor({ state: 'hidden' });
+
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
