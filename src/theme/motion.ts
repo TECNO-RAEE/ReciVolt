@@ -38,6 +38,6 @@ export const motion = {
     pressed: 0.82,
     pressedSubtle: 0.88,
   },
-  sheetSlideDistance: 420,
+  sheetSlideDistance: 72,
   dialogStartScale: 0.94,
 } as const;

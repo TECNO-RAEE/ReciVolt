@@ -337,6 +337,7 @@ const makeStyles = (colors: ThemeColors) =>
       minHeight: 44,
       paddingVertical: 10,
       fontFamily: fonts.regular,
+      fontSize: 16,
       color: colors.text,
     },
     clearSearch: {

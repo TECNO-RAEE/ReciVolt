@@ -1,5 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   Extrapolation,
@@ -13,6 +22,42 @@ import Animated, {
 } from 'react-native-reanimated';
 import { motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
+type WebViewportRect = {
+  width: number;
+  height: number;
+  offsetTop: number;
+  offsetLeft: number;
+};
+
+function useWebVisualViewport(active: boolean): WebViewportRect | null {
+  const [rect, setRect] = useState<WebViewportRect | null>(null);
+
+  useEffect(() => {
+    if (!active || Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const read = () => {
+      const vv = window.visualViewport;
+      setRect({
+        width: vv ? Math.round(vv.width) : window.innerWidth,
+        height: vv ? Math.round(vv.height) : window.innerHeight,
+        offsetTop: vv ? Math.round(vv.offsetTop) : 0,
+        offsetLeft: vv ? Math.round(vv.offsetLeft) : 0,
+      });
+    };
+    read();
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', read);
+    vv?.addEventListener('scroll', read);
+    window.addEventListener('resize', read);
+    return () => {
+      vv?.removeEventListener('resize', read);
+      vv?.removeEventListener('scroll', read);
+      window.removeEventListener('resize', read);
+    };
+  }, [active]);
+
+  return active && Platform.OS === 'web' ? rect : null;
+}
+
 type AnimatedSheetModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -24,7 +69,8 @@ type AnimatedSheetModalProps = {
 
 /**
  * Shared 60/120fps iOS modal presenter supporting both bottom sheets (rising with
- * spring physics) and centered confirmation dialogs, respecting Reduce Motion.
+ * spring physics) and centered confirmation dialogs, respecting Reduce Motion and
+ * shrunk virtual-keyboard viewports on mobile web & iOS.
  */
 export function AnimatedSheetModal({
   visible,
@@ -36,8 +82,10 @@ export function AnimatedSheetModal({
 }: Readonly<AnimatedSheetModalProps>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const [mounted, setMounted] = useState(visible);
+  const webViewport = useWebVisualViewport(mounted);
 
   const backdropProgress = useSharedValue(visible ? 1 : 0);
   const contentProgress = useSharedValue(visible ? 1 : 0);
@@ -112,6 +160,17 @@ export function AnimatedSheetModal({
 
   if (!mounted) return null;
 
+  const webViewportStyle: ViewStyle | undefined =
+    Platform.OS === 'web' && webViewport
+      ? ({
+          position: 'fixed',
+          top: webViewport.offsetTop,
+          left: webViewport.offsetLeft,
+          width: webViewport.width,
+          height: webViewport.height,
+        } as unknown as ViewStyle)
+      : undefined;
+
   return (
     <Modal
       visible={mounted}
@@ -121,9 +180,16 @@ export function AnimatedSheetModal({
         if (dismissible) onClose();
       }}
     >
-      <View
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         pointerEvents={visible ? 'auto' : 'none'}
-        style={[styles.root, presentation === 'sheet' ? styles.rootSheet : styles.rootDialog]}
+        style={[
+          styles.root,
+          webViewportStyle,
+          presentation === 'sheet'
+            ? [styles.rootSheet, { paddingTop: Math.max(insets.top, 12) }]
+            : styles.rootDialog,
+        ]}
       >
         <Animated.View
           style={[
@@ -144,7 +210,7 @@ export function AnimatedSheetModal({
         <Animated.View accessibilityViewIsModal style={[containerStyle, contentAnimatedStyle]}>
           {children}
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

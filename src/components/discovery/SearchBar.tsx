@@ -83,9 +83,9 @@ const makeStyles = (colors: ThemeColors) =>
     },
     input: {
       flex: 1,
-      paddingVertical: 14,
+      paddingVertical: 12,
       fontFamily: fonts.regular,
-      fontSize: 15,
+      fontSize: 16,
       color: colors.text,
       minWidth: 0,
     },

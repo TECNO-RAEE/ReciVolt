@@ -489,11 +489,46 @@ test('buscador "¿Qué tenés para reciclar?" en Inicio filtra por categoría, s
     await dialog.getByText('0 m', { exact: true }).waitFor();
     await capture(page, 'ux-home-finder-light-mobile');
 
-    // Synonym query ("tele") matches Televisores (Punto Obelisco) without colliding with Celulares.
+    // Search input uses >=16px font on web to prevent iOS Safari focus auto-zoom,
+    // and sheet stays pinned within a shrunk keyboard-height viewport (390x420).
     const searchInput = dialog.getByRole('textbox', {
       name: 'Buscar qué tenés para reciclar',
       exact: true,
     });
+    const inputFontSize = await searchInput.evaluate((el) =>
+      parseFloat(getComputedStyle(el).fontSize)
+    );
+    assert.ok(
+      inputFontSize >= 16,
+      `Se esperaba fontSize >= 16px para evitar zoom en iOS, llegó ${inputFontSize}`
+    );
+
+    await page.setViewportSize({ width: 390, height: 420 });
+    await waitForModalSettled(dialog);
+    const headerBox = await dialog
+      .getByRole('heading', { name: '¿Qué tenés para reciclar?' })
+      .boundingBox();
+    const inputBox = await searchInput.boundingBox();
+    const closeBox = await dialog
+      .getByRole('button', { name: 'Cerrar buscador', exact: true })
+      .boundingBox();
+    assert.ok(
+      headerBox && headerBox.y >= 0 && headerBox.x >= 0,
+      'Header visible dentro del viewport con teclado'
+    );
+    assert.ok(
+      closeBox && closeBox.y >= 0 && closeBox.x + closeBox.width <= 390,
+      'Botón cerrar visible sin recorte'
+    );
+    assert.ok(
+      inputBox && inputBox.y >= 0 && inputBox.y + inputBox.height <= 420,
+      'Buscador visible dentro del viewport con teclado abierto'
+    );
+    await capture(page, 'ux-home-finder-keyboard-mobile', { fullPage: false });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await waitForModalSettled(dialog);
+
+    // Synonym query ("tele") matches Televisores (Punto Obelisco) without colliding with Celulares.
     await searchInput.fill('tele');
     await dialog.getByRole('button', { name: 'Ver Punto Obelisco', exact: true }).waitFor();
     assert.equal(
