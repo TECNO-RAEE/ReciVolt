@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { CitizenPage, InfoNote, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import {
   buildContactMailBody,
   contactEmail,
@@ -12,7 +13,7 @@ import {
   resolveContactTopic,
   type ContactTopicKey,
 } from '@/config/contact';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const topicKeys = ['support', 'point', 'reward'] as const;
 
@@ -97,9 +98,10 @@ function ContactContent({ initialReason }: Readonly<{ initialReason: ContactTopi
             </Text>
           </View>
           {Boolean(contactEmail) && (
-            <Pressable
+            <SpringPressable
               accessibilityRole="button"
               accessibilityLabel="Copiar correo de contacto"
+              pressScale={motion.scale.icon}
               style={styles.copyButton}
               onPress={() => void copyEmail()}
             >
@@ -108,7 +110,7 @@ function ContactContent({ initialReason }: Readonly<{ initialReason: ContactTopi
                 size={20}
                 color={copiedEmail ? colors.primaryDark : colors.textSecondary}
               />
-            </Pressable>
+            </SpringPressable>
           )}
         </View>
         {copiedEmail && (
@@ -125,7 +127,7 @@ function ContactContent({ initialReason }: Readonly<{ initialReason: ContactTopi
           <Text style={s.subtitle}>¿En qué te podemos ayudar?</Text>
           <View accessibilityRole="radiogroup" style={{ gap: 10 }}>
             {topicKeys.map((key) => (
-              <Pressable
+              <SpringPressable
                 key={key}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: reason === key }}
@@ -134,6 +136,7 @@ function ContactContent({ initialReason }: Readonly<{ initialReason: ContactTopi
                   setError(null);
                   setNotice(null);
                 }}
+                pressScale={motion.scale.row}
                 style={[styles.option, reason === key && styles.selected]}
               >
                 <Ionicons name={topicIcons[key]} size={25} color={colors.primaryDark} />
@@ -143,7 +146,7 @@ function ContactContent({ initialReason }: Readonly<{ initialReason: ContactTopi
                   size={23}
                   color={reason === key ? colors.primary : colors.textSecondary}
                 />
-              </Pressable>
+              </SpringPressable>
             ))}
           </View>
           <View style={s.card}>

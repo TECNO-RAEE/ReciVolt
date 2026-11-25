@@ -1,12 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,8 +15,10 @@ import {
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { login } from '@/services/auth.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -81,17 +81,18 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (authErrorVisible || !restorePasswordFocusOnDismiss.current) return;
+    const timer = setTimeout(() => {
+      restorePasswordFocusOnDismiss.current = false;
+      passwordInputRef.current?.focus();
+    }, motion.duration.dialogOut + 20);
+    return () => clearTimeout(timer);
+  }, [authErrorVisible]);
+
   function closeAuthError(restoreFocus: boolean) {
+    restorePasswordFocusOnDismiss.current = restoreFocus;
     setAuthErrorVisible(false);
-
-    if (!restoreFocus) return;
-
-    if (Platform.OS === 'android') {
-      // En Android el Modal no dispara onDismiss
-      requestAnimationFrame(() => passwordInputRef.current?.focus());
-    } else {
-      restorePasswordFocusOnDismiss.current = true;
-    }
   }
 
   async function handleLogin() {
@@ -154,9 +155,13 @@ export default function LoginScreen() {
               }}
               placeholder="nombre@correo.com"
               keyboardType="email-address"
+              textContentType="emailAddress"
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="email"
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
               editable={!loading}
             />
           </View>
@@ -173,11 +178,13 @@ export default function LoginScreen() {
               }}
               placeholder="Ingresá tu contraseña"
               passwordToggle
+              textContentType="password"
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="password"
+              returnKeyType="done"
               editable={!loading}
-              onSubmitEditing={handleLogin}
+              onSubmitEditing={() => void handleLogin()}
             />
           </View>
 
@@ -195,8 +202,9 @@ export default function LoginScreen() {
 
           <ActionButton title="Ingresar" onPress={() => void handleLogin()} loading={loading} />
 
-          <Pressable
+          <SpringPressable
             accessibilityRole="link"
+            pressScale={motion.scale.button}
             style={styles.textLink}
             onPress={() =>
               router.push({ pathname: '/forgot-password', params: { email: email.trim() } })
@@ -204,7 +212,7 @@ export default function LoginScreen() {
             disabled={loading}
           >
             <Text style={styles.textLinkLabel}>Olvidé mi contraseña</Text>
-          </Pressable>
+          </SpringPressable>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
@@ -219,8 +227,9 @@ export default function LoginScreen() {
             disabled={loading}
           />
 
-          <Pressable
+          <SpringPressable
             accessibilityRole="link"
+            pressScale={motion.scale.button}
             style={styles.textLink}
             disabled={loading}
             onPress={() =>
@@ -232,49 +241,40 @@ export default function LoginScreen() {
             }
           >
             <Text style={styles.textLinkLabel}>Seguir como visitante</Text>
-          </Pressable>
+          </SpringPressable>
         </View>
       </ScrollView>
 
-      <Modal
+      <AnimatedSheetModal
         visible={authErrorVisible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => {
-          closeAuthError(true);
-        }}
-        onDismiss={() => {
-          if (restorePasswordFocusOnDismiss.current) {
-            restorePasswordFocusOnDismiss.current = false;
-            passwordInputRef.current?.focus();
-          }
-        }}
+        presentation="dialog"
+        onClose={() => closeAuthError(true)}
+        containerStyle={styles.modalCard}
       >
-        <View style={styles.modalOverlay}>
-          <View accessibilityViewIsModal accessibilityRole="alert" style={styles.modalCard}>
-            <View style={styles.modalIconCircle}>
-              <Ionicons name="alert-circle-outline" size={28} color={colors.danger} />
-            </View>
-            <Text style={styles.modalTitle}>No pudimos iniciar sesión</Text>
-            <Text style={styles.modalMessage}>
-              El correo o la contraseña no son correctos. Revisá los datos e intentá nuevamente.
-            </Text>
+        <View accessibilityRole="alert" style={styles.modalBody}>
+          <View style={styles.modalIconCircle}>
+            <Ionicons name="alert-circle-outline" size={28} color={colors.danger} />
+          </View>
+          <Text accessibilityRole="header" style={styles.modalTitle}>
+            No pudimos iniciar sesión
+          </Text>
+          <Text style={styles.modalMessage}>
+            El correo o la contraseña no son correctos. Revisá los datos e intentá nuevamente.
+          </Text>
 
-            <View style={styles.modalActions}>
-              <ActionButton title="Reintentar" onPress={() => closeAuthError(true)} />
-              <ActionButton
-                title="Recuperar contraseña"
-                secondary
-                onPress={() => {
-                  closeAuthError(false);
-                  router.push({ pathname: '/forgot-password', params: { email: email.trim() } });
-                }}
-              />
-            </View>
+          <View style={styles.modalActions}>
+            <ActionButton title="Reintentar" onPress={() => closeAuthError(true)} />
+            <ActionButton
+              title="Recuperar contraseña"
+              secondary
+              onPress={() => {
+                closeAuthError(false);
+                router.push({ pathname: '/forgot-password', params: { email: email.trim() } });
+              }}
+            />
           </View>
         </View>
-      </Modal>
+      </AnimatedSheetModal>
     </KeyboardAvoidingView>
   );
 }
@@ -302,7 +302,13 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.textSecondary,
     },
     field: { width: '100%' },
-    textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
+    textLink: {
+      minHeight: 44,
+      minWidth: 44,
+      paddingHorizontal: 8,
+      alignSelf: 'center',
+      justifyContent: 'center',
+    },
     textLinkLabel: {
       fontFamily: fonts.regular,
       fontSize: 15,
@@ -319,22 +325,18 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.textSecondary,
     },
 
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 24,
-      backgroundColor: colors.overlay,
-    },
     modalCard: {
       width: '100%',
       maxWidth: 380,
-      alignItems: 'center',
       padding: 24,
       borderRadius: 20,
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    modalBody: {
+      width: '100%',
+      alignItems: 'center',
     },
     modalIconCircle: {
       width: 52,

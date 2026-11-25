@@ -1,18 +1,12 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { useRewardStyles } from '@/components/rewards/RewardsUI';
 import {
   activityFilters,
@@ -28,7 +22,7 @@ import {
   type ActivityEntry,
   type ActivityPageCursor,
 } from '@/services/activity.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const initialCursor = (): ActivityPageCursor => ({ deliveries: 0, pickups: 0, redemptions: 0 });
 
@@ -142,7 +136,7 @@ function MyActivity() {
         {activityFilters.map((item) => {
           const selected = filter === item;
           return (
-            <Pressable
+            <SpringPressable
               key={item}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
@@ -152,10 +146,11 @@ function MyActivity() {
                   router.setParams({ tab: item === 'Todos' ? undefined : item });
                 }
               }}
+              pressScale={motion.scale.chip}
               style={[styles.filter, selected && styles.selectedFilter]}
             >
               <Text style={[styles.filterText, selected && styles.selectedFilterText]}>{item}</Text>
-            </Pressable>
+            </SpringPressable>
           );
         })}
       </View>
@@ -192,10 +187,14 @@ function MyActivity() {
             <Ionicons name="car-outline" size={28} color={colors.primaryDark} />
           </View>
           <Text style={s.label}>Tus retiros aparecerán acá</Text>
-          <Text style={[s.body, { textAlign: 'center' }]}>Cuando se confirmen tus retiros, los verás en esta sección.</Text>
+          <Text style={[s.body, { textAlign: 'center' }]}>
+            Cuando se confirmen tus retiros, los verás en esta sección.
+          </Text>
         </View>
       )}
-      {loadingMore && <ActivityIndicator accessibilityLabel="Cargando más actividad" color={colors.primary} />}
+      {loadingMore && (
+        <ActivityIndicator accessibilityLabel="Cargando más actividad" color={colors.primary} />
+      )}
       {!!error && entries.length > 0 && (
         <View style={s.card}>
           <PortalFeedback error="No pudimos cargar más actividad." />
@@ -203,14 +202,15 @@ function MyActivity() {
         </View>
       )}
       {!loading && !loadingMore && hasMore && visible.length === 0 && (
-        <Pressable
+        <SpringPressable
           onPress={() => void loadMore()}
-          style={({ pressed }) => [styles.loadMoreButton, pressed && { opacity: 0.75 }]}
+          pressScale={motion.scale.button}
+          style={styles.loadMoreButton}
           accessibilityRole="button"
           accessibilityLabel="Cargar más movimientos"
         >
           <Text style={styles.loadMoreText}>Cargar más movimientos</Text>
-        </Pressable>
+        </SpringPressable>
       )}
     </View>
   );
@@ -248,11 +248,12 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       accessibilityLabel={`${entry.title}: ${entry.source}. Abrir detalle`}
       onPress={() => router.push(entry.destination)}
-      style={({ pressed }) => [styles.row, pressed && { opacity: 0.75 }]}
+      pressScale={motion.scale.card}
+      style={styles.row}
     >
       <View style={styles.eventIcon}>
         {entry.kind === 'DELIVERY' ? (
@@ -266,15 +267,21 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
         )}
       </View>
       <View style={styles.description}>
-        <Text style={styles.source} numberOfLines={1}>{entry.source}</Text>
+        <Text style={styles.source}>{entry.source}</Text>
         <Text style={styles.entryTitle}>{entry.title}</Text>
-        {!!entry.detail && <Text style={s.body} numberOfLines={1}>{entry.detail}</Text>}
+        {!!entry.detail && <Text style={s.body}>{entry.detail}</Text>}
         <Text style={styles.date}>{new Date(entry.createdAt).toLocaleDateString('es-AR')}</Text>
       </View>
       <View style={styles.amountBlock}>
         {entry.amount !== null && (
-          <Text style={[styles.amount, { color: entry.amount >= 0 ? colors.primaryDark : colors.danger }]}>
-            {entry.amount > 0 ? '+' : ''}{entry.amount.toLocaleString('es-AR')}
+          <Text
+            style={[
+              styles.amount,
+              { color: entry.amount >= 0 ? colors.primaryDark : colors.danger },
+            ]}
+          >
+            {entry.amount > 0 ? '+' : ''}
+            {entry.amount.toLocaleString('es-AR')}
           </Text>
         )}
         {entry.amount !== null && (
@@ -284,7 +291,7 @@ function ActivityRow({ entry }: Readonly<{ entry: ActivityEntry }>) {
         )}
       </View>
       <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-    </Pressable>
+    </SpringPressable>
   );
 }
 
@@ -324,8 +331,13 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    description: { flex: 1, gap: 3 },
-    source: { fontFamily: fonts.semiBold, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+    description: { flex: 1, minWidth: 0, gap: 3 },
+    source: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSecondary,
+    },
     entryTitle: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 22, color: colors.text },
     date: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
     amountBlock: { alignItems: 'flex-end', minWidth: 56 },

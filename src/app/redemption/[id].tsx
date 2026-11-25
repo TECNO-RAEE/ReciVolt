@@ -21,7 +21,7 @@ import { useStatusPolling } from '@/hooks/useStatusPolling';
 import { pointsLabel, rewardQr, type Redemption } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { rewardCommand } from '@/services/reward.service';
-import { useColors } from '@/theme';
+import { lightColors, useColors } from '@/theme';
 
 const PENDING_REDEMPTION_STATUSES = ['RESERVED'] as const;
 const CONFIRMED_REDEMPTION_STATUSES = ['REDEEMED'] as const;
@@ -122,7 +122,7 @@ function Reserved({ data }: Readonly<{ data: Redemption }>) {
             size={Math.max(120, Math.min(180, width - 112))}
             quietZone={12}
             ecl="M"
-            color="#102530"
+            color={lightColors.text}
             backgroundColor={colors.qrBackground}
           />
         </View>

@@ -2,10 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState, type ComponentProps } from 'react';
-import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { brand } from '@/config/brand';
@@ -94,16 +94,7 @@ export default function SettingsScreen() {
                 secondary
                 destructive
                 loading={action.busy}
-                onPress={() => {
-                  if (Platform.OS === 'web') {
-                    setConfirmingSignOut(true);
-                  } else {
-                    Alert.alert('Cerrar sesión', '¿Querés cerrar tu sesión?', [
-                      { text: 'Cancelar', style: 'cancel' },
-                      { text: 'Cerrar sesión', style: 'destructive', onPress: signOut },
-                    ]);
-                  }
-                }}
+                onPress={() => setConfirmingSignOut(true)}
               />
               {!confirmingSignOut && <PortalFeedback error={action.error} />}
             </>
@@ -212,29 +203,19 @@ export default function SettingsScreen() {
         </View>
       </CitizenPage>
 
-      <AnimatedSheetModal
+      <ConfirmModal
         visible={confirmingSignOut}
-        dismissible={!action.busy}
-        presentation="dialog"
-        onClose={() => {
-          if (!action.busy) setConfirmingSignOut(false);
-        }}
-        containerStyle={styles.modal}
-      >
-        <Ionicons name="log-out-outline" size={32} color={colors.danger} />
-        <Text accessibilityRole="header" style={s.subtitle}>
-          Cerrar sesión
-        </Text>
-        <Text style={s.body}>¿Querés cerrar tu sesión?</Text>
-        <PortalFeedback error={action.error} />
-        <ActionButton title="Cerrar sesión" destructive loading={action.busy} onPress={signOut} />
-        <ActionButton
-          title="Cancelar"
-          secondary
-          disabled={action.busy}
-          onPress={() => setConfirmingSignOut(false)}
-        />
-      </AnimatedSheetModal>
+        icon="log-out-outline"
+        title="Cerrar sesión"
+        message="¿Querés cerrar tu sesión?"
+        confirmLabel="Cerrar sesión"
+        cancelLabel="Cancelar"
+        destructive
+        loading={action.busy}
+        error={action.error}
+        onConfirm={signOut}
+        onClose={() => setConfirmingSignOut(false)}
+      />
     </>
   );
 }
@@ -261,14 +242,4 @@ const makeStyles = (colors: ThemeColors) =>
     },
     appearanceText: { flex: 1, minWidth: 0, gap: 2 },
     appearanceLabel: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
-    modal: {
-      width: '100%',
-      maxWidth: 400,
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 24,
-      gap: 14,
-    },
   });

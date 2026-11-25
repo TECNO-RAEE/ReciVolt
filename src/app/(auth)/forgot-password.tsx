@@ -16,8 +16,9 @@ import { AuthTextField } from '@/components/auth/AuthTextField';
 import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { sendRecoveryCode, verifyRecoveryCode } from '@/services/auth.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -238,9 +239,11 @@ export default function ForgotPasswordScreen() {
                     }}
                     placeholder="nombre@correo.com"
                     keyboardType="email-address"
+                    textContentType="emailAddress"
                     autoCapitalize="none"
                     autoCorrect={false}
                     autoComplete="email"
+                    returnKeyType="send"
                     onSubmitEditing={() => void handleSendCode()}
                   />
                 </View>
@@ -292,6 +295,7 @@ export default function ForgotPasswordScreen() {
                     autoFocus
                     autoComplete="one-time-code"
                     textContentType="oneTimeCode"
+                    returnKeyType="done"
                     placeholderTextColor={colors.textSecondary}
                     style={styles.hiddenOtpInput}
                     value={code}
@@ -314,37 +318,40 @@ export default function ForgotPasswordScreen() {
                   disabled={busy === 'send' || code.length < OTP_LENGTH}
                 />
                 <View style={styles.row}>
-                  <Pressable
+                  <SpringPressable
                     accessibilityRole="button"
                     accessibilityState={{ disabled: Boolean(busy) || cooldown > 0 }}
                     disabled={Boolean(busy) || cooldown > 0}
+                    pressScale={motion.scale.button}
                     style={[styles.textLink, (Boolean(busy) || cooldown > 0) && styles.disabled]}
                     onPress={() => void handleSendCode(true)}
                   >
                     <Text style={styles.textLinkLabel}>
                       {cooldown > 0 ? `Reenviar código (${cooldown}s)` : 'Reenviar código'}
                     </Text>
-                  </Pressable>
-                  <Pressable
+                  </SpringPressable>
+                  <SpringPressable
                     accessibilityRole="button"
                     disabled={Boolean(busy)}
+                    pressScale={motion.scale.button}
                     style={[styles.textLink, busy && styles.disabled]}
                     onPress={handleReturnToEmailStep}
                   >
                     <Text style={styles.textLinkLabel}>Cambiar correo</Text>
-                  </Pressable>
+                  </SpringPressable>
                 </View>
               </>
             )}
 
-            <Pressable
+            <SpringPressable
               accessibilityRole="link"
+              pressScale={motion.scale.button}
               style={styles.textLink}
               disabled={Boolean(busy)}
               onPress={() => router.replace('/login')}
             >
               <Text style={styles.textLinkLabel}>Volver a ingresar</Text>
-            </Pressable>
+            </SpringPressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -357,7 +364,6 @@ const makeStyles = (colors: ThemeColors) =>
     container: { flex: 1, backgroundColor: colors.background },
     scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
     screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
-    pressed: { opacity: 0.75 },
     disabled: { opacity: 0.6 },
     error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
 
@@ -377,7 +383,13 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.textSecondary,
     },
     row: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
-    textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
+    textLink: {
+      minHeight: 44,
+      minWidth: 44,
+      paddingHorizontal: 8,
+      alignSelf: 'center',
+      justifyContent: 'center',
+    },
     textLinkLabel: {
       fontFamily: fonts.regular,
       fontSize: 15,
@@ -398,6 +410,13 @@ const makeStyles = (colors: ThemeColors) =>
     },
     otpBoxFocused: { borderColor: colors.primary, borderWidth: 2 },
     otpDigit: { fontFamily: fonts.regular, fontSize: 18, color: colors.text },
-    hiddenOtpInput: { position: 'absolute', width: '100%', height: '100%', opacity: 0 },
+    hiddenOtpInput: {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      minHeight: 44,
+      fontSize: 16,
+      opacity: 0,
+    },
     notice: { fontFamily: fonts.semiBold, fontSize: 14, lineHeight: 21, color: colors.primary },
   });

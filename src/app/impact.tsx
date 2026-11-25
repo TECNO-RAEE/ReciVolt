@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { CitizenPage, InfoNote, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { DevicePreparationArtwork } from '@/components/ui/EcoArtwork';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const steps = [
   {
@@ -50,7 +51,6 @@ export default function ImpactScreen() {
     <CitizenPage title="Preparar dispositivos">
       <View style={s.card}>
         <DevicePreparationArtwork />
-        <Text style={styles.heroTitle}>Prepará tus dispositivos</Text>
         <Text style={s.body}>
           Antes de entregarlos, seguí estos pasos para proteger tu información y facilitar su
           correcto tratamiento.
@@ -70,10 +70,11 @@ export default function ImpactScreen() {
         ))}
       </View>
       <View style={styles.repairCard}>
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityState={{ expanded }}
           onPress={() => setExpanded((value) => !value)}
+          pressScale={motion.scale.row}
           style={styles.repairHeader}
         >
           <Ionicons name="leaf-outline" size={23} color={colors.primary} />
@@ -83,16 +84,17 @@ export default function ImpactScreen() {
             size={20}
             color={colors.textSecondary}
           />
-        </Pressable>
+        </SpringPressable>
         {expanded && (
           <View style={styles.answers}>
             <Text style={s.body}>Elegí una opción para ver una recomendación general.</Text>
             {answers.map((item) => (
-              <Pressable
+              <SpringPressable
                 key={item.key}
                 accessibilityRole="button"
                 accessibilityState={{ selected: answer === item.key }}
                 onPress={() => setAnswer(item.key)}
+                pressScale={motion.scale.row}
                 style={[styles.answer, answer === item.key && styles.answerSelected]}
               >
                 <Text
@@ -101,7 +103,7 @@ export default function ImpactScreen() {
                   {item.label}
                 </Text>
                 {answer === item.key && <Text style={s.body}>{item.text}</Text>}
-              </Pressable>
+              </SpringPressable>
             ))}
           </View>
         )}
@@ -122,7 +124,6 @@ export default function ImpactScreen() {
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    heroTitle: { color: colors.text, fontFamily: fonts.bold, fontSize: 26, lineHeight: 34 },
     steps: { gap: 10 },
     step: {
       minHeight: 82,
