@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { StyleSheet, Text, View } from 'react-native';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface NumericStepperProps {
   value: number;
@@ -47,25 +48,22 @@ export function NumericStepper({
 
   return (
     <View testID={testID} style={styles.container}>
-      <Pressable
+      <SpringPressable
         testID={testID ? `${testID}-minus` : undefined}
         accessibilityRole="button"
         accessibilityLabel={decrementAccessibilityLabel}
         accessibilityState={{ disabled: !canDecrement }}
         disabled={!canDecrement}
         onPress={handleDecrement}
-        style={({ pressed }) => [
-          styles.button,
-          (!canDecrement || disabled) && styles.buttonDisabled,
-          pressed && canDecrement && styles.buttonPressed,
-        ]}
+        pressScale={motion.scale.icon}
+        style={[styles.button, (!canDecrement || disabled) && styles.buttonDisabled]}
       >
         <Ionicons
           name="remove"
           size={22}
           color={canDecrement ? colors.primary : colors.textSecondary}
         />
-      </Pressable>
+      </SpringPressable>
 
       <Text
         testID={testID ? `${testID}-value` : undefined}
@@ -76,25 +74,22 @@ export function NumericStepper({
         {safeValue}
       </Text>
 
-      <Pressable
+      <SpringPressable
         testID={testID ? `${testID}-plus` : undefined}
         accessibilityRole="button"
         accessibilityLabel={incrementAccessibilityLabel}
         accessibilityState={{ disabled: !canIncrement }}
         disabled={!canIncrement}
         onPress={handleIncrement}
-        style={({ pressed }) => [
-          styles.button,
-          (!canIncrement || disabled) && styles.buttonDisabled,
-          pressed && canIncrement && styles.buttonPressed,
-        ]}
+        pressScale={motion.scale.icon}
+        style={[styles.button, (!canIncrement || disabled) && styles.buttonDisabled]}
       >
         <Ionicons
           name="add"
           size={22}
           color={canIncrement ? colors.primary : colors.textSecondary}
         />
-      </Pressable>
+      </SpringPressable>
     </View>
   );
 }

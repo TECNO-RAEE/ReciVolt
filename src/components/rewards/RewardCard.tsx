@@ -1,7 +1,19 @@
+import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  ReduceMotion,
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { pointsLabel, type Reward } from '@/models/Reward';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { PointsBadge, RewardPhoto } from './RewardsUI';
 
 export function RewardCard({
@@ -12,11 +24,12 @@ export function RewardCard({
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       accessibilityLabel={`${reward.title}, ${reward.businessName}, ${status ?? pointsLabel(reward.pointsCost)}. Ver detalle`}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.75 }]}
+      pressScale={motion.scale.card}
+      style={styles.card}
     >
       <View style={styles.photo}>
         <RewardPhoto reward={reward} height={104} />
@@ -40,14 +53,39 @@ export function RewardCard({
         )}
       </View>
       <Ionicons name="chevron-forward" size={20} color={colors.text} />
-    </Pressable>
+    </SpringPressable>
   );
 }
 export function RewardsSkeleton() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const reducedMotion = useReducedMotion();
+  const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      cancelAnimation(pulse);
+      pulse.value = 1;
+      return;
+    }
+    pulse.value = withRepeat(
+      withTiming(0.55, {
+        duration: motion.duration.skeletonPulse,
+        easing: Easing.inOut(Easing.ease),
+        reduceMotion: ReduceMotion.System,
+      }),
+      -1,
+      true
+    );
+    return () => cancelAnimation(pulse);
+  }, [reducedMotion, pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: pulse.value,
+  }));
+
   return (
-    <View accessibilityLabel="Cargando premios" style={{ gap: 12 }}>
+    <Animated.View accessibilityLabel="Cargando premios" style={[{ gap: 12 }, pulseStyle]}>
       {[0, 1, 2].map((i) => (
         <View key={i} style={[styles.card, { gap: 14 }]}>
           <View style={[styles.photo, { height: 104, backgroundColor: colors.primarySoft }]} />
@@ -65,7 +103,7 @@ export function RewardsSkeleton() {
           </View>
         </View>
       ))}
-    </View>
+    </Animated.View>
   );
 }
 const makeStyles = (colors: ThemeColors) =>

@@ -1,7 +1,16 @@
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
 import { SuccessArtwork } from '@/components/ui/EcoArtwork';
-import { fonts, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ScanSuccessModalProps = {
   visible: boolean;
@@ -25,42 +34,56 @@ export function ScanSuccessModal({
   onDismiss,
 }: Readonly<ScanSuccessModalProps>) {
   const styles = useThemedStyles(makeStyles);
+  const reducedMotion = useReducedMotion();
+  const artworkScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (!visible || reducedMotion) {
+      artworkScale.value = 1;
+      return;
+    }
+    artworkScale.value = 0.72;
+    artworkScale.value = withSpring(1, {
+      ...motion.iconSpring,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [visible, reducedMotion, artworkScale]);
+
+  const artworkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: artworkScale.value }],
+  }));
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onDismiss}>
-      <View style={styles.backdrop}>
-        <View accessibilityViewIsModal accessibilityLiveRegion="polite" style={styles.card}>
-          <View style={styles.artworkWrap}>
-            <SuccessArtwork />
+    <AnimatedSheetModal
+      visible={visible}
+      onClose={onDismiss}
+      presentation="dialog"
+      containerStyle={styles.card}
+    >
+      <View accessibilityLiveRegion="polite" style={styles.cardInner}>
+        <Animated.View style={[styles.artworkWrap, artworkStyle]}>
+          <SuccessArtwork />
+        </Animated.View>
+        <Text accessibilityRole="header" style={styles.title}>
+          {title}
+        </Text>
+        {Boolean(highlight) && (
+          <View style={styles.highlightPill}>
+            <Text style={styles.highlightText}>{highlight}</Text>
           </View>
-          <Text accessibilityRole="header" style={styles.title}>
-            {title}
-          </Text>
-          {Boolean(highlight) && (
-            <View style={styles.highlightPill}>
-              <Text style={styles.highlightText}>{highlight}</Text>
-            </View>
-          )}
-          <Text style={styles.message}>{message}</Text>
-          <View style={styles.actions}>
-            <ActionButton title={primaryLabel} onPress={onPrimary} />
-            <ActionButton secondary title={secondaryLabel} onPress={onDismiss} />
-          </View>
+        )}
+        <Text style={styles.message}>{message}</Text>
+        <View style={styles.actions}>
+          <ActionButton title={primaryLabel} onPress={onPrimary} />
+          <ActionButton secondary title={secondaryLabel} onPress={onDismiss} />
         </View>
       </View>
-    </Modal>
+    </AnimatedSheetModal>
   );
 }
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 24,
-    },
     card: {
       width: '100%',
       maxWidth: 420,
@@ -69,6 +92,9 @@ const makeStyles = (colors: ThemeColors) =>
       borderWidth: 1,
       borderColor: colors.border,
       padding: 24,
+    },
+    cardInner: {
+      width: '100%',
       alignItems: 'center',
       gap: 14,
     },

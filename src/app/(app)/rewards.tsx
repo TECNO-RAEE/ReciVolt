@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import {
   CitizenPage,
   InfoNote,
@@ -21,7 +22,7 @@ import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { getRewards, getRedemptions } from '@/services/reward.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function RewardsScreen() {
   const colors = useColors();
@@ -83,9 +84,10 @@ export default function RewardsScreen() {
     <CitizenPage
       title="Premios"
       action={
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel={searching ? 'Cerrar búsqueda' : 'Buscar premios'}
+          pressScale={motion.scale.icon}
           style={styles.searchButton}
           onPress={() => {
             setSearching(!searching);
@@ -93,7 +95,7 @@ export default function RewardsScreen() {
           }}
         >
           <Ionicons name={searching ? 'close' : 'search-outline'} size={23} color={colors.text} />
-        </Pressable>
+        </SpringPressable>
       }
     >
       {session && (
@@ -106,7 +108,7 @@ export default function RewardsScreen() {
       )}
       <View style={styles.tabs}>
         {['Disponibles', 'Mis canjes'].map((label) => (
-          <Pressable
+          <SpringPressable
             key={label}
             accessibilityRole="tab"
             accessibilityState={{ selected: tab === label }}
@@ -115,12 +117,13 @@ export default function RewardsScreen() {
               // Clear ?tab=canjes so "Ver mis canjes" can switch tabs again later.
               if (params.tab) router.setParams({ tab: undefined });
             }}
+            pressScale={motion.scale.button}
             style={[styles.tab, tab === label && styles.activeTab]}
           >
             <Text style={[styles.tabText, tab === label && { color: colors.primaryDark }]}>
               {label}
             </Text>
-          </Pressable>
+          </SpringPressable>
         ))}
       </View>
       {tab === 'Mis canjes' ? (
@@ -143,14 +146,15 @@ export default function RewardsScreen() {
                 style={styles.searchInput}
               />
               {search !== '' && (
-                <Pressable
+                <SpringPressable
                   accessibilityRole="button"
                   accessibilityLabel="Borrar búsqueda"
                   onPress={() => setSearch('')}
-                  style={({ pressed }) => [styles.clearSearch, pressed && { opacity: 0.7 }]}
+                  pressScale={motion.scale.icon}
+                  style={styles.clearSearch}
                 >
                   <Ionicons name="close" size={20} color={colors.text} />
-                </Pressable>
+                </SpringPressable>
               )}
             </View>
           )}
@@ -160,11 +164,12 @@ export default function RewardsScreen() {
             contentContainerStyle={styles.chips}
           >
             {categoryOptions.map(([key, label]) => (
-              <Pressable
+              <SpringPressable
                 key={key}
                 accessibilityRole="button"
                 accessibilityState={{ selected: activeCategory === key }}
                 onPress={() => setCategory(key)}
+                pressScale={motion.scale.chip}
                 style={[styles.chip, activeCategory === key && styles.selectedChip]}
               >
                 <Text
@@ -175,7 +180,7 @@ export default function RewardsScreen() {
                 >
                   {label}
                 </Text>
-              </Pressable>
+              </SpringPressable>
             ))}
           </ScrollView>
           {loading ? (
@@ -247,12 +252,13 @@ function MyRedemptions() {
         const reserved = r.status === 'RESERVED';
         const statusHint = reserved ? 'Reservado · Ver código' : 'Entregado · Ver detalle';
         return (
-          <Pressable
+          <SpringPressable
             key={r.id}
             accessibilityRole="button"
             accessibilityLabel={`${r.reward.title}, ${r.reward.businessName}, ${pointsLabel(r.pointsCost)}, ${statusHint}`}
             onPress={() => router.push({ pathname: '/redemption/[id]', params: { id: r.id } })}
-            style={({ pressed }) => [styles.redemptionCard, pressed && { opacity: 0.75 }]}
+            pressScale={motion.scale.card}
+            style={styles.redemptionCard}
           >
             <View style={styles.redemptionPhoto}>
               <RewardPhoto reward={r.reward} height={104} />
@@ -289,7 +295,7 @@ function MyRedemptions() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
-          </Pressable>
+          </SpringPressable>
         );
       })}
       <View style={s.row}>

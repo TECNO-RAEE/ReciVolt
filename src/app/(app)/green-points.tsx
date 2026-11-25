@@ -1,9 +1,10 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { DiscoveryState } from '@/components/discovery/DiscoveryState';
 import { PointCardPreview } from '@/components/discovery/PointCardPreview';
 import {
@@ -17,7 +18,7 @@ import { SearchBar } from '@/components/discovery/SearchBar';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 function ViewToggle({
   label,
@@ -27,14 +28,15 @@ function ViewToggle({
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={onPress}
+      pressScale={motion.scale.chip}
       style={[styles.pill, selected && styles.pillSelected]}
     >
       <Text style={[styles.pillText, selected && { color: colors.textOnPrimary }]}>{label}</Text>
-    </Pressable>
+    </SpringPressable>
   );
 }
 export default function GreenPointsScreen() {
@@ -154,19 +156,21 @@ function GreenPointsExplorer({
           <View style={styles.searchSlot}>
             <SearchBar value={search} onChangeText={setSearch} />
           </View>
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel="Actualizar puntos verdes"
             onPress={refresh}
-            style={({ pressed }) => [styles.filterButton, pressed && { opacity: 0.7 }]}
+            pressScale={motion.scale.icon}
+            style={styles.filterButton}
           >
             <Ionicons name="refresh-outline" size={22} color={colors.primary} />
-          </Pressable>
-          <Pressable
+          </SpringPressable>
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel={`Filtrar puntos verdes${activeFilterCount ? `, ${activeFilterCount} filtros activos` : ''}`}
             onPress={() => setFilterSheetOpen(true)}
-            style={({ pressed }) => [styles.filterButton, pressed && { opacity: 0.7 }]}
+            pressScale={motion.scale.icon}
+            style={styles.filterButton}
           >
             <Ionicons name="options-outline" size={22} color={colors.primary} />
             {activeFilterCount > 0 && (
@@ -174,7 +178,7 @@ function GreenPointsExplorer({
                 <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
               </View>
             )}
-          </Pressable>
+          </SpringPressable>
         </View>
         <View style={styles.pillRow}>
           <ViewToggle label="Mapa" selected={view === 'map'} onPress={() => setView('map')} />
@@ -194,30 +198,32 @@ function GreenPointsExplorer({
             selectedId={selectedPoint?.id ?? null}
             onSelect={(point) => setSelectedId(point.id)}
           />
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel={location ? 'Actualizar mi ubicación' : 'Usar mi ubicación'}
             onPress={() => void requestLocation()}
-            style={({ pressed }) => [styles.locateButton, pressed && { opacity: 0.7 }]}
+            pressScale={motion.scale.icon}
+            style={styles.locateButton}
           >
             <Ionicons
               name={locating ? 'hourglass-outline' : 'locate-outline'}
               size={22}
               color={colors.primary}
             />
-          </Pressable>
+          </SpringPressable>
           {showMapNotice && (
             <View style={styles.mapNotices}>
               <View style={styles.mapNotice}>
                 <Text style={styles.mapNoticeText}>{mapNoticeText}</Text>
-                <Pressable
+                <SpringPressable
                   accessibilityRole="button"
                   accessibilityLabel="Cerrar aviso"
                   onPress={() => setDismissedNoticeKey(mapNoticeText)}
-                  style={({ pressed }) => [styles.dismissNoticeBtn, pressed && { opacity: 0.7 }]}
+                  pressScale={motion.scale.icon}
+                  style={styles.dismissNoticeBtn}
                 >
                   <Ionicons name="close" size={18} color={colors.textSecondary} />
-                </Pressable>
+                </SpringPressable>
               </View>
             </View>
           )}
@@ -261,12 +267,7 @@ function GreenPointsExplorer({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <PointRow
-              point={item}
-              location={location}
-              now={now}
-              onPress={() => openPoint(item)}
-            />
+            <PointRow point={item} location={location} now={now} onPress={() => openPoint(item)} />
           )}
           ListHeaderComponent={
             <View style={styles.listHeader}>

@@ -5,8 +5,19 @@ import type { Href } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  ReduceMotion,
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import {
   pointsLabel,
   rewardCategoryFallbackImage,
@@ -105,6 +116,31 @@ export function PointsCard({
   const colors = useColors();
   const rewardStyles = useRewardStyles();
   const styles = useThemedStyles(makeStyles);
+  const reducedMotion = useReducedMotion();
+  const skeletonPulse = useSharedValue(1);
+
+  useEffect(() => {
+    if (!loading || reducedMotion) {
+      cancelAnimation(skeletonPulse);
+      skeletonPulse.value = 1;
+      return;
+    }
+    skeletonPulse.value = withRepeat(
+      withTiming(0.55, {
+        duration: motion.duration.skeletonPulse,
+        easing: Easing.inOut(Easing.ease),
+        reduceMotion: ReduceMotion.System,
+      }),
+      -1,
+      true
+    );
+    return () => cancelAnimation(skeletonPulse);
+  }, [loading, reducedMotion, skeletonPulse]);
+
+  const skeletonStyle = useAnimatedStyle(() => ({
+    opacity: skeletonPulse.value,
+  }));
+
   const accessibilityLabel = guest
     ? 'Creá tu cuenta para sumar puntos'
     : error
@@ -113,18 +149,22 @@ export function PointsCard({
         ? 'Ver mis puntos globales'
         : 'Tus puntos';
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={accessibilityLabel}
       disabled={!onPress}
       onPress={onPress}
-      style={({ pressed }) => [styles.pointsCard, pressed && onPress && { opacity: 0.75 }]}
+      pressScale={motion.scale.card}
+      style={styles.pointsCard}
     >
       <PointsCoin />
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={rewardStyles.label}>{label}</Text>
         {loading ? (
-          <View accessibilityLabel="Cargando saldo" style={styles.balanceSkeleton} />
+          <Animated.View
+            accessibilityLabel="Cargando saldo"
+            style={[styles.balanceSkeleton, skeletonStyle]}
+          />
         ) : (
           <Text style={[styles.balance, guest && styles.guestBalance]}>
             {guest
@@ -139,11 +179,11 @@ export function PointsCard({
             ? 'Registrá tus entregas y disfrutá premios.'
             : error
               ? 'No pudimos cargar tu saldo. Tocá para reintentar.'
-              : hint ?? 'Sumás puntos por tus entregas confirmadas en toda la red.'}
+              : (hint ?? 'Sumás puntos por tus entregas confirmadas en toda la red.')}
         </Text>
       </View>
       {onPress ? <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} /> : null}
-    </Pressable>
+    </SpringPressable>
   );
 }
 type RewardPhotoSubject = Pick<Reward, 'imageUrl' | 'title'> & {
@@ -224,9 +264,7 @@ function RewardPhotoSource({
         accessibilityLabel={`Foto no disponible para ${title}`}
         style={[
           styles.photoFallback,
-          size
-            ? { width: size, height: size, borderRadius: size / 2 }
-            : { height, width: '100%' },
+          size ? { width: size, height: size, borderRadius: size / 2 } : { height, width: '100%' },
         ]}
       >
         <Ionicons name="gift-outline" size={compact ? 26 : 36} color={colors.primaryDark} />
@@ -414,9 +452,10 @@ export function CopyableCode({ code }: Readonly<{ code: string }>) {
         <Text selectable style={styles.codeText}>
           {code}
         </Text>
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Copiar código de canje"
+          pressScale={motion.scale.icon}
           style={styles.copyButton}
           onPress={() =>
             void Clipboard.setStringAsync(code)
@@ -433,7 +472,7 @@ export function CopyableCode({ code }: Readonly<{ code: string }>) {
             size={20}
             color={copied ? colors.primaryDark : colors.textSecondary}
           />
-        </Pressable>
+        </SpringPressable>
       </View>
       {copied && (
         <Text accessibilityLiveRegion="polite" style={styles.copied}>

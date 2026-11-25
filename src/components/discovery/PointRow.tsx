@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import {
   distanceKm,
   formatDistance,
@@ -7,7 +8,7 @@ import {
   type Coordinates,
   type GreenPoint,
 } from '@/models/GreenPoint';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 export function PointRow({
   point,
   location,
@@ -24,11 +25,12 @@ export function PointRow({
       .map((policy) => `${policy.category!.name} (retiro)`),
   ];
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       accessibilityLabel={`Ver ${point.name}${point.demo ? ', punto verde de ejemplo' : ''}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && { opacity: 0.65 }]}
+      pressScale={motion.scale.row}
+      style={styles.row}
     >
       <View style={styles.content}>
         {point.demo && <Text style={styles.text}>Punto verde de ejemplo</Text>}
@@ -55,7 +57,7 @@ export function PointRow({
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-    </Pressable>
+    </SpringPressable>
   );
 }
 const makeStyles = (colors: ThemeColors) =>

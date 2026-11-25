@@ -24,7 +24,8 @@ import {
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { InfoCard } from '@/components/ui/InfoCard';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 export function createPortalStyles(colors: ThemeColors) {
@@ -115,18 +116,19 @@ export function PortalLink({
 }: Readonly<{ title: string; onPress: () => void; disabled?: boolean }>) {
   const portalStyles = usePortalStyles();
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => ({
+      pressScale={motion.scale.button}
+      style={{
         minHeight: 44,
         justifyContent: 'center',
-        opacity: pressed || disabled ? 0.6 : 1,
-      })}
+        opacity: disabled ? 0.6 : 1,
+      }}
     >
       <Text style={portalStyles.link}>{title}</Text>
-    </Pressable>
+    </SpringPressable>
   );
 }
 export function PortalMenuItem({
@@ -143,10 +145,11 @@ export function PortalMenuItem({
   const colors = useColors();
   const portalStyles = usePortalStyles();
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       accessibilityHint={description}
       onPress={onPress}
+      pressScale={motion.scale.card}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
@@ -166,7 +169,7 @@ export function PortalMenuItem({
         {description && <Text style={portalStyles.hint}>{description}</Text>}
       </View>
       <Ionicons name="chevron-forward" size={20} color={colors.text} />
-    </Pressable>
+    </SpringPressable>
   );
 }
 export function PortalBadge({
@@ -233,11 +236,12 @@ export function PortalListItem({
   const colors = useColors();
   const portalStyles = usePortalStyles();
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityHint={accessibilityHint}
       disabled={!onPress}
       onPress={onPress}
+      pressScale={motion.scale.card}
       style={({ pressed }) => ({
         gap: 12,
         padding: 16,
@@ -278,7 +282,7 @@ export function PortalListItem({
         {onPress && <Ionicons name="chevron-forward" size={20} color={colors.text} />}
       </View>
       {children}
-    </Pressable>
+    </SpringPressable>
   );
 }
 export function OrganizationCard({ name, role }: Readonly<{ name: string; role: string }>) {

@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import {
   distanceKm,
   formatDistance,
@@ -7,7 +8,7 @@ import {
   type Coordinates,
   type GreenPoint,
 } from '@/models/GreenPoint';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 /**
  * Tarjeta flotante sobre el mapa de Puntos verdes: resume cuántos puntos hay en el
@@ -35,11 +36,12 @@ export function PointCardPreview({
   const status = point ? openingStatus(point, now) : 'unknown';
   return (
     <View style={styles.card}>
-      <Pressable
+      <SpringPressable
         accessibilityRole="button"
         accessibilityLabel="Ver todos los puntos verdes en lista"
         onPress={onViewAll}
-        style={({ pressed }) => [styles.summaryRow, pressed && { opacity: 0.7 }]}
+        pressScale={motion.scale.row}
+        style={styles.summaryRow}
       >
         <Text style={styles.summary}>
           {count}{' '}
@@ -55,13 +57,14 @@ export function PointCardPreview({
           <Text style={styles.linkText}>Ver todos</Text>
           <Ionicons name="chevron-forward" size={18} color={colors.primary} />
         </View>
-      </Pressable>
+      </SpringPressable>
       {point && (
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel={`Ver detalle de ${point.name}`}
           onPress={onOpenPoint}
-          style={({ pressed }) => [styles.preview, pressed && { opacity: 0.7 }]}
+          pressScale={motion.scale.row}
+          style={styles.preview}
         >
           <View style={styles.previewText}>
             <Text style={styles.name} numberOfLines={1}>
@@ -80,7 +83,7 @@ export function PointCardPreview({
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={22} color={colors.primary} />
-        </Pressable>
+        </SpringPressable>
       )}
     </View>
   );
