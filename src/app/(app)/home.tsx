@@ -1,21 +1,36 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { QuickAccess } from '@/components/home/QuickAccess';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { HomeBotanical, ImpactPlant, LeafMark } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { PortalFeedback, PortalLink } from '@/components/portal/PortalUI';
 import { InfoNote, PointsCard } from '@/components/rewards/RewardsUI';
 import { PointsMap } from '@/components/discovery/PointsMap';
 import { PointRow } from '@/components/discovery/PointRow';
 import { DiscoveryState } from '@/components/discovery/DiscoveryState';
+import { RecycleFinderModal } from '@/components/discovery/RecycleFinderModal';
 import { filterGreenPoints, type GreenPoint } from '@/models/GreenPoint';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { fonts, useColors, useThemePreference, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemePreference,
+  useThemedStyles,
+  type ThemeColors,
+} from '@/theme';
 import { brand } from '@/config/brand';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
@@ -24,6 +39,32 @@ export default function HomeScreen() {
   const { scheme, setPreference } = useThemePreference();
   const isDark = scheme === 'dark';
   const styles = useThemedStyles(makeStyles);
+  const reducedMotion = useReducedMotion();
+  const isInitialThemeMount = useRef(true);
+  const themeIconScale = useSharedValue(1);
+  const themeIconRotate = useSharedValue(0);
+
+  useEffect(() => {
+    if (isInitialThemeMount.current) {
+      isInitialThemeMount.current = false;
+      return;
+    }
+    if (reducedMotion) return;
+    themeIconScale.value = 0.74;
+    themeIconRotate.value = isDark ? -26 : 26;
+    themeIconScale.value = withSpring(1, {
+      ...motion.iconSpring,
+      reduceMotion: ReduceMotion.System,
+    });
+    themeIconRotate.value = withSpring(0, {
+      ...motion.iconSpring,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [isDark, reducedMotion, themeIconScale, themeIconRotate]);
+
+  const themeIconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: themeIconScale.value }, { rotate: `${themeIconRotate.value}deg` }],
+  }));
   const scroll = useScrollReset();
   const { profile, session } = useAuth();
   const wallet = useWallet();
@@ -49,6 +90,7 @@ export default function HomeScreen() {
       refresh();
     }, [refresh])
   );
+  const [finderOpen, setFinderOpen] = useState(false);
   const sorted = useMemo(() => filterGreenPoints(points, {}, location), [points, location]);
   const nearest = useMemo(() => sorted.slice(0, 1), [sorted]);
   const openPoint = useCallback(
@@ -70,7 +112,7 @@ export default function HomeScreen() {
               <Text style={{ color: colors.primaryDark }}>{brand.wordmarkSuffix}</Text>
             </Text>
           </View>
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             aria-pressed={isDark}
             accessibilityLabel={
@@ -78,10 +120,13 @@ export default function HomeScreen() {
             }
             accessibilityHint="Cambia entre apariencia clara y oscura"
             onPress={() => setPreference(isDark ? 'light' : 'dark')}
-            style={({ pressed }) => [styles.themeToggle, pressed && styles.themeTogglePressed]}
+            pressScale={motion.scale.icon}
+            style={styles.themeToggle}
           >
-            <Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={colors.primaryDark} />
-          </Pressable>
+            <Animated.View style={themeIconStyle}>
+              <Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={colors.primaryDark} />
+            </Animated.View>
+          </SpringPressable>
         </View>
         <View style={styles.intro}>
           <View style={{ flex: 1, zIndex: 1 }}>
@@ -103,28 +148,25 @@ export default function HomeScreen() {
           error={wallet.error}
           onPress={() => (wallet.error ? void refreshWallet() : router.push('/(app)/my-points'))}
         />
-        <View style={styles.quickGrid}>
-          <QuickAccess
-            title="Entregas"
-            icon={<MaterialCommunityIcons name="recycle" size={27} color={colors.primaryDark} />}
-            onPress={() => router.push('/my-raee')}
-          />
-          <QuickAccess
-            title="Mis puntos"
-            icon={<Ionicons name="bar-chart" size={25} color={colors.primaryDark} />}
-            onPress={() => router.push('/(app)/my-points')}
-          />
-          <QuickAccess
-            title="Premios"
-            icon={<Ionicons name="gift-outline" size={26} color={colors.primaryDark} />}
-            onPress={() => router.push('/rewards')}
-          />
-          <QuickAccess
-            title="Preparar equipos"
-            icon={<Ionicons name="leaf" size={26} color={colors.primaryDark} />}
-            onPress={() => router.push('/impact')}
-          />
-        </View>
+        <SpringPressable
+          accessibilityRole="button"
+          accessibilityLabel="¿Qué tenés para reciclar? Buscá puntos verdes cercanos"
+          accessibilityHint="Abre el buscador de dispositivos para ver qué puntos verdes los reciben"
+          onPress={() => setFinderOpen(true)}
+          pressScale={motion.scale.card}
+          style={styles.recycleSearch}
+        >
+          <View style={styles.recycleSearchIcon}>
+            <Ionicons name="search-outline" size={20} color={colors.primaryDark} />
+          </View>
+          <View style={styles.recycleSearchCopy}>
+            <Text style={styles.recycleSearchPlaceholder}>¿Qué tenés para reciclar?</Text>
+            <Text style={styles.recycleSearchHint}>
+              Elegí un dispositivo y mirá los puntos más cercanos
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.primaryDark} />
+        </SpringPressable>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Puntos verdes</Text>
           <PortalLink title="Ver todos ›" onPress={() => router.push('/green-points')} />
@@ -166,9 +208,10 @@ export default function HomeScreen() {
             {locationError && <PortalFeedback error={locationError} />}
           </View>
         )}
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           onPress={() => router.push('/impact')}
+          pressScale={motion.scale.card}
           style={styles.impact}
         >
           <ImpactPlant />
@@ -177,8 +220,14 @@ export default function HomeScreen() {
             <Text style={styles.impactHint}>Tus entregas ayudan a un futuro más verde.</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.primaryDark} />
-        </Pressable>
+        </SpringPressable>
       </ScrollView>
+      <RecycleFinderModal
+        visible={finderOpen}
+        onClose={() => setFinderOpen(false)}
+        onSelectPoint={openPoint}
+        onViewAllPoints={() => router.push('/green-points')}
+      />
     </SafeAreaView>
   );
 }
@@ -209,8 +258,12 @@ const makeStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    themeTogglePressed: { opacity: 0.7 },
-    intro: { flexDirection: 'row', minHeight: 106, paddingTop: 12, justifyContent: 'space-between' },
+    intro: {
+      flexDirection: 'row',
+      minHeight: 106,
+      paddingTop: 12,
+      justifyContent: 'space-between',
+    },
     ecology: { position: 'absolute', right: -20, bottom: -24, opacity: 0.8 },
     greeting: { fontFamily: fonts.bold, fontSize: 27, color: colors.text, letterSpacing: -0.6 },
     description: {
@@ -227,7 +280,38 @@ const makeStyles = (colors: ThemeColors) =>
       marginBottom: -10,
     },
     sectionTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
-    quickGrid: { flexDirection: 'row', gap: 10 },
+    recycleSearch: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      minHeight: 58,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.borderControl,
+      boxShadow: '0 4px 16px rgba(22,65,39,0.05)',
+    },
+    recycleSearchIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    recycleSearchCopy: { flex: 1, minWidth: 0, gap: 2 },
+    recycleSearchPlaceholder: {
+      fontFamily: fonts.semiBold,
+      fontSize: 15,
+      color: colors.text,
+    },
+    recycleSearchHint: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
     mapCard: {
       backgroundColor: colors.surface,
       padding: 8,

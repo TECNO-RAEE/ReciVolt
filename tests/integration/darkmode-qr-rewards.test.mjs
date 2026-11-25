@@ -11,13 +11,48 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE_DIR || 'playwright');
 const base = process.env.TEST_APP_URL || 'http://localhost:8083';
 assert.ok(['localhost', '127.0.0.1'].includes(new URL(base).hostname), 'Use a local test app');
 
-async function capture(page, name) {
+async function capture(page, name, { fullPage = true } = {}) {
   await mkdir('output/verification', { recursive: true });
   const overflow = await page.evaluate(
     () => document.scrollingElement.scrollWidth - document.scrollingElement.clientWidth
   );
   assert.ok(overflow <= 0, `Overflow horizontal de ${overflow}px en ${name}`);
-  await page.screenshot({ path: `output/verification/${name}.png`, fullPage: true });
+  await page.screenshot({ path: `output/verification/${name}.png`, fullPage });
+}
+
+async function waitForModalSettled(dialog) {
+  await dialog.evaluate(
+    (el) =>
+      new Promise((resolve) => {
+        const minSettle = Date.now() + 360;
+        const deadline = Date.now() + 2000;
+        let stableFrames = 0;
+        const tick = () => {
+          const now = Date.now();
+          let node = el;
+          let visible = true;
+          while (node && node !== document.body) {
+            const style = getComputedStyle(node);
+            if (parseFloat(style.opacity) < 0.99) {
+              visible = false;
+              break;
+            }
+            if (style.transform && style.transform !== 'none') {
+              const matrix = new DOMMatrix(style.transform);
+              if (Math.abs(matrix.m42) > 0.5 || Math.abs(matrix.a - 1) > 0.01) {
+                visible = false;
+                break;
+              }
+            }
+            node = node.parentElement;
+          }
+          stableFrames = visible && now >= minSettle ? stableFrames + 1 : 0;
+          if (stableFrames >= 2 || now >= deadline) return resolve();
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      })
+  );
 }
 
 test('configuraciones cambia a modo oscuro, persiste al recargar y premios sin foto usan fallback', async () => {
@@ -91,10 +126,7 @@ test('configuraciones cambia a modo oscuro, persiste al recargar y premios sin f
     // Persistence across reload and sync with Settings radio group.
     await page.reload({ waitUntil: 'networkidle' });
     await page.getByText('¡Hola, visitante!', { exact: true }).waitFor();
-    assert.equal(
-      await page.evaluate(() => document.documentElement.style.colorScheme),
-      'dark'
-    );
+    assert.equal(await page.evaluate(() => document.documentElement.style.colorScheme), 'dark');
     assert.equal(
       await page
         .getByRole('button', { name: 'Modo oscuro. Cambiar a modo claro', exact: true })
@@ -156,7 +188,10 @@ test('configuraciones cambia a modo oscuro, persiste al recargar y premios sin f
       }
       return null;
     });
-    assert.ok(imgSrc, 'Premio sin image_url debe mostrar la foto HTTPS predeterminada de gastronomía cargada');
+    assert.ok(
+      imgSrc,
+      'Premio sin image_url debe mostrar la foto HTTPS predeterminada de gastronomía cargada'
+    );
     await capture(page, 'ux-rewards-dark-mobile');
 
     // Toggle back from dark to light directly on Home and verify Automático in Settings.
@@ -216,8 +251,16 @@ test('al confirmar escaneo QR en /delivery/[id] aparece modal de éxito con Volv
     citizenId = citizen.data.user.id;
     ownerId = owner.data.user.id;
 
-    await backend.from('profiles').update({ full_name: 'Ciudadano QR' }).eq('id', citizenId).throwOnError();
-    await backend.from('profiles').update({ full_name: 'Operador QR' }).eq('id', ownerId).throwOnError();
+    await backend
+      .from('profiles')
+      .update({ full_name: 'Ciudadano QR' })
+      .eq('id', citizenId)
+      .throwOnError();
+    await backend
+      .from('profiles')
+      .update({ full_name: 'Operador QR' })
+      .eq('id', ownerId)
+      .throwOnError();
 
     await backend
       .from('companies')
@@ -269,14 +312,17 @@ test('al confirmar escaneo QR en /delivery/[id] aparece modal de éxito con Volv
     await citizenClient.auth.signInWithPassword({ email: citizenEmail, password });
     await ownerClient.auth.signInWithPassword({ email: ownerEmail, password });
 
-    const { data: createdDelivery, error: createError } = await citizenClient.rpc('delivery_command', {
-      operation: 'create',
-      payload: {
-        pointId,
-        requestId: randomUUID(),
-        items: [{ categoryId: category.id, quantity: 1 }],
-      },
-    });
+    const { data: createdDelivery, error: createError } = await citizenClient.rpc(
+      'delivery_command',
+      {
+        operation: 'create',
+        payload: {
+          pointId,
+          requestId: randomUUID(),
+          items: [{ categoryId: category.id, quantity: 1 }],
+        },
+      }
+    );
     assert.equal(createError, null);
     assert.ok(createdDelivery?.id);
 
@@ -296,14 +342,19 @@ test('al confirmar escaneo QR en /delivery/[id] aparece modal de éxito con Volv
     await page.getByRole('radio', { name: /Oscuro\./ }).click();
     await page.getByRole('button', { name: 'Volver', exact: true }).click();
     await page.waitForURL(/\/profile$/);
-    await page.getByRole('button', { name: /Iniciar sesión/ }).first().click();
+    await page
+      .getByRole('button', { name: /Iniciar sesión/ })
+      .first()
+      .click();
     await page.waitForURL(/\/login$/);
     await page.getByPlaceholder('nombre@correo.com', { exact: true }).fill(citizenEmail);
     await page.getByPlaceholder('Ingresá tu contraseña', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
     await page.waitForURL(/\/home$/);
 
-    await page.getByRole('button', { name: /Entregas/ }).first().click();
+    await page.getByRole('tab', { name: /Perfil/ }).click();
+    await page.waitForURL(/\/profile$/);
+    await page.getByRole('button', { name: 'Mis entregas', exact: true }).click();
     await page.waitForURL(/\/my-raee$/);
     await page.getByRole('button', { name: 'Ver entrega / QR', exact: true }).first().click();
     await page.waitForURL(new RegExp(`/delivery/${createdDelivery.id}$`));
@@ -326,7 +377,10 @@ test('al confirmar escaneo QR en /delivery/[id] aparece modal de éxito con Volv
     await page.getByText(`+${rate} puntos`, { exact: true }).waitFor();
     await capture(page, 'ux-delivery-scan-success-dark-mobile');
 
-    await page.getByRole('dialog').getByRole('button', { name: 'Volver al inicio', exact: true }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Volver al inicio', exact: true })
+      .click();
     await page.waitForURL(/\/home$/);
     assert.deepEqual(errors, []);
   } finally {
@@ -339,5 +393,156 @@ test('al confirmar escaneo QR en /delivery/[id] aparece modal de éxito con Volv
     await backend.from('companies').delete().eq('id', companyId);
     if (citizenId) await backend.auth.admin.deleteUser(citizenId);
     if (ownerId) await backend.auth.admin.deleteUser(ownerId);
+  }
+});
+
+test('buscador "¿Qué tenés para reciclar?" en Inicio filtra por categoría, sinónimos y cercanía en modal claro y oscuro', async () => {
+  const finderCategories = [
+    { id: 'cat-phones', name: 'Celulares', slug: 'celulares' },
+    { id: 'cat-notebooks', name: 'Notebooks', slug: 'notebooks' },
+    { id: 'cat-tv', name: 'Televisores', slug: 'televisores' },
+  ];
+  const nearPoint = {
+    id: '11111111-1111-4111-8111-111111111111',
+    company_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    name: 'Punto Obelisco',
+    address: 'Av. 9 de Julio 100',
+    latitude: -34.6037,
+    longitude: -58.3816,
+    phone: null,
+    description: 'Recibe notebooks y televisores en pleno centro.',
+    time_zone: 'America/Argentina/Buenos_Aires',
+    pickup_enabled: false,
+    intake_confirmed: true,
+    companies: { name: 'Eco Centro', status: 'ACTIVE' },
+    green_point_schedules: [],
+    green_point_device_categories: [finderCategories[1], finderCategories[2]].map((c) => ({
+      device_categories: c,
+    })),
+    green_point_device_policies: [finderCategories[1], finderCategories[2]].map((c) => ({
+      device_category_id: c.id,
+      mode: 'onsite',
+      device_categories: c,
+    })),
+  };
+  const farPoint = {
+    id: '22222222-2222-4222-8222-222222222222',
+    company_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    name: 'Punto Palermo',
+    address: 'Av. Santa Fe 4200',
+    latitude: -34.582,
+    longitude: -58.421,
+    phone: null,
+    description: 'Recibe teléfonos móviles.',
+    time_zone: 'America/Argentina/Buenos_Aires',
+    pickup_enabled: true,
+    intake_confirmed: true,
+    companies: { name: 'Eco Norte', status: 'ACTIVE' },
+    green_point_schedules: [],
+    green_point_device_categories: [{ device_categories: finderCategories[0] }],
+    green_point_device_policies: [
+      {
+        device_category_id: finderCategories[0].id,
+        mode: 'onsite',
+        device_categories: finderCategories[0],
+      },
+    ],
+  };
+
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  try {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      permissions: ['geolocation'],
+      geolocation: { latitude: -34.6037, longitude: -58.3816 },
+    });
+    const page = await context.newPage();
+    page.setDefaultTimeout(15000);
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+
+    await page.route('**/rest/v1/device_categories?*', (route) =>
+      route.fulfill({ json: finderCategories })
+    );
+    await page.route('**/rest/v1/green_points?*', (route) =>
+      route.fulfill({ json: [farPoint, nearPoint] })
+    );
+
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: 'Saltar introducción', exact: true }).click();
+    await page.waitForURL(/\/home$/);
+
+    // QuickAccess Entregas button is replaced by "¿Qué tenés para reciclar?" widget.
+    assert.equal(await page.getByRole('button', { name: 'Entregas', exact: true }).count(), 0);
+    const homeTrigger = page.getByRole('button', {
+      name: /¿Qué tenés para reciclar\?/,
+    });
+    await homeTrigger.waitFor();
+    await homeTrigger.click();
+
+    const dialog = page.getByRole('dialog');
+    await dialog.getByText('¿Qué tenés para reciclar?', { exact: true }).waitFor();
+
+    // Activate location from modal to sort nearest green points first.
+    await dialog.getByRole('button', { name: /Usar mi ubicación/ }).click();
+    await dialog.getByText('2 puntos más cercanos', { exact: true }).waitFor();
+    await dialog.getByText('0 m', { exact: true }).waitFor();
+    await capture(page, 'ux-home-finder-light-mobile');
+
+    // Synonym query ("tele") matches Televisores (Punto Obelisco) without colliding with Celulares.
+    const searchInput = dialog.getByRole('textbox', {
+      name: 'Buscar qué tenés para reciclar',
+      exact: true,
+    });
+    await searchInput.fill('tele');
+    await dialog.getByRole('button', { name: 'Ver Punto Obelisco', exact: true }).waitFor();
+    assert.equal(
+      await dialog.getByRole('button', { name: 'Ver Punto Palermo', exact: true }).count(),
+      0
+    );
+
+    // Clear query and pick Celulares chip -> shows Punto Palermo only.
+    await dialog.getByRole('button', { name: 'Borrar búsqueda', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Celulares', exact: true }).click();
+    await dialog.getByText('1 punto cercano que recibe Celulares', { exact: true }).waitFor();
+    await dialog.getByRole('button', { name: 'Ver Punto Palermo', exact: true }).waitFor();
+    assert.equal(
+      await dialog.getByRole('button', { name: 'Ver Punto Obelisco', exact: true }).count(),
+      0
+    );
+
+    // Empty state and recovery back to all nearest points.
+    await dialog.getByRole('button', { name: 'Todos', exact: true }).click();
+    await searchInput.fill('tostadora espacial');
+    await dialog
+      .getByText('No encontramos puntos verdes que reciban «tostadora espacial».', { exact: true })
+      .waitFor();
+    await dialog.getByRole('button', { name: 'Limpiar búsqueda', exact: true }).click();
+    await dialog.getByText('2 puntos más cercanos', { exact: true }).waitFor();
+
+    // Close modal, switch Home to Dark Mode, reopen and verify mobile + desktop layouts before jumping to detail.
+    await dialog.getByRole('button', { name: 'Cerrar buscador', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Modo claro. Cambiar a modo oscuro', exact: true })
+      .click();
+    await page.waitForFunction(() => document.documentElement.style.colorScheme === 'dark');
+
+    await homeTrigger.click();
+    await dialog.getByText('¿Qué tenés para reciclar?', { exact: true }).waitFor();
+    await waitForModalSettled(dialog);
+    await capture(page, 'ux-home-finder-dark-mobile', { fullPage: false });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await waitForModalSettled(dialog);
+    await capture(page, 'ux-home-finder-dark-desktop', { fullPage: false });
+
+    await dialog.getByRole('button', { name: 'Ver Punto Obelisco', exact: true }).click();
+    await page.waitForURL(/\/point\/11111111-1111-4111-8111-111111111111$/);
+    await page
+      .getByText('Recibe notebooks y televisores en pleno centro.', { exact: true })
+      .waitFor();
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser.close();
   }
 });

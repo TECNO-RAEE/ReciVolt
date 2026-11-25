@@ -2,9 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState, type ComponentProps } from 'react';
-import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { brand } from '@/config/brand';
 import { usePortalAction } from '@/hooks/usePortalData';
@@ -12,6 +14,7 @@ import { roleHome } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
 import {
   fonts,
+  motion,
   useColors,
   useThemePreference,
   useThemedStyles,
@@ -56,7 +59,13 @@ export default function SettingsScreen() {
 
   const isPortalRole =
     role === 'company_owner' || role === 'company_worker' || role === 'platform_admin';
-  const backTarget = role ? (role !== 'citizen' ? roleHome(role) : '/profile') : guest ? '/profile' : '/';
+  const backTarget = role
+    ? role !== 'citizen'
+      ? roleHome(role)
+      : '/profile'
+    : guest
+      ? '/profile'
+      : '/';
 
   const signOut = () =>
     void action.run(async () => {
@@ -101,9 +110,15 @@ export default function SettingsScreen() {
           ) : (
             <>
               <Text style={s.label}>Estás explorando como visitante</Text>
-              <Text style={s.body}>Ingresá para guardar tus entregas, tus puntos y tus canjes.</Text>
+              <Text style={s.body}>
+                Ingresá para guardar tus entregas, tus puntos y tus canjes.
+              </Text>
               <ActionButton title="Iniciar sesión" onPress={() => router.push('/login')} />
-              <ActionButton title="Crear cuenta" secondary onPress={() => router.push('/register')} />
+              <ActionButton
+                title="Crear cuenta"
+                secondary
+                onPress={() => router.push('/register')}
+              />
             </>
           )}
         </View>
@@ -111,23 +126,26 @@ export default function SettingsScreen() {
           Apariencia
         </Text>
         <View style={s.card}>
-          <Text style={s.body}>Elegí el tema visual o seguí la configuración de tu dispositivo.</Text>
-          <View accessibilityRole="radiogroup" accessibilityLabel="Apariencia" style={styles.optionList}>
+          <Text style={s.body}>
+            Elegí el tema visual o seguí la configuración de tu dispositivo.
+          </Text>
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Apariencia"
+            style={styles.optionList}
+          >
             {APPEARANCE_OPTIONS.map((option) => {
               const selected = preference === option.value;
               return (
-                <Pressable
+                <SpringPressable
                   key={option.value}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
                   aria-checked={selected}
                   accessibilityLabel={`${option.label}. ${option.description}`}
                   onPress={() => setPreference(option.value)}
-                  style={({ pressed }) => [
-                    styles.appearanceOption,
-                    selected && styles.appearanceOptionSelected,
-                    pressed && styles.pressed,
-                  ]}
+                  pressScale={motion.scale.row}
+                  style={[styles.appearanceOption, selected && styles.appearanceOptionSelected]}
                 >
                   <Ionicons
                     name={option.icon}
@@ -136,10 +154,7 @@ export default function SettingsScreen() {
                   />
                   <View style={styles.appearanceText}>
                     <Text
-                      style={[
-                        styles.appearanceLabel,
-                        selected && { color: colors.primaryDark },
-                      ]}
+                      style={[styles.appearanceLabel, selected && { color: colors.primaryDark }]}
                     >
                       {option.label}
                     </Text>
@@ -150,7 +165,7 @@ export default function SettingsScreen() {
                     size={22}
                     color={selected ? colors.primary : colors.borderControl}
                   />
-                </Pressable>
+                </SpringPressable>
               );
             })}
           </View>
@@ -158,10 +173,11 @@ export default function SettingsScreen() {
         <Text accessibilityRole="header" style={s.subtitle}>
           Información legal
         </Text>
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           onPress={() => router.push('/terms')}
-          style={({ pressed }) => [s.card, styles.row, pressed && styles.pressed]}
+          pressScale={motion.scale.card}
+          style={[s.card, styles.row]}
         >
           <Ionicons name="document-text-outline" size={26} color={colors.primaryDark} />
           <View style={{ flex: 1, gap: 4 }}>
@@ -169,14 +185,15 @@ export default function SettingsScreen() {
             <Text style={s.body}>Contrato de uso de {brand.name}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </Pressable>
+        </SpringPressable>
         <Text accessibilityRole="header" style={s.subtitle}>
           Ayuda y colaboración
         </Text>
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           onPress={() => router.push('/contact')}
-          style={({ pressed }) => [s.card, styles.row, pressed && styles.pressed]}
+          pressScale={motion.scale.card}
+          style={[s.card, styles.row]}
         >
           <Ionicons name="mail-outline" size={26} color={colors.primaryDark} />
           <View style={{ flex: 1, gap: 4 }}>
@@ -188,51 +205,42 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </Pressable>
+        </SpringPressable>
         <View style={styles.about}>
           <Text style={s.label}>{brand.name}</Text>
           <Text style={s.body}>Versión {Constants.expoConfig?.version ?? '1.0.0'}</Text>
         </View>
       </CitizenPage>
 
-      <Modal
-        transparent
+      <AnimatedSheetModal
         visible={confirmingSignOut}
-        animationType="fade"
-        onRequestClose={() => {
+        dismissible={!action.busy}
+        presentation="dialog"
+        onClose={() => {
           if (!action.busy) setConfirmingSignOut(false);
         }}
+        containerStyle={styles.modal}
       >
-        <View style={styles.backdrop}>
-          <View accessibilityViewIsModal style={styles.modal}>
-            <Ionicons name="log-out-outline" size={32} color={colors.danger} />
-            <Text accessibilityRole="header" style={s.subtitle}>
-              Cerrar sesión
-            </Text>
-            <Text style={s.body}>¿Querés cerrar tu sesión?</Text>
-            <PortalFeedback error={action.error} />
-            <ActionButton
-              title="Cerrar sesión"
-              destructive
-              loading={action.busy}
-              onPress={signOut}
-            />
-            <ActionButton
-              title="Cancelar"
-              secondary
-              disabled={action.busy}
-              onPress={() => setConfirmingSignOut(false)}
-            />
-          </View>
-        </View>
-      </Modal>
+        <Ionicons name="log-out-outline" size={32} color={colors.danger} />
+        <Text accessibilityRole="header" style={s.subtitle}>
+          Cerrar sesión
+        </Text>
+        <Text style={s.body}>¿Querés cerrar tu sesión?</Text>
+        <PortalFeedback error={action.error} />
+        <ActionButton title="Cerrar sesión" destructive loading={action.busy} onPress={signOut} />
+        <ActionButton
+          title="Cancelar"
+          secondary
+          disabled={action.busy}
+          onPress={() => setConfirmingSignOut(false)}
+        />
+      </AnimatedSheetModal>
     </>
   );
 }
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 84 },
-    pressed: { opacity: 0.75 },
     about: { alignItems: 'center', gap: 4, paddingVertical: 16 },
     optionList: { gap: 10 },
     appearanceOption: {
@@ -253,18 +261,13 @@ const makeStyles = (colors: ThemeColors) =>
     },
     appearanceText: { flex: 1, minWidth: 0, gap: 2 },
     appearanceLabel: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
-    backdrop: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 24,
-    },
     modal: {
       width: '100%',
       maxWidth: 400,
       backgroundColor: colors.surface,
       borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
       padding: 24,
       gap: 14,
     },

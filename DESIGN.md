@@ -152,8 +152,8 @@ rounded:
   note: 14px
   reward: 15px
   button: 16px
+  search-trigger: 16px
   card: 18px
-  quick-access: 19px
   points: 22px
   chip: 24px
 spacing:
@@ -319,12 +319,12 @@ La profundidad se obtiene con superficies blancas sobre el fondo claro, verdes s
 | Tarjeta ciudadana     | `0 4px 16px rgba(22,65,39,0.05)` | `rewardStyles.card`       |
 | Premio                | `0 3px 12px rgba(22,65,39,0.06)` | `RewardCard`              |
 | Resumen de puntos     | `0 7px 20px rgba(22,65,39,0.10)` | `PointsCard`              |
-| Acceso rápido         | `0 5px 16px rgba(22,65,39,0.08)` | `QuickAccess`             |
+| Buscador de Inicio    | `0 4px 16px rgba(22,65,39,0.05)` | Campo "¿Qué tenés para reciclar?" |
 | Mapa de Inicio        | `0 5px 18px rgba(31,75,48,0.07)` | Tarjeta de mapa en Inicio |
 
 **The Profundidad discreta Rule.** Las tarjetas ciudadanas pueden usar su sombra compartida. Las filas y paneles de gestión se separan con borde y espacio; no acumular una sombra en cada nivel anidado.
 
-El degradado existente de `PointsCoin` pertenece a la ilustración de la moneda. No extenderlo a fondos de pantalla ni a los botones sólidos. Los cambios de estado usan respuesta visual breve, como la opacidad del botón; evitar animaciones decorativas continuas. Respetar movimiento reducido si se incorpora una animación nueva.
+El degradado existente de `PointsCoin` pertenece a la ilustración de la moneda. No extenderlo a fondos de pantalla ni a los botones sólidos. Las interacciones táctiles, modales y hojas (`SpringPressable`, `AnimatedSheetModal` y `motion`) usan resortes y transiciones en hilo de interfaz de UI/compositor (`transform` y `opacity`, con salidas más rápidas que las entradas); los indicadores de carga muestran pulso suave únicamente mientras esperan datos y no se agregan animaciones decorativas continuas. Todas las animaciones y transiciones de navegación respetan la preferencia del sistema para movimiento reducido (reduciendo escala/desplazamiento a fundido breve).
 
 ## Shapes
 
@@ -339,7 +339,7 @@ Las curvas transmiten cercanía y ayudan a distinguir controles, tarjetas y figu
 | Tarjeta de premio                     | `rounded.reward`                                     |
 | Botón principal y secundario          | `rounded.button`                                     |
 | Tarjeta ciudadana                     | `rounded.card`                                       |
-| Acceso rápido de Inicio               | `rounded.quick-access`                               |
+| Buscador de Inicio                    | `rounded.search-trigger`                             |
 | Resumen de puntos                     | `rounded.points`                                     |
 | Categoría                             | `rounded.chip`                                       |
 | Botón de apariencia y moneda          | Círculo; no usar esta forma para todas las acciones. |
@@ -354,12 +354,15 @@ Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Header de pantalla                                  | [ScreenHeader](src/components/ui/ScreenHeader.tsx)                                                |
 | Acción principal o secundaria                       | [ActionButton](src/components/ui/ActionButton.tsx)                                                |
+| Interacción táctil fluida (resorte 60fps / ReducedMotion) | [SpringPressable](src/components/ui/SpringPressable.tsx)                                        |
+| Hoja inferior o diálogo modal animado               | [AnimatedSheetModal](src/components/ui/AnimatedSheetModal.tsx)                                  |
 | Tarjeta informativa, fila de datos y código         | [InfoCard](src/components/ui/InfoCard.tsx)                                                        |
 | Selector numérico accesible (+ / -)                 | [NumericStepper](src/components/ui/NumericStepper.tsx)                                             |
 | Página, tarjetas, saldo, premio y aviso ciudadano   | [RewardsUI](src/components/rewards/RewardsUI.tsx)                                                 |
 | Página, campos, selector, menú, pestañas y estados de gestión | [PortalUI](src/components/portal/PortalUI.tsx), [CompanyPage](src/components/portal/CompanyPage.tsx) y [AdminPage](src/components/portal/AdminPage.tsx) |
 | Campo de autenticación (con `passwordToggle` para mostrar/ocultar la contraseña) | [AuthTextField](src/components/auth/AuthTextField.tsx)                                            |
 | Buscar puntos verdes                                | [SearchBar](src/components/discovery/SearchBar.tsx)                                               |
+| Buscador de dispositivos en Inicio                  | [RecycleFinderModal](src/components/discovery/RecycleFinderModal.tsx)                             |
 | Hoja, moneda, planta, planeta y escenas de cuenta (`AuthArtwork`: candado, cuenta, recuperación) | [EcoArtwork](src/components/ui/EcoArtwork.tsx)                                                    |
 | Scroll al regresar                                  | [useScrollReset](src/hooks/useScrollReset.ts)                                                     |
 
@@ -369,7 +372,7 @@ Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del
 
 `ScreenHeader` tiene altura mínima (72), controles de volver y acción con ancho (44), y título de hasta dos líneas. El espacio derecho se conserva aunque no tenga acción, para mantener el título centrado. Inicio usa su hoja, nombre de marca y el botón circular de apariencia (sol en modo claro, luna en modo oscuro); el acceso a Perfil permanece en la barra de navegación inferior.
 
-La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en ese orden. Sección activa en verde con icono lleno; inactiva con icono de contorno. “Mis entregas” se encuentra en Perfil; el acceso rápido de Inicio puede llevar allí. La sección del mapa se llama “Puntos verdes”. El mapa ocupa el bloque de Inicio que antes mostraba premios destacados. Las capturas antiguas con otra navegación no son referencia de estructura.
+La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en ese orden. Sección activa en verde con icono lleno; inactiva con icono de contorno. “Mis entregas” se encuentra en Perfil. En Inicio, el bloque superior bajo `PointsCard` ofrece el buscador `"¿Qué tenés para reciclar?"` que abre el sheet modal con chips de categorías y puntos verdes más cercanos; `Mis puntos` permanece accesible desde `PointsCard`, `Premios` desde la barra inferior y `Preparar equipos` desde la tarjeta de impacto inferior. La sección del mapa se llama “Puntos verdes”. El mapa ocupa el bloque de Inicio que antes mostraba premios destacados. Las capturas antiguas con otra navegación no son referencia de estructura.
 
 **Decisión aprobada el 26/10/2026, pendiente de implementación:** agregar Marketplace junto a Premios: **Inicio · Puntos verdes · Premios · Marketplace · Perfil**. La sección se llama Marketplace y sus productos, “Dispositivos reacondicionados”. Empresa administra su catálogo; el detalle del punto verde muestra hasta cuatro productos y “Ver catálogo completo”; Marketplace reúne los productos de todas las empresas. Las tareas MK-01 a MK-08 están en Trello. Esta decisión no significa que las pantallas ya estén implementadas; al implementarlas, actualizar también la muestra de navegación de `.impeccable/design.json`.
 

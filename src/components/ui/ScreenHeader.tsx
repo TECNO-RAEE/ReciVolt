@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function ScreenHeader({
   title,
@@ -26,14 +27,15 @@ export function ScreenHeader({
         {hideBack ? (
           <View style={styles.iconButton} />
         ) : (
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel="Volver"
-            style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.6 }]}
+            pressScale={motion.scale.icon}
+            style={styles.iconButton}
             onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace(back)))}
           >
             <Ionicons name="chevron-back" size={24} color={colors.text} />
-          </Pressable>
+          </SpringPressable>
         )}
         <Text accessibilityRole="header" style={styles.title} numberOfLines={2}>
           {title}

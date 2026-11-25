@@ -1,18 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { StyleSheet, TextInput, View } from 'react-native';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 export function SearchBar({
   value,
   onChangeText,
   onSubmit,
   label = 'Buscar puntos verdes',
   placeholder = 'Nombre, dirección o dispositivo',
+  autoFocus = false,
+  accessibilityHint,
 }: Readonly<{
   value: string;
   onChangeText: (text: string) => void;
   onSubmit?: () => void;
   label?: string;
   placeholder?: string;
+  autoFocus?: boolean;
+  accessibilityHint?: string;
 }>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -20,7 +25,9 @@ export function SearchBar({
     <View style={styles.bar}>
       <Ionicons name="search-outline" size={20} color={colors.brandDark} />
       <TextInput
+        autoFocus={autoFocus}
         accessibilityLabel={label}
+        accessibilityHint={accessibilityHint}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -30,24 +37,26 @@ export function SearchBar({
         onSubmitEditing={onSubmit}
       />
       {value !== '' && (
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Borrar búsqueda"
           onPress={() => onChangeText('')}
+          pressScale={motion.scale.icon}
           style={styles.iconButton}
         >
           <Ionicons name="close" size={20} color={colors.brandDark} />
-        </Pressable>
+        </SpringPressable>
       )}
       {onSubmit && (
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Buscar"
           onPress={onSubmit}
+          pressScale={motion.scale.icon}
           style={styles.iconButton}
         >
           <Ionicons name="arrow-forward" size={20} color={colors.primary} />
-        </Pressable>
+        </SpringPressable>
       )}
     </View>
   );

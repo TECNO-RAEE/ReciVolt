@@ -7,6 +7,7 @@ import {
   parseThemePreference,
   resolveColorScheme,
 } from '../src/theme/palette.ts';
+import { motion } from '../src/theme/motion.ts';
 
 function hexToRgb(hex) {
   const clean = hex.replace('#', '');
@@ -114,4 +115,16 @@ test('lightColors y darkColors cumplen contraste WCAG AA en texto y controles', 
       `${name} borderControl on surface debe superar 3:1 (actual: ${controlRatio.toFixed(2)}:1)`
     );
   }
+});
+
+test('tokens de movimiento respetan límites de duración, salida más rápida que entrada y escalas sutiles', () => {
+  assert.ok(motion.duration.pressFade > 0 && motion.duration.pressFade <= 150);
+  assert.ok(motion.duration.backdropOut < motion.duration.backdropIn);
+  assert.ok(motion.duration.dialogOut < motion.duration.dialogIn);
+  assert.ok(motion.duration.sheetOut <= 200);
+  for (const [key, scale] of Object.entries(motion.scale)) {
+    assert.ok(scale > 0.9 && scale < 1, `Escala ${key} debe ser compresión sutil (${scale})`);
+  }
+  assert.ok(motion.pressSpring.stiffness >= 300 && motion.pressSpring.damping >= 18);
+  assert.ok(motion.sheetSpring.stiffness >= 250 && motion.sheetSpring.damping >= 24);
 });

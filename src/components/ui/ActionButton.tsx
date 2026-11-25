@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export function ActionButton({
   title,
@@ -30,18 +31,19 @@ export function ActionButton({
       : colors.textOnPrimary;
 
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       accessibilityLabel={title}
       disabled={loading || disabled}
       accessibilityState={{ disabled: loading || disabled, busy: loading }}
       onPress={onPress}
-      style={({ pressed }) => [
+      pressScale={motion.scale.button}
+      style={[
         styles.button,
         icon != null && styles.withIcon,
         secondary && styles.secondary,
         destructive && (secondary ? styles.destructiveSecondary : styles.destructive),
-        (pressed || loading || disabled) && styles.pressed,
+        (loading || disabled) && styles.pressed,
       ]}
     >
       {loading ? (
@@ -60,7 +62,7 @@ export function ActionButton({
           </Text>
         </>
       )}
-    </Pressable>
+    </SpringPressable>
   );
 }
 const makeStyles = (colors: ThemeColors) =>

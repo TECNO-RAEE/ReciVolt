@@ -16,3 +16,4 @@ export {
   useThemedStyles,
 } from './ThemeContext';
 export { fonts } from './typography';
+export { motion } from './motion';

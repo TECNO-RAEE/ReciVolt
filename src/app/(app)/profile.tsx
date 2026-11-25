@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { CitizenBalanceCard } from '@/components/account/CitizenBalanceCard';
 import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
 import { useAuth } from '@/providers/AuthProvider';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 export default function ProfileScreen() {
   const colors = useColors();
   const s = useRewardStyles();
@@ -27,26 +29,28 @@ export default function ProfileScreen() {
         <ActionButton title="Iniciar sesión" secondary onPress={() => router.push('/login')} />
       </View>
       <View style={s.card}>
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Mis entregas"
           onPress={() => router.push('/my-raee')}
+          pressScale={motion.scale.row}
           style={styles.menuRow}
         >
           <Ionicons name="refresh-outline" size={23} color={colors.primaryDark} />
           <Text style={[s.label, { flex: 1 }]}>Mis entregas</Text>
           <Ionicons name="chevron-forward" size={19} color={colors.textSecondary} />
-        </Pressable>
-        <Pressable
+        </SpringPressable>
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Qué recibimos"
           onPress={() => router.push('/device-categories')}
+          pressScale={motion.scale.row}
           style={styles.menuRow}
         >
           <Ionicons name="hardware-chip-outline" size={23} color={colors.primaryDark} />
           <Text style={[s.label, { flex: 1 }]}>Qué recibimos</Text>
           <Ionicons name="chevron-forward" size={19} color={colors.textSecondary} />
-        </Pressable>
+        </SpringPressable>
         <SettingsLink />
       </View>
     </CitizenPage>
@@ -57,16 +61,17 @@ function SettingsLink() {
   const s = useRewardStyles();
   const styles = useThemedStyles(makeStyles);
   return (
-    <Pressable
+    <SpringPressable
       accessibilityRole="button"
       accessibilityLabel="Configuraciones"
       onPress={() => router.push('/settings')}
+      pressScale={motion.scale.row}
       style={styles.menuRow}
     >
       <Ionicons name="settings-outline" size={23} color={colors.primaryDark} />
       <Text style={[s.label, { flex: 1 }]}>Configuraciones</Text>
       <Ionicons name="chevron-forward" size={19} color={colors.textSecondary} />
-    </Pressable>
+    </SpringPressable>
   );
 }
 function Profile() {
@@ -102,7 +107,11 @@ function Profile() {
       label: 'Qué recibimos',
       onPress: () => router.push('/device-categories'),
     },
-    { icon: 'chatbubble-outline' as const, label: 'Contacto', onPress: () => router.push('/contact') },
+    {
+      icon: 'chatbubble-outline' as const,
+      label: 'Contacto',
+      onPress: () => router.push('/contact'),
+    },
     {
       icon: 'settings-outline' as const,
       label: 'Configuraciones',
@@ -127,22 +136,24 @@ function Profile() {
       <CitizenBalanceCard onPress={() => router.push('/(app)/my-points')} />
       <View style={s.card}>
         {menuItems.map(({ icon, label, onPress }) => (
-          <Pressable
+          <SpringPressable
             key={label}
             accessibilityRole="button"
             accessibilityLabel={label}
             onPress={onPress}
+            pressScale={motion.scale.row}
             style={[styles.menuRow, styles.menuDivider]}
           >
             <Ionicons name={icon} size={23} color={colors.primaryDark} />
             <Text style={[s.label, { flex: 1 }]}>{label}</Text>
             <Ionicons name="chevron-forward" size={19} color={colors.textSecondary} />
-          </Pressable>
+          </SpringPressable>
         ))}
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel={action.busy ? 'Cerrando sesión' : 'Cerrar sesión'}
           disabled={action.busy}
+          pressScale={motion.scale.row}
           style={styles.menuRow}
           onPress={() => {
             if (Platform.OS === 'web') setConfirmingSignOut(true);
@@ -158,39 +169,31 @@ function Profile() {
             {action.busy ? 'Cerrando sesión…' : 'Cerrar sesión'}
           </Text>
           <Ionicons name="chevron-forward" size={19} color={colors.textSecondary} />
-        </Pressable>
+        </SpringPressable>
       </View>
       {!confirmingSignOut && <PortalFeedback error={action.error} />}
-      <Modal
-        transparent
+      <AnimatedSheetModal
         visible={confirmingSignOut}
-        animationType="fade"
-        onRequestClose={() => {
+        dismissible={!action.busy}
+        presentation="dialog"
+        onClose={() => {
           if (!action.busy) setConfirmingSignOut(false);
         }}
+        containerStyle={styles.modal}
       >
-        <View style={styles.backdrop}>
-          <View accessibilityViewIsModal style={styles.modal}>
-            <Ionicons name="log-out-outline" size={32} color={colors.danger} />
-            <Text accessibilityRole="header" style={s.subtitle}>
-              Cerrar sesión
-            </Text>
-            <Text style={s.body}>¿Querés cerrar tu sesión?</Text>
-            <PortalFeedback error={action.error} />
-            <ActionButton
-              title="Cancelar"
-              disabled={action.busy}
-              onPress={() => setConfirmingSignOut(false)}
-            />
-            <ActionButton
-              title="Cerrar sesión"
-              secondary
-              loading={action.busy}
-              onPress={signOut}
-            />
-          </View>
-        </View>
-      </Modal>
+        <Ionicons name="log-out-outline" size={32} color={colors.danger} />
+        <Text accessibilityRole="header" style={s.subtitle}>
+          Cerrar sesión
+        </Text>
+        <Text style={s.body}>¿Querés cerrar tu sesión?</Text>
+        <PortalFeedback error={action.error} />
+        <ActionButton
+          title="Cancelar"
+          disabled={action.busy}
+          onPress={() => setConfirmingSignOut(false)}
+        />
+        <ActionButton title="Cerrar sesión" secondary loading={action.busy} onPress={signOut} />
+      </AnimatedSheetModal>
     </CitizenPage>
   );
 }
@@ -209,18 +212,13 @@ const makeStyles = (colors: ThemeColors) =>
     menuRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12 },
     menuDivider: { borderBottomWidth: 1, borderColor: colors.border },
     logoutText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.danger },
-    backdrop: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 24,
-    },
     modal: {
       width: '100%',
       maxWidth: 400,
       backgroundColor: colors.surface,
       borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
       padding: 24,
       gap: 14,
     },

@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { ActivityIndicator, View } from 'react-native';
 import { useEffect, useState } from 'react';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { DiscoveryProvider } from '@/providers/DiscoveryProvider';
@@ -58,6 +59,7 @@ function RootShell() {
 function Navigation() {
   const { session, role, guest, loading, recoveringPassword } = useAuth();
   const colors = useColors();
+  const reducedMotion = useReducedMotion();
   const [ready, setReady] = useState(false);
   if (!ready && !loading) setReady(true);
   // Delay initial routing, but keep the navigator mounted during later Auth events.
@@ -68,7 +70,13 @@ function Navigation() {
       </View>
     );
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+        animation: reducedMotion ? 'fade' : 'default',
+      }}
+    >
       <Stack.Screen name="index" />
       <Stack.Screen name="portal-access" />
       <Stack.Screen name="company-application" />

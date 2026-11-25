@@ -1,15 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type ScannerHelpModalProps = {
   readonly visible: boolean;
@@ -20,98 +14,94 @@ export function ScannerHelpModal({ visible, onClose }: ScannerHelpModalProps) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   return (
-    <Modal
+    <AnimatedSheetModal
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      onClose={onClose}
+      presentation="dialog"
+      containerStyle={styles.helpModalCard}
     >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <View style={styles.helpModalCard} onStartShouldSetResponder={() => true}>
-          <View style={styles.modalHeaderRow}>
-            <Text style={styles.helpModalTitle}>¿Cómo validar códigos?</Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Cerrar ayuda"
-              style={styles.modalCloseBtn}
-              onPress={onClose}
-            >
-              <Ionicons name="close" size={24} color={colors.text} />
-            </Pressable>
+      <View style={styles.modalHeaderRow}>
+        <Text style={styles.helpModalTitle}>¿Cómo validar códigos?</Text>
+        <SpringPressable
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar ayuda"
+          pressScale={motion.scale.icon}
+          style={styles.modalCloseBtn}
+          onPress={onClose}
+        >
+          <Ionicons name="close" size={24} color={colors.text} />
+        </SpringPressable>
+      </View>
+
+      <ScrollView style={styles.helpModalScroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.helpItem}>
+          <View style={styles.helpStepBadge}>
+            <Text style={styles.helpStepBadgeText}>1</Text>
           </View>
-
-          <ScrollView style={styles.helpModalScroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.helpItem}>
-              <View style={styles.helpStepBadge}>
-                <Text style={styles.helpStepBadgeText}>1</Text>
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.helpItemTitle}>Escanear código QR</Text>
-                <Text style={styles.helpItemBody}>
-                  Apuntá la cámara al código presentado por el ciudadano en su pantalla o comprobante impreso.
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.helpItem}>
-              <View style={styles.helpStepBadge}>
-                <Text style={styles.helpStepBadgeText}>2</Text>
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.helpItemTitle}>Ingreso manual de respaldo</Text>
-                <Text style={styles.helpItemBody}>
-                  Si la cámara no está disponible o el código no se lee, podés tipear el código alfanumérico que empieza con TR-… (entregas o retiros) o TRR-… (canjes de premios).
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.helpItem}>
-              <View style={styles.helpStepBadge}>
-                <Text style={styles.helpStepBadgeText}>3</Text>
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.helpItemTitle}>Verificación física y ajuste</Text>
-                <Text style={styles.helpItemBody}>
-                  Contá las unidades reales recibidas. Podés aumentar o reducir las cantidades con los botones + y −. Si alguna categoría no llegó, ajustala a 0.
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.helpItem}>
-              <View style={styles.helpStepBadge}>
-                <Text style={styles.helpStepBadgeText}>4</Text>
-              </View>
-              <View style={styles.cardTextCol}>
-                <Text style={styles.helpItemTitle}>Acreditación y premios</Text>
-                <Text style={styles.helpItemBody}>
-                  Los puntos de entrega o retiro se acreditan de inmediato al confirmar. En los canjes de beneficios, los puntos ya fueron descontados previamente.
-                </Text>
-              </View>
-            </View>
-          </ScrollView>
-
-          <ActionButton title="Entendido" onPress={onClose} />
+          <View style={styles.cardTextCol}>
+            <Text style={styles.helpItemTitle}>Escanear código QR</Text>
+            <Text style={styles.helpItemBody}>
+              Apuntá la cámara al código presentado por el ciudadano en su pantalla o comprobante
+              impreso.
+            </Text>
+          </View>
         </View>
-      </Pressable>
-    </Modal>
+
+        <View style={styles.helpItem}>
+          <View style={styles.helpStepBadge}>
+            <Text style={styles.helpStepBadgeText}>2</Text>
+          </View>
+          <View style={styles.cardTextCol}>
+            <Text style={styles.helpItemTitle}>Ingreso manual de respaldo</Text>
+            <Text style={styles.helpItemBody}>
+              Si la cámara no está disponible o el código no se lee, podés tipear el código
+              alfanumérico que empieza con TR-… (entregas o retiros) o TRR-… (canjes de premios).
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.helpItem}>
+          <View style={styles.helpStepBadge}>
+            <Text style={styles.helpStepBadgeText}>3</Text>
+          </View>
+          <View style={styles.cardTextCol}>
+            <Text style={styles.helpItemTitle}>Verificación física y ajuste</Text>
+            <Text style={styles.helpItemBody}>
+              Contá las unidades reales recibidas. Podés aumentar o reducir las cantidades con los
+              botones + y −. Si alguna categoría no llegó, ajustala a 0.
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.helpItem}>
+          <View style={styles.helpStepBadge}>
+            <Text style={styles.helpStepBadgeText}>4</Text>
+          </View>
+          <View style={styles.cardTextCol}>
+            <Text style={styles.helpItemTitle}>Acreditación y premios</Text>
+            <Text style={styles.helpItemBody}>
+              Los puntos de entrega o retiro se acreditan de inmediato al confirmar. En los canjes
+              de beneficios, los puntos ya fueron descontados previamente.
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      <ActionButton title="Entendido" onPress={onClose} />
+    </AnimatedSheetModal>
   );
 }
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 20,
-    },
     helpModalCard: {
       width: '100%',
       maxWidth: 480,
       maxHeight: '85%',
       backgroundColor: colors.surface,
       borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
       padding: 20,
       gap: 16,
       ...Platform.select({
