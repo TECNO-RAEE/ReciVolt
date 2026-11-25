@@ -2,40 +2,29 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { PickupTimeline } from '@/components/pickup/PickupTimeline';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { InfoCard } from '@/components/ui/InfoCard';
 import { ScanSuccessModal } from '@/components/ui/ScanSuccessModal';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { useScrollReset } from '@/hooks/useScrollReset';
 import { useStatusPolling } from '@/hooks/useStatusPolling';
 import { getCategoryVisual } from '@/models/DeviceCategory';
-import {
-  formatPickupDate,
-  getPickupTimeline,
-  pickupQr,
-  pickupStatusNames,
-} from '@/models/Pickup';
+import { formatPickupDate, getPickupTimeline, pickupQr, pickupStatusNames } from '@/models/Pickup';
+import { humanizePortalError } from '@/models/PortalError';
 import { pointsLabel } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { getPickupPhotoUrl, pickupCommand } from '@/services/pickup.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, lightColors, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 const PENDING_PICKUP_STATUSES = ['REQUESTED', 'COORDINATED', 'IN_TRANSIT'] as const;
 const CONFIRMED_PICKUP_STATUSES = ['COMPLETED'] as const;
@@ -48,6 +37,7 @@ export default function PickupDetailScreen() {
 function PickupDetail({ id }: Readonly<{ id: string }>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { refresh: refreshWallet } = useWallet();
   const loader = useCallback(() => pickupCommand('get', { id }), [id]);
@@ -57,6 +47,7 @@ function PickupDetail({ id }: Readonly<{ id: string }>) {
 
   const [copied, setCopied] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [scanSuccessVisible, setScanSuccessVisible] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -86,7 +77,9 @@ function PickupDetail({ id }: Readonly<{ id: string }>) {
 
   useEffect(() => {
     if (pickup?.photoPath) {
-      void getPickupPhotoUrl(pickup.photoPath).then(setPhotoUrl).catch(() => {});
+      void getPickupPhotoUrl(pickup.photoPath)
+        .then(setPhotoUrl)
+        .catch(() => {});
     }
   }, [pickup?.photoPath]);
 
@@ -117,26 +110,22 @@ function PickupDetail({ id }: Readonly<{ id: string }>) {
   };
 
   const handleConfirmCancel = () => {
-    setCancelModalVisible(false);
+    setCancelError(null);
     void action.run(async () => {
-      await pickupCommand('cancel', { id });
-      await refresh();
+      try {
+        await pickupCommand('cancel', { id });
+        await refresh();
+        setCancelModalVisible(false);
+      } catch (err) {
+        setCancelError(humanizePortalError(err, 'No pudimos cancelar el retiro.'));
+        throw err;
+      }
     }, 'Solicitud de retiro cancelada.');
   };
 
   const handleCancelPress = () => {
-    if (Platform.OS === 'web') {
-      setCancelModalVisible(true);
-    } else {
-      Alert.alert(
-        'Cancelar solicitud de retiro',
-        '¿Estás seguro de que querés cancelar esta solicitud? La empresa será notificada.',
-        [
-          { text: 'No, conservar', style: 'cancel' },
-          { text: 'Sí, cancelar', style: 'destructive', onPress: handleConfirmCancel },
-        ]
-      );
-    }
+    setCancelError(null);
+    setCancelModalVisible(true);
   };
 
   const timelineSteps = useMemo(() => {
@@ -153,7 +142,11 @@ function PickupDetail({ id }: Readonly<{ id: string }>) {
       <View style={styles.screen}>
         <ScreenHeader title="Tu retiro" back="/my-raee" />
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator
+            size="large"
+            color={colors.primary}
+            accessibilityLabel="Cargando retiro"
+          />
           <Text style={styles.loadingText}>Cargando información del retiro…</Text>
         </View>
       </View>
@@ -182,7 +175,13 @@ function PickupDetail({ id }: Readonly<{ id: string }>) {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Tu retiro" back="/my-raee" />
-      <ScrollView ref={scroll} contentContainerStyle={styles.container}>
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={[
+          styles.container,
+          insets.bottom > 0 && { paddingBottom: 32 + insets.bottom },
+        ]}
+      >
         {action.notice && (
           <View style={styles.noticeBanner}>
             <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
@@ -307,7 +306,10 @@ function PickupDetail({ id }: Readonly<{ id: string }>) {
         <View style={styles.card}>
           <Text style={styles.cardHeaderTitle}>Material a retirar</Text>
           {pickup.items.map((it) => {
-            const visual = getCategoryVisual({ name: it.categoryName, slug: it.categoryName.toLowerCase() });
+            const visual = getCategoryVisual({
+              name: it.categoryName,
+              slug: it.categoryName.toLowerCase(),
+            });
             return (
               <View key={it.categoryId} style={styles.itemRow}>
                 <View style={styles.itemIconCircle}>
@@ -352,7 +354,8 @@ function PickupDetail({ id }: Readonly<{ id: string }>) {
         <View style={styles.creditNoticeBox}>
           <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
           <Text style={styles.creditNoticeText}>
-            Los puntos finales se calculan y acreditan en tu saldo de red una vez que la empresa verifique físicamente los residuos retirados.
+            Los puntos finales se calculan y acreditan en tu saldo de red una vez que la empresa
+            verifique físicamente los residuos retirados.
           </Text>
         </View>
 
@@ -374,136 +377,123 @@ function PickupDetail({ id }: Readonly<{ id: string }>) {
           )}
 
           {isCompleted && (
-            <ActionButton
-              title="Ver mis puntos"
-              onPress={() => router.push('/my-points')}
-            />
+            <ActionButton title="Ver mis puntos" onPress={() => router.push('/my-points')} />
           )}
         </View>
       </ScrollView>
 
       {/* Modal: Detalle de la solicitud (QR y código legible) */}
-      <Modal
+      <AnimatedSheetModal
         visible={detailsModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setDetailsModalVisible(false)}
+        onClose={() => setDetailsModalVisible(false)}
+        presentation="sheet"
+        containerStyle={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 16) }]}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Detalle del retiro</Text>
-              <Pressable
+        <View style={styles.modalHandle} />
+        <View style={styles.modalHeader}>
+          <Text accessibilityRole="header" style={styles.modalTitle}>
+            Detalle del retiro
+          </Text>
+          <SpringPressable
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar modal"
+            pressScale={motion.scale.icon}
+            style={styles.modalCloseBtn}
+            onPress={() => setDetailsModalVisible(false)}
+          >
+            <Ionicons name="close" size={24} color={colors.text} />
+          </SpringPressable>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.modalBody}>
+          <View
+            accessibilityRole="image"
+            accessibilityLabel="Código QR del retiro"
+            style={styles.qrContainer}
+          >
+            <QRCode
+              value={pickupQr(pickup.code)}
+              size={190}
+              quietZone={12}
+              ecl="M"
+              color={lightColors.text}
+              backgroundColor={colors.qrBackground}
+            />
+          </View>
+
+          <View style={styles.codeContainer}>
+            <Text style={styles.codeLabel}>Código de retiro:</Text>
+            <View style={styles.codeRow}>
+              <Text selectable style={styles.codeText}>
+                {pickup.code}
+              </Text>
+              <SpringPressable
                 accessibilityRole="button"
-                accessibilityLabel="Cerrar modal"
-                onPress={() => setDetailsModalVisible(false)}
+                accessibilityLabel="Copiar código"
+                pressScale={motion.scale.icon}
+                style={styles.copyBtn}
+                onPress={() => void handleCopyCode(pickup.code)}
               >
-                <Ionicons name="close" size={24} color={colors.text} />
-              </Pressable>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.modalBody}>
-              <View
-                accessibilityRole="image"
-                accessibilityLabel="Código QR del retiro"
-                style={styles.qrContainer}
-              >
-                <QRCode
-                  value={pickupQr(pickup.code)}
-                  size={190}
-                  quietZone={12}
-                  ecl="M"
-                  color="#102530"
-                  backgroundColor={colors.qrBackground}
+                <Ionicons
+                  name={copied ? 'checkmark' : 'copy-outline'}
+                  size={20}
+                  color={copied ? colors.primary : colors.textSecondary}
                 />
-              </View>
-
-              <View style={styles.codeContainer}>
-                <Text style={styles.codeLabel}>Código de retiro:</Text>
-                <View style={styles.codeRow}>
-                  <Text selectable style={styles.codeText}>
-                    {pickup.code}
-                  </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Copiar código"
-                    style={styles.copyBtn}
-                    onPress={() => handleCopyCode(pickup.code)}
-                  >
-                    <Ionicons
-                      name={copied ? 'checkmark' : 'copy-outline'}
-                      size={18}
-                      color={copied ? colors.primary : colors.textSecondary}
-                    />
-                  </Pressable>
-                </View>
-                {copied && <Text style={styles.copiedNotice}>¡Copiado al portapapeles!</Text>}
-              </View>
-
-              <View style={styles.metadataList}>
-                <View style={styles.metadataRow}>
-                  <Text style={styles.metadataLabel}>Estado:</Text>
-                  <Text style={styles.metadataValue}>{pickupStatusNames[pickup.status]}</Text>
-                </View>
-                <View style={styles.metadataRow}>
-                  <Text style={styles.metadataLabel}>Fecha de pedido:</Text>
-                  <Text style={styles.metadataValue}>{formatPickupDate(pickup.createdAt)}</Text>
-                </View>
-                {pickup.scheduledDate && (
-                  <View style={styles.metadataRow}>
-                    <Text style={styles.metadataLabel}>Fecha coordinada:</Text>
-                    <Text style={styles.metadataValue}>{formatPickupDate(pickup.scheduledDate)}</Text>
-                  </View>
-                )}
-                {pickup.scheduledTimeSlot && (
-                  <View style={styles.metadataRow}>
-                    <Text style={styles.metadataLabel}>Franja horaria:</Text>
-                    <Text style={styles.metadataValue}>{pickup.scheduledTimeSlot}</Text>
-                  </View>
-                )}
-                {pickup.driverName && (
-                  <View style={styles.metadataRow}>
-                    <Text style={styles.metadataLabel}>Responsable:</Text>
-                    <Text style={styles.metadataValue}>{pickup.driverName}</Text>
-                  </View>
-                )}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal: Confirmación de cancelación (Web) */}
-      <Modal
-        visible={cancelModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCancelModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmModalBox}>
-            <Ionicons name="alert-circle" size={36} color={colors.danger} />
-            <Text style={styles.confirmModalTitle}>¿Cancelar solicitud?</Text>
-            <Text style={styles.confirmModalText}>
-              ¿Estás seguro de que querés cancelar esta solicitud de retiro? La organización receptora será notificada.
-            </Text>
-            <View style={styles.confirmModalActions}>
-              <ActionButton
-                title="Conservar solicitud"
-                secondary={false}
-                disabled={action.busy}
-                onPress={() => setCancelModalVisible(false)}
-              />
-              <ActionButton
-                title="Sí, cancelar retiro"
-                secondary={true}
-                loading={action.busy}
-                onPress={handleConfirmCancel}
-              />
+              </SpringPressable>
             </View>
+            {copied && (
+              <Text accessibilityLiveRegion="polite" style={styles.copiedNotice}>
+                ¡Copiado al portapapeles!
+              </Text>
+            )}
           </View>
-        </View>
-      </Modal>
+
+          <View style={styles.metadataList}>
+            <View style={styles.metadataRow}>
+              <Text style={styles.metadataLabel}>Estado:</Text>
+              <Text style={styles.metadataValue}>{pickupStatusNames[pickup.status]}</Text>
+            </View>
+            <View style={styles.metadataRow}>
+              <Text style={styles.metadataLabel}>Fecha de pedido:</Text>
+              <Text style={styles.metadataValue}>{formatPickupDate(pickup.createdAt)}</Text>
+            </View>
+            {pickup.scheduledDate && (
+              <View style={styles.metadataRow}>
+                <Text style={styles.metadataLabel}>Fecha coordinada:</Text>
+                <Text style={styles.metadataValue}>{formatPickupDate(pickup.scheduledDate)}</Text>
+              </View>
+            )}
+            {pickup.scheduledTimeSlot && (
+              <View style={styles.metadataRow}>
+                <Text style={styles.metadataLabel}>Franja horaria:</Text>
+                <Text style={styles.metadataValue}>{pickup.scheduledTimeSlot}</Text>
+              </View>
+            )}
+            {pickup.driverName && (
+              <View style={styles.metadataRow}>
+                <Text style={styles.metadataLabel}>Responsable:</Text>
+                <Text style={styles.metadataValue}>{pickup.driverName}</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </AnimatedSheetModal>
+
+      <ConfirmModal
+        visible={cancelModalVisible}
+        onClose={() => {
+          setCancelModalVisible(false);
+          setCancelError(null);
+        }}
+        onConfirm={handleConfirmCancel}
+        title="¿Cancelar solicitud?"
+        message="¿Estás seguro de que querés cancelar esta solicitud de retiro? La organización receptora será notificada."
+        confirmLabel="Cancelar retiro"
+        cancelLabel="Conservar retiro"
+        destructive
+        loading={action.busy}
+        error={cancelError}
+      />
 
       <ScanSuccessModal
         visible={Boolean(scanSuccessVisible && pickup.status === 'COMPLETED')}
@@ -693,6 +683,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     bannerTextCol: {
       flex: 1,
+      minWidth: 0,
       gap: 2,
     },
     card: {
@@ -826,33 +817,48 @@ const makeStyles = (colors: ThemeColors) =>
       fontSize: 13,
       color: colors.danger,
     },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      justifyContent: 'flex-end',
-    },
     modalContent: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
       backgroundColor: colors.surface,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       maxHeight: '85%',
-      padding: 20,
-      gap: 16,
+      paddingTop: 10,
+      paddingHorizontal: 20,
+      gap: 12,
+    },
+    modalHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderControl,
+      alignSelf: 'center',
     },
     modalHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      gap: 12,
     },
     modalTitle: {
+      flex: 1,
+      minWidth: 0,
       fontFamily: fonts.bold,
       fontSize: 18,
       color: colors.text,
     },
+    modalCloseBtn: {
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     modalBody: {
       alignItems: 'center',
       gap: 16,
-      paddingBottom: 24,
+      paddingBottom: 12,
     },
     qrContainer: {
       padding: 14,
@@ -874,10 +880,11 @@ const makeStyles = (colors: ThemeColors) =>
     codeRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
+      gap: 6,
       backgroundColor: colors.surfaceSoft,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
+      paddingLeft: 14,
+      paddingRight: 4,
+      paddingVertical: 4,
       borderRadius: 10,
       borderWidth: 1,
       borderColor: colors.border,
@@ -889,7 +896,10 @@ const makeStyles = (colors: ThemeColors) =>
       letterSpacing: 0.5,
     },
     copyBtn: {
-      padding: 4,
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     copiedNotice: {
       fontFamily: fonts.semiBold,
@@ -905,8 +915,10 @@ const makeStyles = (colors: ThemeColors) =>
     },
     metadataRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       justifyContent: 'space-between',
       alignItems: 'center',
+      gap: 8,
     },
     metadataLabel: {
       fontFamily: fonts.regular,
@@ -917,34 +929,5 @@ const makeStyles = (colors: ThemeColors) =>
       fontFamily: fonts.bold,
       fontSize: 13,
       color: colors.text,
-    },
-    confirmModalBox: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      margin: 24,
-      padding: 24,
-      alignItems: 'center',
-      gap: 14,
-      alignSelf: 'center',
-      maxWidth: 400,
-      width: '90%',
-    },
-    confirmModalTitle: {
-      fontFamily: fonts.bold,
-      fontSize: 18,
-      color: colors.text,
-      textAlign: 'center',
-    },
-    confirmModalText: {
-      fontFamily: fonts.regular,
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
-    confirmModalActions: {
-      width: '100%',
-      gap: 10,
-      marginTop: 6,
     },
   });

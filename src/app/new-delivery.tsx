@@ -2,21 +2,15 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { PortalFeedback, PortalLink } from '@/components/portal/PortalUI';
 import { CitizenPage, InfoNote } from '@/components/rewards/RewardsUI';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
 import { NumericStepper } from '@/components/ui/NumericStepper';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { deliveryQuantity } from '@/models/Delivery';
 import { getCategoryVisual } from '@/models/DeviceCategory';
@@ -37,7 +31,7 @@ import {
   pickDeliveryPhoto,
   removeDeliveryPhoto,
 } from '@/services/delivery.service';
-import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 type DeliveryDraftItem = PickupDraftItem;
 
@@ -130,10 +124,7 @@ export default function NewDeliveryScreen() {
             Podés explorar este punto, pero no registrar entregas reales. Elegí un punto publicado
             para entregar tus dispositivos.
           </Text>
-          <ActionButton
-            title="Ver puntos verdes"
-            onPress={() => router.replace('/green-points')}
-          />
+          <ActionButton title="Ver puntos verdes" onPress={() => router.replace('/green-points')} />
         </View>
       </CitizenPage>
     );
@@ -169,16 +160,18 @@ export default function NewDeliveryScreen() {
             value={search}
             onChangeText={setSearch}
             autoCorrect={false}
+            returnKeyType="search"
           />
           {search.length > 0 && (
-            <Pressable
+            <SpringPressable
               accessibilityRole="button"
               accessibilityLabel="Borrar búsqueda"
+              pressScale={motion.scale.icon}
               style={styles.clearSearchBtn}
               onPress={() => setSearch('')}
             >
               <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
-            </Pressable>
+            </SpringPressable>
           )}
         </View>
 
@@ -192,11 +185,12 @@ export default function NewDeliveryScreen() {
         ) : (
           <>
             {filteredPoints.map((p) => (
-              <Pressable
+              <SpringPressable
                 key={p.id}
                 accessibilityRole="button"
                 accessibilityLabel={`Entregar en ${p.name}`}
-                style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+                pressScale={motion.scale.card}
+                style={[styles.card, styles.interactiveCard]}
                 onPress={() => handleSelectPoint(p.id)}
               >
                 <View style={styles.cardRow}>
@@ -211,7 +205,7 @@ export default function NewDeliveryScreen() {
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
                 </View>
-              </Pressable>
+              </SpringPressable>
             ))}
 
             {filteredPoints.length === 0 && (
@@ -279,6 +273,7 @@ function DeliveryForm({
 }>) {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const loader = useCallback(() => getDeliveryRates(point.companyId), [point.companyId]);
   const { data: rates, error: ratesError, refresh: refreshRates } = usePortalData(loader);
 
@@ -413,10 +408,11 @@ function DeliveryForm({
         {/* Card 1: Organización receptora */}
         <View style={styles.fieldSection}>
           <Text style={styles.fieldLabel}>Organización receptora</Text>
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel={`Organización receptora: ${point.name}. Tocá para cambiar.`}
-            style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+            pressScale={motion.scale.card}
+            style={[styles.card, styles.interactiveCard]}
             onPress={() => setPointModalVisible(true)}
             disabled={action.busy}
           >
@@ -432,7 +428,7 @@ function DeliveryForm({
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </View>
-          </Pressable>
+          </SpringPressable>
         </View>
 
         {!hasCategories ? (
@@ -448,9 +444,7 @@ function DeliveryForm({
                   />
                 </View>
                 <View style={styles.cardTextCol}>
-                  <Text style={styles.cardTitle}>
-                    Este punto no tiene dispositivos habilitados
-                  </Text>
+                  <Text style={styles.cardTitle}>Este punto no tiene dispositivos habilitados</Text>
                   <Text style={styles.cardSubtitle}>
                     Todavía no tiene categorías cargadas para recibir entregas presenciales. Elegí
                     otro punto para continuar.
@@ -477,7 +471,7 @@ function DeliveryForm({
                 return (
                   <View key={item.id} style={styles.card}>
                     {/* Category selector row */}
-                    <Pressable
+                    <SpringPressable
                       accessibilityRole={canChangeCategory ? 'button' : 'none'}
                       accessibilityLabel={
                         canChangeCategory
@@ -486,10 +480,8 @@ function DeliveryForm({
                       }
                       accessibilityState={{ disabled: !canChangeCategory }}
                       disabled={!canChangeCategory || action.busy}
-                      style={({ pressed }) => [
-                        styles.cardRow,
-                        canChangeCategory && pressed && styles.pressed,
-                      ]}
+                      pressScale={motion.scale.row}
+                      style={[styles.cardRow, styles.categoryRow]}
                       onPress={() => setEditingItemId(item.id)}
                     >
                       <View style={styles.iconCircle}>
@@ -500,9 +492,7 @@ function DeliveryForm({
                         />
                       </View>
                       <View style={styles.cardTextCol}>
-                        <Text style={styles.cardTitle}>
-                          {cat?.name ?? 'Categoría de residuo'}
-                        </Text>
+                        <Text style={styles.cardTitle}>{cat?.name ?? 'Categoría de residuo'}</Text>
                         <Text style={styles.cardSubtitle}>{visual.description}</Text>
                         {!canChangeCategory && (
                           <Text style={styles.onlyCategoryNotice}>
@@ -513,7 +503,7 @@ function DeliveryForm({
                       {canChangeCategory ? (
                         <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
                       ) : null}
-                    </Pressable>
+                    </SpringPressable>
 
                     {/* Divider */}
                     <View style={styles.cardDivider} />
@@ -530,23 +520,24 @@ function DeliveryForm({
                         accessibilityLabel={`Cantidad de ${cat?.name ?? 'unidades'}`}
                       />
                       {items.length > 1 && (
-                        <Pressable
+                        <SpringPressable
                           accessibilityRole="button"
                           accessibilityLabel={`Quitar ${cat?.name ?? 'dispositivo'}`}
+                          pressScale={motion.scale.icon}
                           style={styles.removeItemBtn}
                           disabled={action.busy}
                           onPress={() => handleRemoveItem(item.id)}
                         >
                           <Ionicons name="trash-outline" size={20} color={colors.danger} />
-                        </Pressable>
+                        </SpringPressable>
                       )}
                     </View>
 
                     {rates?.points[item.categoryId] ? (
                       <Text style={styles.itemPointsHint}>
                         {rates.points[item.categoryId]} pts por unidad (
-                        {(item.quantity * rates.points[item.categoryId]).toLocaleString('es-AR')} pts
-                        en total)
+                        {(item.quantity * rates.points[item.categoryId]).toLocaleString('es-AR')}{' '}
+                        pts en total)
                       </Text>
                     ) : null}
                   </View>
@@ -555,16 +546,17 @@ function DeliveryForm({
 
               {/* Action: Agregar otra categoría (solo disponible si hay categorías no seleccionadas) */}
               {remainingCategories.length > 0 && (
-                <Pressable
+                <SpringPressable
                   accessibilityRole="button"
                   accessibilityLabel="Agregar otra categoría de residuo"
-                  style={({ pressed }) => [styles.addCategoryBtn, pressed && styles.pressed]}
+                  pressScale={motion.scale.button}
+                  style={styles.addCategoryBtn}
                   disabled={action.busy}
                   onPress={handleAddItem}
                 >
                   <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
                   <Text style={styles.addCategoryText}>+ Agregar otra categoría</Text>
-                </Pressable>
+                </SpringPressable>
               )}
             </View>
 
@@ -625,37 +617,36 @@ function DeliveryForm({
                     resizeMode="cover"
                   />
                   <View style={styles.photoActions}>
-                    <Pressable
+                    <SpringPressable
                       accessibilityRole="button"
                       accessibilityLabel="Cambiar foto"
+                      pressScale={motion.scale.button}
                       style={styles.photoActionBtn}
                       disabled={action.busy}
                       onPress={handlePickPhoto}
                     >
                       <Ionicons name="camera-reverse-outline" size={18} color={colors.primary} />
                       <Text style={styles.photoActionText}>Cambiar foto</Text>
-                    </Pressable>
-                    <Pressable
+                    </SpringPressable>
+                    <SpringPressable
                       accessibilityRole="button"
                       accessibilityLabel="Quitar foto"
+                      pressScale={motion.scale.button}
                       style={styles.photoActionBtn}
                       disabled={action.busy}
                       onPress={handleRemovePhoto}
                     >
                       <Ionicons name="trash-outline" size={18} color={colors.danger} />
                       <Text style={[styles.photoActionText, { color: colors.danger }]}>Quitar</Text>
-                    </Pressable>
+                    </SpringPressable>
                   </View>
                 </View>
               ) : (
-                <Pressable
+                <SpringPressable
                   accessibilityRole="button"
                   accessibilityLabel="Subir foto de los residuos (opcional)"
-                  style={({ pressed }) => [
-                    styles.card,
-                    styles.uploadCard,
-                    pressed && styles.pressed,
-                  ]}
+                  pressScale={motion.scale.card}
+                  style={[styles.card, styles.uploadCard]}
                   disabled={action.busy}
                   onPress={handlePickPhoto}
                 >
@@ -668,7 +659,7 @@ function DeliveryForm({
                       Podés agregar una foto de los residuos (opcional, JPG/PNG hasta 5 MB).
                     </Text>
                   </View>
-                </Pressable>
+                </SpringPressable>
               )}
             </View>
 
@@ -695,139 +686,117 @@ function DeliveryForm({
       </CitizenPage>
 
       {/* Modal: Selector de categoría para un item específico (sin categorías duplicadas) */}
-      <Modal
+      <AnimatedSheetModal
         visible={editingItemId !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setEditingItemId(null)}
+        onClose={() => setEditingItemId(null)}
+        presentation="sheet"
+        containerStyle={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setEditingItemId(null)}>
-          <View
-            accessibilityViewIsModal
-            style={styles.modalSheet}
-            onStartShouldSetResponder={() => true}
+        <View style={styles.modalHandle} />
+        <View style={styles.modalHeader}>
+          <Text accessibilityRole="header" style={styles.modalTitle}>
+            Categorías aceptadas
+          </Text>
+          <SpringPressable
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar selector de categorías"
+            pressScale={motion.scale.icon}
+            style={styles.modalCloseBtn}
+            onPress={() => setEditingItemId(null)}
           >
-            <View style={styles.modalHeader}>
-              <Text accessibilityRole="header" style={styles.modalTitle}>
-                Categorías aceptadas
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Cerrar selector de categorías"
-                style={styles.modalCloseBtn}
-                onPress={() => setEditingItemId(null)}
-              >
-                <Ionicons name="close" size={24} color={colors.text} />
-              </Pressable>
-            </View>
-            <ScrollView style={styles.modalList}>
-              {selectableCategoriesForModal.map((cat) => {
-                const visual = getCategoryVisual(cat);
-                const currentItem = items.find((it) => it.id === editingItemId);
-                const isSelected = currentItem?.categoryId === cat.id;
+            <Ionicons name="close" size={24} color={colors.text} />
+          </SpringPressable>
+        </View>
+        <ScrollView style={styles.modalList}>
+          {selectableCategoriesForModal.map((cat) => {
+            const visual = getCategoryVisual(cat);
+            const currentItem = items.find((it) => it.id === editingItemId);
+            const isSelected = currentItem?.categoryId === cat.id;
 
-                return (
-                  <Pressable
-                    key={cat.id}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                    style={({ pressed }) => [
-                      styles.modalItem,
-                      isSelected && styles.modalItemSelected,
-                      pressed && styles.pressed,
-                    ]}
-                    onPress={() => {
-                      if (editingItemId) {
-                        handleChangeCategoryForItem(editingItemId, cat.id);
-                      }
-                    }}
-                  >
-                    <View style={styles.iconCircle}>
-                      <MaterialCommunityIcons
-                        name={visual.icon}
-                        size={22}
-                        color={colors.primaryDark}
-                      />
-                    </View>
-                    <View style={styles.cardTextCol}>
-                      <Text style={[styles.cardTitle, isSelected && { color: colors.primaryDark }]}>
-                        {cat.name}
-                      </Text>
-                      <Text style={styles.cardSubtitle}>{visual.description}</Text>
-                    </View>
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-                    )}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </Pressable>
-      </Modal>
+            return (
+              <SpringPressable
+                key={cat.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                pressScale={motion.scale.row}
+                style={[styles.modalItem, isSelected && styles.modalItemSelected]}
+                onPress={() => {
+                  if (editingItemId) {
+                    handleChangeCategoryForItem(editingItemId, cat.id);
+                  }
+                }}
+              >
+                <View style={styles.iconCircle}>
+                  <MaterialCommunityIcons name={visual.icon} size={22} color={colors.primaryDark} />
+                </View>
+                <View style={styles.cardTextCol}>
+                  <Text style={[styles.cardTitle, isSelected && { color: colors.primaryDark }]}>
+                    {cat.name}
+                  </Text>
+                  <Text style={styles.cardSubtitle}>{visual.description}</Text>
+                </View>
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                )}
+              </SpringPressable>
+            );
+          })}
+        </ScrollView>
+      </AnimatedSheetModal>
 
       {/* Modal: Selector de punto verde */}
-      <Modal
+      <AnimatedSheetModal
         visible={pointModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPointModalVisible(false)}
+        onClose={() => setPointModalVisible(false)}
+        presentation="sheet"
+        containerStyle={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setPointModalVisible(false)}>
-          <View
-            accessibilityViewIsModal
-            style={styles.modalSheet}
-            onStartShouldSetResponder={() => true}
+        <View style={styles.modalHandle} />
+        <View style={styles.modalHeader}>
+          <Text accessibilityRole="header" style={styles.modalTitle}>
+            Cambiar organización receptora
+          </Text>
+          <SpringPressable
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar selector de organización"
+            pressScale={motion.scale.icon}
+            style={styles.modalCloseBtn}
+            onPress={() => setPointModalVisible(false)}
           >
-            <View style={styles.modalHeader}>
-              <Text accessibilityRole="header" style={styles.modalTitle}>
-                Cambiar organización receptora
-              </Text>
-              <Pressable
+            <Ionicons name="close" size={24} color={colors.text} />
+          </SpringPressable>
+        </View>
+        <ScrollView style={styles.modalList}>
+          {deliveryPoints.map((p) => {
+            const isSelected = p.id === point.id;
+            return (
+              <SpringPressable
+                key={p.id}
                 accessibilityRole="button"
-                accessibilityLabel="Cerrar selector de organización"
-                style={styles.modalCloseBtn}
-                onPress={() => setPointModalVisible(false)}
+                accessibilityState={{ selected: isSelected }}
+                pressScale={motion.scale.row}
+                style={[styles.modalItem, isSelected && styles.modalItemSelected]}
+                onPress={() => handleChangePoint(p.id)}
               >
-                <Ionicons name="close" size={24} color={colors.text} />
-              </Pressable>
-            </View>
-            <ScrollView style={styles.modalList}>
-              {deliveryPoints.map((p) => {
-                const isSelected = p.id === point.id;
-                return (
-                  <Pressable
-                    key={p.id}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                    style={({ pressed }) => [
-                      styles.modalItem,
-                      isSelected && styles.modalItemSelected,
-                      pressed && styles.pressed,
-                    ]}
-                    onPress={() => handleChangePoint(p.id)}
-                  >
-                    <View style={styles.iconCircle}>
-                      <Ionicons name="business" size={20} color={colors.primaryDark} />
-                    </View>
-                    <View style={styles.cardTextCol}>
-                      <Text style={[styles.cardTitle, isSelected && { color: colors.primaryDark }]}>
-                        {p.name}
-                      </Text>
-                      <Text style={styles.cardSubtitle}>
-                        {p.companyName} · {p.address}
-                      </Text>
-                    </View>
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-                    )}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </Pressable>
-      </Modal>
+                <View style={styles.iconCircle}>
+                  <Ionicons name="business" size={20} color={colors.primaryDark} />
+                </View>
+                <View style={styles.cardTextCol}>
+                  <Text style={[styles.cardTitle, isSelected && { color: colors.primaryDark }]}>
+                    {p.name}
+                  </Text>
+                  <Text style={styles.cardSubtitle}>
+                    {p.companyName} · {p.address}
+                  </Text>
+                </View>
+                {isSelected && (
+                  <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                )}
+              </SpringPressable>
+            );
+          })}
+        </ScrollView>
+      </AnimatedSheetModal>
     </>
   );
 }
@@ -855,14 +824,15 @@ const makeStyles = (colors: ThemeColors) =>
     },
     searchInput: {
       flex: 1,
+      minWidth: 0,
       fontFamily: fonts.regular,
-      fontSize: 14,
+      fontSize: 16,
       color: colors.text,
       paddingVertical: 12,
     },
     clearSearchBtn: {
-      width: 44,
-      height: 44,
+      minWidth: 44,
+      minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -882,6 +852,9 @@ const makeStyles = (colors: ThemeColors) =>
       borderRadius: 16,
       padding: 16,
     },
+    interactiveCard: {
+      minHeight: 44,
+    },
     emptyCategoriesCard: {
       gap: 16,
     },
@@ -889,6 +862,9 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+    },
+    categoryRow: {
+      minHeight: 44,
     },
     iconCircle: {
       width: 44,
@@ -900,6 +876,7 @@ const makeStyles = (colors: ThemeColors) =>
     },
     cardTextCol: {
       flex: 1,
+      minWidth: 0,
       gap: 2,
     },
     cardTitle: {
@@ -998,8 +975,8 @@ const makeStyles = (colors: ThemeColors) =>
     },
     notesInput: {
       fontFamily: fonts.regular,
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: 16,
+      lineHeight: 22,
       color: colors.text,
       minHeight: 80,
       padding: 0,
@@ -1015,6 +992,7 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+      minHeight: 44,
     },
     photoContainer: {
       backgroundColor: colors.surface,
@@ -1070,41 +1048,47 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.danger,
       paddingHorizontal: 4,
     },
-    pressed: {
-      opacity: 0.8,
-    },
     ratesErrorBox: {
       gap: 4,
     },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: colors.overlay,
-      justifyContent: 'flex-end',
-    },
     modalSheet: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
       backgroundColor: colors.surface,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
       maxHeight: '80%',
-      paddingBottom: 32,
+      paddingTop: 10,
+    },
+    modalHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderControl,
+      alignSelf: 'center',
+      marginBottom: 4,
     },
     modalHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 20,
-      paddingVertical: 12,
+      paddingVertical: 10,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+      gap: 12,
     },
     modalTitle: {
+      flex: 1,
+      minWidth: 0,
       fontFamily: fonts.bold,
       fontSize: 18,
       color: colors.text,
     },
     modalCloseBtn: {
-      width: 44,
-      height: 44,
+      minWidth: 44,
+      minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
     },
