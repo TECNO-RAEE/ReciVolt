@@ -524,12 +524,23 @@ test('buscador "¿Qué tenés para reciclar?" en Inicio filtra por categoría, s
       name: 'Buscar qué tenés para reciclar',
       exact: true,
     });
-    const inputFontSize = await searchInput.evaluate((el) =>
-      parseFloat(getComputedStyle(el).fontSize)
-    );
+    const inputMetrics = await searchInput.evaluate((el) => {
+      el.focus();
+      const cs = getComputedStyle(el);
+      return {
+        fontSize: parseFloat(cs.fontSize),
+        outlineStyle: cs.outlineStyle,
+        outlineWidth: cs.outlineWidth,
+      };
+    });
     assert.ok(
-      inputFontSize >= 16,
-      `Se esperaba fontSize >= 16px para evitar zoom en iOS, llegó ${inputFontSize}`
+      inputMetrics.fontSize >= 16,
+      `Se esperaba fontSize >= 16px para evitar zoom en iOS, llegó ${inputMetrics.fontSize}`
+    );
+    assert.equal(
+      inputMetrics.outlineStyle,
+      'none',
+      `Se esperaba input enfocado sin contorno de highlight, llegó ${inputMetrics.outlineStyle} ${inputMetrics.outlineWidth}`
     );
 
     await page.setViewportSize({ width: 390, height: 420 });

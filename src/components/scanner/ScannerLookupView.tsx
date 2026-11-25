@@ -4,7 +4,14 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { PortalFeedback } from '@/components/portal/PortalUI';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { SpringPressable } from '@/components/ui/SpringPressable';
-import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 
 type ScannerLookupViewProps = {
   readonly camera: boolean;
@@ -110,6 +117,7 @@ export function ScannerLookupView({
             style={styles.manualInput}
             placeholder="TR-… o TRR-…"
             placeholderTextColor={colors.textSecondary}
+            selectionColor={colors.primary}
             value={code}
             onChangeText={onChangeCode}
             autoCapitalize="characters"
@@ -282,6 +290,7 @@ const makeStyles = (colors: ThemeColors) =>
       gap: 10,
     },
     manualInput: {
+      ...webInputReset,
       flex: 1,
       minWidth: 0,
       fontFamily: fonts.regular,

@@ -188,6 +188,7 @@ export default function HomeScreen() {
                 point={sorted[0]}
                 location={location}
                 now={now}
+                variant="inset"
                 onPress={() => openPoint(sorted[0])}
               />
             ) : (

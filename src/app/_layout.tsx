@@ -1,3 +1,4 @@
+import './global.css';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';

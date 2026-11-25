@@ -416,8 +416,7 @@ export function CompanyPointEditor({
               throw new Error('Ingresá coordenadas válidas para ubicar el punto en el mapa.');
             const hasAcceptedDevice = data.categories.some(
               (category) =>
-                intakePolicies[category.id] === 'onsite' ||
-                intakePolicies[category.id] === 'pickup'
+                intakePolicies[category.id] === 'onsite' || intakePolicies[category.id] === 'pickup'
             );
             if (!hasAcceptedDevice)
               throw new Error(
@@ -490,6 +489,7 @@ function ScheduleGrid({
       onChangeText={(value) => set(i, key, value)}
       placeholder="--:--"
       placeholderTextColor={colors.textSecondary}
+      selectionColor={colors.primary}
       keyboardType="number-pad"
       maxLength={5}
       editable={!disabled}

@@ -18,7 +18,14 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SpringPressable } from '@/components/ui/SpringPressable';
 import { sendRecoveryCode, verifyRecoveryCode } from '@/services/auth.service';
-import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -411,6 +418,7 @@ const makeStyles = (colors: ThemeColors) =>
     otpBoxFocused: { borderColor: colors.primary, borderWidth: 2 },
     otpDigit: { fontFamily: fonts.regular, fontSize: 18, color: colors.text },
     hiddenOtpInput: {
+      ...webInputReset,
       position: 'absolute',
       width: '100%',
       height: '100%',

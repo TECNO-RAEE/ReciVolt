@@ -49,7 +49,9 @@ export function ThemeProvider({
   schemeOverride,
 }: Readonly<{ children: ReactNode; schemeOverride?: ColorScheme }>) {
   const systemScheme = useColorScheme();
-  const [preference, setStoredPreference] = useState<ThemePreference>(() => readSyncWebPreference());
+  const [preference, setStoredPreference] = useState<ThemePreference>(() =>
+    readSyncWebPreference()
+  );
   const dirtyRef = useRef(false);
 
   useEffect(() => {
@@ -86,6 +88,7 @@ export function ThemeProvider({
     if (schemeOverride) return;
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       document.documentElement.style.colorScheme = scheme;
+      document.documentElement.dataset.theme = scheme;
       if (document.body) {
         document.body.style.backgroundColor = colors.background;
       }

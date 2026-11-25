@@ -22,7 +22,14 @@ import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { getRewards, getRedemptions } from '@/services/reward.service';
-import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 
 export default function RewardsScreen() {
   const colors = useColors();
@@ -144,6 +151,7 @@ export default function RewardsScreen() {
                 onChangeText={setSearch}
                 placeholder="Buscá un premio o comercio"
                 placeholderTextColor={colors.textSecondary}
+                selectionColor={colors.primary}
                 style={styles.searchInput}
               />
               {search !== '' && (
@@ -337,6 +345,7 @@ const makeStyles = (colors: ThemeColors) =>
       paddingRight: 4,
     },
     searchInput: {
+      ...webInputReset,
       flex: 1,
       minWidth: 0,
       minHeight: 44,

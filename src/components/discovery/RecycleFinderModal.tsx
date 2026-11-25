@@ -201,6 +201,7 @@ export function RecycleFinderModal({
       <View style={styles.searchWrap}>
         <SearchBar
           autoFocus
+          variant="sheet"
           value={query}
           onChangeText={setQuery}
           label="Buscar qué tenés para reciclar"
@@ -311,6 +312,7 @@ export function RecycleFinderModal({
               point={item}
               location={location}
               now={now}
+              variant="inset"
               onPress={() => handleSelectPoint(item)}
             />
           )}
@@ -477,7 +479,9 @@ const makeStyles = (colors: ThemeColors) =>
     },
     listContent: {
       paddingHorizontal: 20,
-      paddingBottom: 12,
+      paddingTop: 2,
+      paddingBottom: 16,
+      gap: 10,
     },
     demoNoteWrap: {
       marginBottom: 4,
