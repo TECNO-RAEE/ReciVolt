@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -13,16 +14,23 @@ const slides = [
   {
     title: 'Dale una segunda vida a tu tecnología',
     description:
-      'Celulares, notebooks y otros aparatos en desuso pueden convertirse en nuevos recursos.',
+      'Celulares, notebooks, cables y otros aparatos en desuso pueden convertirse en nuevos recursos en lugar de terminar contaminando.',
+    image: require('../../../assets/images/onboarding/step-1-devices.jpg'),
+    imageAlt: 'Una persona junta un celular y una notebook en desuso para reciclarlos',
   },
   {
-    title: 'Encontrá puntos verdes cerca tuyo',
+    title: 'Encontrá el punto verde más cercano',
     description:
-      'Buscá por dispositivo y consultá qué recibe cada punto, su dirección y sus horarios.',
+      'Buscá por el dispositivo que querés entregar y mirá qué categorías acepta cada punto, su dirección, horarios y distancia hasta ahí.',
+    image: require('../../../assets/images/onboarding/step-2-map.jpg'),
+    imageAlt: 'Una persona mirando el mapa de puntos verdes en su celular por la calle',
   },
   {
-    title: 'Reciclá, generá impacto y obtené beneficios',
-    description: 'Creá tu cuenta para registrar tus entregas y acompañar cada paso de tu impacto.',
+    title: 'Sumá puntos y canjealos por premios',
+    description:
+      'Creá tu cuenta para registrar tus entregas, llevar tu saldo global y canjear premios de los comercios aliados.',
+    image: require('../../../assets/images/onboarding/step-3-rewards.jpg'),
+    imageAlt: 'Una persona canjeando un código QR por un premio en un comercio aliado',
   },
 ] as const;
 export default function OnboardingScreen() {
@@ -115,30 +123,14 @@ export default function OnboardingScreen() {
           ))}
         </View>
         <View style={styles.slide}>
-          <View
-            style={styles.illustration}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-            aria-hidden
-          >
-            {index === 0 ? (
-              <>
-                <Ionicons name="laptop-outline" size={104} color={colors.primary} />
-                <Ionicons name="phone-portrait-outline" size={48} color={colors.primary} />
-                <Ionicons name="arrow-forward-outline" size={24} color={colors.brandDark} />
-                <Ionicons name="leaf-outline" size={48} color={colors.primary} />
-              </>
-            ) : index === 1 ? (
-              <>
-                <Ionicons name="map-outline" size={120} color={colors.primary} />
-                <Ionicons name="location-outline" size={72} color={colors.primary} />
-              </>
-            ) : (
-              <>
-                <Ionicons name="leaf-outline" size={112} color={colors.primary} />
-                <Ionicons name="checkmark-circle-outline" size={64} color={colors.primary} />
-              </>
-            )}
+          <View style={styles.illustration}>
+            <Image
+              source={slide.image}
+              style={styles.illustrationImage}
+              contentFit="cover"
+              transition={150}
+              accessibilityLabel={slide.imageAlt}
+            />
           </View>
           <View style={styles.copy} accessibilityLiveRegion="polite">
             <Text accessibilityRole="header" style={styles.title}>
@@ -222,18 +214,15 @@ const makeStyles = (colors: ThemeColors) =>
     stepComplete: { backgroundColor: colors.primaryAction },
     slide: { flex: 1, justifyContent: 'center', gap: 24, paddingVertical: 24 },
     illustration: {
-      minHeight: 200,
-      paddingVertical: 32,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 12,
+      width: '100%',
+      aspectRatio: 3 / 2,
+      overflow: 'hidden',
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 8,
+      borderRadius: 12,
       backgroundColor: colors.surface,
     },
+    illustrationImage: { width: '100%', height: '100%' },
     copy: { gap: 12, minHeight: 164 },
     title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 36, color: colors.text },
     description: {
