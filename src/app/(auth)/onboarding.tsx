@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { SpringPressable } from '@/components/ui/SpringPressable';
@@ -14,16 +15,16 @@ const slides = [
   {
     title: 'Dale una segunda vida a tu tecnología',
     description:
-      'Celulares, notebooks, cables y otros aparatos en desuso pueden convertirse en nuevos recursos en lugar de terminar contaminando.',
+      'Celulares, notebooks, cables y otros aparatos en desuso pueden convertirse en nuevos recursos en vez de contaminar.',
     image: require('../../../assets/images/onboarding/step-1-devices.jpg'),
     imageAlt: 'Una persona junta un celular y una notebook en desuso para reciclarlos',
   },
   {
     title: 'Encontrá el punto verde más cercano',
     description:
-      'Buscá por el dispositivo que querés entregar y mirá qué categorías acepta cada punto, su dirección, horarios y distancia hasta ahí.',
+      'Buscá por el dispositivo que querés entregar y mirá qué categorías acepta cada punto, su dirección y horarios. Si compartís tu ubicación, también vas a ver qué tan lejos te queda.',
     image: require('../../../assets/images/onboarding/step-2-map.jpg'),
-    imageAlt: 'Una persona mirando el mapa de puntos verdes en su celular por la calle',
+    imageAlt: 'Una persona mirando el mapa en su celular frente a un punto verde verificado',
   },
   {
     title: 'Sumá puntos y canjealos por premios',
@@ -36,6 +37,7 @@ const slides = [
 export default function OnboardingScreen() {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const reducedMotion = useReducedMotion();
   const { replay } = useLocalSearchParams<{ replay?: string }>();
   const { onboardingComplete, continueAsGuest } = useAuth();
   const [index, setIndex] = useState(0);
@@ -128,7 +130,8 @@ export default function OnboardingScreen() {
               source={slide.image}
               style={styles.illustrationImage}
               contentFit="cover"
-              transition={150}
+              transition={reducedMotion ? 0 : 150}
+              accessible
               accessibilityLabel={slide.imageAlt}
             />
           </View>
@@ -216,6 +219,7 @@ const makeStyles = (colors: ThemeColors) =>
     illustration: {
       width: '100%',
       aspectRatio: 3 / 2,
+      maxHeight: 230,
       overflow: 'hidden',
       borderWidth: 1,
       borderColor: colors.border,

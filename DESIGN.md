@@ -229,7 +229,7 @@ Este documento es obligatorio para agentes, desarrolladores, diseñadores y cual
 - Verde profundo para acciones y selección; verde suave para información y acompañamiento.
 - Texto oscuro, títulos claros y espacios que permiten leer sin esfuerzo.
 - Bordes curvos, capas blancas y sombras ambientales discretas.
-- Fotos de premios, mapa real e ilustraciones ecológicas propias según su función.
+- Fotos de premios, mapa real, fotografías conceptuales de escenas cotidianas en onboarding e ilustraciones ecológicas propias según su función.
 - Español cercano con voseo y nombres consistentes.
 
 **The Una sola identidad Rule.** Cambiar de rol cambia las tareas disponibles, no la marca, la familia tipográfica ni el header.
@@ -345,6 +345,8 @@ Las curvas transmiten cercanía y ayudan a distinguir controles, tarjetas y figu
 | Botón de apariencia y moneda          | Círculo; no usar esta forma para todas las acciones. |
 
 Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del texto. Hojas y planeta usan las formas de `EcoArtwork`; no sustituirlas por emojis o ilustraciones de otro estilo.
+
+**Decisión aprobada el 27/11/2026:** la introducción (`src/app/(auth)/onboarding.tsx`) usa fotografías conceptuales de escenas cotidianas (persona separando dispositivos en desuso, persona consultando el mapa frente a un punto verde verificado, persona canjeando un QR en un comercio aliado) en lugar de los íconos vectoriales anteriores. Las fotos deben evitar elementos que puedan confundirse con la función real de la app (por ejemplo, tachos de basura callejeros en vez de un punto verde verificado) y respetar tono, paleta e iluminación cálida y natural consistentes entre las tres escenas.
 
 ## Components
 
