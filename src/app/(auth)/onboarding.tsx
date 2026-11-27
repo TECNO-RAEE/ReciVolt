@@ -218,6 +218,8 @@ const makeStyles = (colors: ThemeColors) =>
     slide: { flex: 1, justifyContent: 'center', gap: 24, paddingVertical: 24 },
     illustration: {
       width: '100%',
+      maxWidth: 345,
+      alignSelf: 'center',
       aspectRatio: 3 / 2,
       maxHeight: 230,
       overflow: 'hidden',
