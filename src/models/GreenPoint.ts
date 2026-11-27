@@ -97,6 +97,110 @@ const normalize = (value: string) =>
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('es')
     .trim();
+export function getAcceptedCategories(
+  point: Pick<GreenPoint, 'categories' | 'intakePolicies'>
+): DeviceCategory[] {
+  const rejectedIds = new Set(
+    (point.intakePolicies ?? [])
+      .filter((policy) => policy.mode === 'not_accepted')
+      .map((policy) => policy.categoryId)
+  );
+  const byId = new Map<string, DeviceCategory>();
+  for (const category of point.categories ?? []) {
+    if (!rejectedIds.has(category.id)) byId.set(category.id, category);
+  }
+  for (const policy of point.intakePolicies ?? []) {
+    if (policy.mode !== 'not_accepted' && policy.category) {
+      byId.set(policy.category.id, policy.category);
+    }
+  }
+  return [...byId.values()];
+}
+
+const CATEGORY_SEARCH_RULES: readonly [RegExp, readonly string[]][] = [
+  [
+    /\b(notebook|notebooks|laptop|laptops|netbook|netbooks)\b/i,
+    ['laptop', 'netbook', 'portatil', 'macbook', 'compu'],
+  ],
+  [
+    /\b(pc|computadora|computadoras|computador|computadores|desktop|cpu)\b/i,
+    ['pc', 'compu', 'escritorio', 'desktop', 'gabinete', 'torre', 'teclado', 'mouse'],
+  ],
+  [/\b(monitor|monitores)\b/i, ['monitor', 'pantalla', 'lcd', 'led']],
+  [
+    /\b(televisor|televisores|tv)\b/i,
+    ['tv', 'tele', 'televisor', 'televisores', 'smart tv', 'pantalla'],
+  ],
+  [
+    /\b(celular|celulares|telefono|telefonos|teléfono|teléfonos|smartphone|smartphones|movil|moviles|móvil|móviles)\b/i,
+    ['celu', 'celus', 'telefono', 'telefonos', 'smartphone', 'movil', 'iphone', 'android'],
+  ],
+  [/\b(tablet|tablets|ipad|ipads|e-reader|ereader)\b/i, ['tablet', 'ipad', 'ereader', 'kindle']],
+  [
+    /\b(electrodomestico|electrodomesticos|electrodoméstico|electrodomésticos|pequenos|pequeños|hogar|microondas|licuadora|cafetera)\b/i,
+    [
+      'electrodomestico',
+      'microondas',
+      'licuadora',
+      'cafetera',
+      'pava',
+      'tostadora',
+      'plancha',
+      'aspiradora',
+      'ventilador',
+      'secador',
+    ],
+  ],
+  [
+    /\b(audio|sonido|auricular|auriculares|parlante|parlantes|microfono|micrófono)\b/i,
+    ['auris', 'auricular', 'audio', 'parlante', 'headset', 'airpods'],
+  ],
+  [
+    /\b(consola|consolas|videojuego|videojuegos|joystick|joysticks|playstation|xbox|nintendo)\b/i,
+    ['play', 'playstation', 'xbox', 'nintendo', 'switch', 'joystick', 'videojuego'],
+  ],
+  [
+    /\b(impresora|impresoras|scanner|scanners|escaner|escáner|toner)\b/i,
+    ['impresora', 'escaner', 'scanner', 'multifuncion', 'toner', 'cartucho'],
+  ],
+  [
+    /\b(cargador|cargadores|adaptador|adaptadores)\b/i,
+    ['cargador', 'fuente', 'transformador', 'adaptador', 'usb'],
+  ],
+  [
+    /\b(cable|cables|enchufe|zapatilla)\b/i,
+    ['cable', 'enchufe', 'alargue', 'zapatilla', 'hdmi', 'usb'],
+  ],
+];
+
+/**
+ * Returns common everyday search aliases for a device category so citizens
+ * can find green points without guessing exact catalog labels.
+ */
+export function getDeviceCategorySearchTerms(
+  category: Pick<DeviceCategory, 'name' | 'slug'>
+): string[] {
+  const target = normalize(`${category.slug ?? ''} ${category.name ?? ''}`);
+  for (const [pattern, aliases] of CATEGORY_SEARCH_RULES) {
+    if (pattern.test(target)) return [...aliases];
+  }
+  return [];
+}
+
+function matchesCategoryAlias(category: DeviceCategory, normalizedQuery: string): boolean {
+  if (!normalizedQuery) return false;
+  const queryWords = normalizedQuery.split(/\s+/);
+  return getDeviceCategorySearchTerms(category).some((rawAlias) => {
+    const alias = normalize(rawAlias);
+    return (
+      alias === normalizedQuery ||
+      queryWords.includes(alias) ||
+      (alias.length >= 5 && normalizedQuery.startsWith(alias)) ||
+      (normalizedQuery.length >= 5 && alias.startsWith(normalizedQuery))
+    );
+  });
+}
+
 export interface DiscoveryFilters {
   search?: string;
   categoryId?: string;
@@ -119,30 +223,38 @@ export function filterGreenPoints(
       ? [filters.categoryId]
       : [];
   return points
-    .filter(
-      (p) =>
-        (!query ||
-          normalize(
-            `${p.name} ${p.address} ${p.companyName} ${(p.categories ?? []).map((c) => c.name).join(' ')} ${(
-              p.intakePolicies ?? []
+    .filter((p) => {
+      const accepted = getAcceptedCategories(p);
+      const baseText = normalize(
+        `${p.name} ${p.address} ${p.companyName} ${accepted.map((c) => c.name).join(' ')}`
+      );
+      const matchesSearch =
+        !query ||
+        baseText.includes(query) ||
+        accepted.some((category) => matchesCategoryAlias(category, query));
+      const matchesCategories =
+        !categoryIds.length ||
+        categoryIds.some((categoryId) => {
+          const rejected = (p.intakePolicies ?? []).some(
+            (policy) => policy.categoryId === categoryId && policy.mode === 'not_accepted'
+          );
+          if (rejected) return false;
+          return (
+            accepted.some((category) => category.id === categoryId) ||
+            (p.intakePolicies ?? []).some(
+              (policy) => policy.categoryId === categoryId && policy.mode !== 'not_accepted'
             )
-              .filter((policy) => policy.mode !== 'not_accepted')
-              .map((policy) => policy.category?.name ?? '')
-              .join(' ')}`
-          ).includes(query)) &&
-        (!categoryIds.length ||
-          categoryIds.some(
-            (categoryId) =>
-              (p.categories ?? []).some((c) => c.id === categoryId) ||
-              (p.intakePolicies ?? []).some(
-                (policy) => policy.categoryId === categoryId && policy.mode !== 'not_accepted'
-              )
-          )) &&
+          );
+        });
+      return (
+        matchesSearch &&
+        matchesCategories &&
         (!filters.companyId || p.companyId === filters.companyId) &&
         (!filters.openOnly || openingStatus(p, now) === 'open') &&
         (!filters.pickupOnly || p.pickupEnabled) &&
         (!filters.nearbyOnly || (location !== null && distanceKm(location, p) <= 10))
-    )
+      );
+    })
     .sort((a, b) =>
       location
         ? distanceKm(location, a) - distanceKm(location, b) || a.name.localeCompare(b.name, 'es')

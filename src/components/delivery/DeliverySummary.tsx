@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Image, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { PortalLoading, portalStyles as s } from '@/components/portal/PortalUI';
+import { PortalLoading, usePortalStyles } from '@/components/portal/PortalUI';
 import { usePortalData } from '@/hooks/usePortalData';
 import {
   deliveryEstimate,
@@ -11,11 +11,14 @@ import {
   type Delivery,
 } from '@/models/Delivery';
 import { getDeliveryPhotoUrl } from '@/services/delivery.service';
+import { useColors } from '@/theme';
 
 export function DeliverySummary({
   delivery,
   showQr = false,
 }: Readonly<{ delivery: Delivery; showQr?: boolean }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
   const status = effectiveDeliveryStatus(delivery);
   const estimate = deliveryEstimate(delivery.items);
   return (
@@ -26,8 +29,14 @@ export function DeliverySummary({
       </Text>
       <Text style={s.body}>{new Date(delivery.createdAt).toLocaleString('es-AR')}</Text>
       {showQr && status === 'PENDING_RECEPTION' && (
-        <View style={{ gap: 16, alignItems: 'center', padding: 16, backgroundColor: '#fff' }}>
-          <QRCode value={deliveryQr(delivery.code)} size={220} quietZone={16} ecl="M" />
+        <View style={{ gap: 16, alignItems: 'center', padding: 16 }}>
+          <View
+            accessibilityRole="image"
+            accessibilityLabel="Código QR de la entrega"
+            style={{ backgroundColor: colors.qrBackground, borderRadius: 12, padding: 14 }}
+          >
+            <QRCode value={deliveryQr(delivery.code)} size={220} quietZone={16} ecl="M" />
+          </View>
           <Text selectable style={[s.body, { textAlign: 'center' }]}>
             {delivery.code}
           </Text>
@@ -72,6 +81,7 @@ export function DeliverySummary({
   );
 }
 function DeliveryPhoto({ path }: Readonly<{ path: string }>) {
+  const s = usePortalStyles();
   const loader = useCallback(() => getDeliveryPhotoUrl(path), [path]);
   const { data, loading, error, refresh } = usePortalData(loader);
   return (

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts } from '@/theme';
+import { StyleSheet, Text, View } from 'react-native';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface NumericStepperProps {
   value: number;
@@ -27,6 +28,8 @@ export function NumericStepper({
   incrementAccessibilityLabel = 'Aumentar cantidad',
   testID,
 }: Readonly<NumericStepperProps>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const safeValue = Number.isFinite(value) ? value : min;
   const canDecrement = !disabled && safeValue > min;
   const canIncrement = !disabled && safeValue < max;
@@ -45,25 +48,22 @@ export function NumericStepper({
 
   return (
     <View testID={testID} style={styles.container}>
-      <Pressable
+      <SpringPressable
         testID={testID ? `${testID}-minus` : undefined}
         accessibilityRole="button"
         accessibilityLabel={decrementAccessibilityLabel}
         accessibilityState={{ disabled: !canDecrement }}
         disabled={!canDecrement}
         onPress={handleDecrement}
-        style={({ pressed }) => [
-          styles.button,
-          (!canDecrement || disabled) && styles.buttonDisabled,
-          pressed && canDecrement && styles.buttonPressed,
-        ]}
+        pressScale={motion.scale.icon}
+        style={[styles.button, (!canDecrement || disabled) && styles.buttonDisabled]}
       >
         <Ionicons
           name="remove"
           size={22}
           color={canDecrement ? colors.primary : colors.textSecondary}
         />
-      </Pressable>
+      </SpringPressable>
 
       <Text
         testID={testID ? `${testID}-value` : undefined}
@@ -74,63 +74,61 @@ export function NumericStepper({
         {safeValue}
       </Text>
 
-      <Pressable
+      <SpringPressable
         testID={testID ? `${testID}-plus` : undefined}
         accessibilityRole="button"
         accessibilityLabel={incrementAccessibilityLabel}
         accessibilityState={{ disabled: !canIncrement }}
         disabled={!canIncrement}
         onPress={handleIncrement}
-        style={({ pressed }) => [
-          styles.button,
-          (!canIncrement || disabled) && styles.buttonDisabled,
-          pressed && canIncrement && styles.buttonPressed,
-        ]}
+        pressScale={motion.scale.icon}
+        style={[styles.button, (!canIncrement || disabled) && styles.buttonDisabled]}
       >
         <Ionicons
           name="add"
           size={22}
           color={canIncrement ? colors.primary : colors.textSecondary}
         />
-      </Pressable>
+      </SpringPressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  button: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-    backgroundColor: colors.surfaceSoft,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
-  value: {
-    minWidth: 52,
-    fontFamily: fonts.bold,
-    fontSize: 24,
-    lineHeight: 28,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  valueDisabled: {
-    color: colors.textSecondary,
-    opacity: 0.6,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 16,
+    },
+    button: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    buttonDisabled: {
+      opacity: 0.4,
+      backgroundColor: colors.surfaceSoft,
+    },
+    buttonPressed: {
+      opacity: 0.7,
+    },
+    value: {
+      minWidth: 52,
+      fontFamily: fonts.bold,
+      fontSize: 24,
+      lineHeight: 28,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    valueDisabled: {
+      color: colors.textSecondary,
+      opacity: 0.6,
+    },
+  });

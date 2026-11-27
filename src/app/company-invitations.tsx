@@ -1,17 +1,19 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, type TextInputInstance, View } from 'react-native';
 import { supabase } from '@/config/supabase';
+import { AuthTextField } from '@/components/auth/AuthTextField';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { InfoNote } from '@/components/rewards/RewardsUI';
 import {
   PortalPage,
-  PortalField,
   PortalFeedback,
   PortalLoading,
-  portalStyles as s,
+  usePortalStyles,
 } from '@/components/portal/PortalUI';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
+import { roleHome } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAuthFlowArrival } from '@/hooks/useAuthFlowArrival';
 import { authRoute } from '@/models/AuthFlow';
@@ -19,7 +21,8 @@ import { getMyInvitations, portalCommand } from '@/services/portal.service';
 
 export default function CompanyInvitationsScreen() {
   useAuthFlowArrival();
-  const { session } = useAuth();
+  const s = usePortalStyles();
+  const { session, role, postponeInvitations } = useAuth();
   const url = Linking.useURL();
   const [emailInvite, setEmailInvite] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
@@ -43,11 +46,25 @@ export default function CompanyInvitationsScreen() {
         });
     }
   }, [url]);
+  const handleBack = () => {
+    if (!session) {
+      if (router.canGoBack()) router.back();
+      else router.replace('/');
+      return;
+    }
+    if (role === 'citizen') {
+      postponeInvitations();
+      router.replace('/home');
+      return;
+    }
+    router.replace(role ? roleHome(role) : '/');
+  };
   return (
     <PortalPage
       title="Invitaciones de empresa"
       subtitle="Aceptá tu acceso para comenzar a trabajar con tu organización."
-      back="/"
+      back={session && role ? roleHome(role) : '/'}
+      onBack={handleBack}
     >
       <PortalFeedback error={linkError} />
       {session ? (
@@ -68,30 +85,54 @@ export default function CompanyInvitationsScreen() {
   );
 }
 function Invitations({ needsPassword }: Readonly<{ needsPassword: boolean }>) {
+  const s = usePortalStyles();
   const { data, loading, error, refresh } = usePortalData(getMyInvitations);
-  const { retryAccess } = useAuth();
+  const { session, role, retryAccess, postponeInvitations, logout } = useAuth();
   const action = usePortalAction();
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const [password, setPassword] = useState(''),
     [confirm, setConfirm] = useState('');
+  const confirmPasswordRef = useRef<TextInputInstance>(null);
+  const showPasswordSetup = needsPassword && Boolean(data?.length);
   return (
     <>
+      {session?.user.email && <Text style={s.hint}>Sesión iniciada como {session.user.email}</Text>}
       <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
-      {needsPassword && (
+      {showPasswordSetup && (
         <View style={s.stack}>
-          <PortalField
-            label="Creá tu contraseña (mínimo 8 caracteres)"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            editable={!action.busy}
-          />
-          <PortalField
-            label="Repetí la contraseña"
-            value={confirm}
-            onChangeText={setConfirm}
-            secureTextEntry
-            editable={!action.busy}
-          />
+          <View style={{ gap: 6 }}>
+            <AuthTextField
+              label="Creá tu contraseña (mínimo 8 caracteres)"
+              iconName="lock-closed-outline"
+              value={password}
+              onChangeText={setPassword}
+              passwordToggle
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+              editable={!action.busy}
+            />
+          </View>
+          <View style={{ gap: 6 }}>
+            <AuthTextField
+              label="Repetí la contraseña"
+              iconName="lock-closed-outline"
+              inputRef={confirmPasswordRef}
+              value={confirm}
+              onChangeText={setConfirm}
+              passwordToggle
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="done"
+              editable={!action.busy}
+            />
+          </View>
         </View>
       )}
       {data?.length === 0 && (
@@ -105,26 +146,74 @@ function Invitations({ needsPassword }: Readonly<{ needsPassword: boolean }>) {
           </Text>
           <ActionButton
             title="Aceptar y entrar a la empresa"
-            loading={action.busy}
-            onPress={() =>
-              void action.run(async () => {
-                if (needsPassword) {
-                  if (password.length < 8 || password !== confirm)
-                    throw new Error(
-                      'Las contraseñas deben coincidir y tener al menos 8 caracteres.'
-                    );
-                  const { error: passwordError } = await supabase.auth.updateUser({ password });
-                  if (passwordError) throw passwordError;
-                }
-                await portalCommand('accept_invitation', { id: inv.id });
-                retryAccess();
-                router.replace('/');
-              }, 'Acceso aceptado.')
-            }
+            loading={action.busy && busyAction === inv.id}
+            disabled={action.busy}
+            onPress={() => {
+              setBusyAction(inv.id);
+              void action
+                .run(async () => {
+                  if (needsPassword) {
+                    if (password.length < 8 || password !== confirm)
+                      throw new Error(
+                        'Las contraseñas deben coincidir y tener al menos 8 caracteres.'
+                      );
+                    const { error: passwordError } = await supabase.auth.updateUser({ password });
+                    if (passwordError) throw passwordError;
+                  }
+                  await portalCommand('accept_invitation', { id: inv.id });
+                  retryAccess();
+                  router.replace('/');
+                }, 'Acceso aceptado.')
+                .finally(() => setBusyAction(null));
+            }}
           />
         </View>
       ))}
       <PortalFeedback error={action.error} notice={action.notice} />
+      {Boolean(data?.length) && role === 'citizen' && (
+        <InfoNote>
+          Si todavía no querés responder, podés continuar como ciudadano y decidir más tarde, o
+          cerrar sesión para usar otra cuenta.
+        </InfoNote>
+      )}
+      <View style={s.stack}>
+        {role && (
+          <ActionButton
+            title={
+              role === 'citizen'
+                ? data?.length
+                  ? 'Continuar como ciudadano'
+                  : 'Ir al inicio'
+                : 'Ir a mi portal'
+            }
+            secondary
+            disabled={action.busy}
+            onPress={() => {
+              if (role === 'citizen') postponeInvitations();
+              router.replace(roleHome(role));
+            }}
+          />
+        )}
+        <ActionButton
+          title="Cerrar sesión"
+          secondary
+          loading={action.busy && busyAction === 'logout'}
+          disabled={action.busy}
+          onPress={() => {
+            setBusyAction('logout');
+            void action
+              .run(async () => {
+                try {
+                  await logout();
+                } catch {
+                  throw new Error('No pudimos cerrar la sesión. Intentá nuevamente.');
+                }
+                router.replace('/');
+              }, '')
+              .finally(() => setBusyAction(null));
+          }}
+        />
+      </View>
     </>
   );
 }

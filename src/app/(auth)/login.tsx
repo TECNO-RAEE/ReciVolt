@@ -1,11 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,8 +15,10 @@ import {
 import { AuthTextField } from '@/components/auth/AuthTextField';
 import { AuthArtwork } from '@/components/ui/EcoArtwork';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { login } from '@/services/auth.service';
-import { colors, fonts } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { authRoute, parseAuthIntent } from '@/models/AuthFlow';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -65,28 +66,33 @@ function getLoginErrorMessage(error: unknown) {
 }
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ intent?: string; confirm?: string }>();
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const params = useLocalSearchParams<{ intent?: string; confirm?: string; email?: string }>();
   const intent = parseAuthIntent(params.intent);
   const { prepareAuth, continueAsGuest } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [authErrorVisible, setAuthErrorVisible] = useState(false);
   const passwordInputRef = useRef<TextInputInstance>(null);
   const restorePasswordFocusOnDismiss = useRef(false);
-  const [email, setEmail] = useState('');
+  const paramEmail = typeof params.email === 'string' ? params.email.trim() : '';
+  const [emailDraft, setEmailDraft] = useState<string | null>(null);
+  const email = emailDraft ?? paramEmail;
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (authErrorVisible || !restorePasswordFocusOnDismiss.current) return;
+    const timer = setTimeout(() => {
+      restorePasswordFocusOnDismiss.current = false;
+      passwordInputRef.current?.focus();
+    }, motion.duration.dialogOut + 20);
+    return () => clearTimeout(timer);
+  }, [authErrorVisible]);
+
   function closeAuthError(restoreFocus: boolean) {
+    restorePasswordFocusOnDismiss.current = restoreFocus;
     setAuthErrorVisible(false);
-
-    if (!restoreFocus) return;
-
-    if (Platform.OS === 'android') {
-      // En Android el Modal no dispara onDismiss
-      requestAnimationFrame(() => passwordInputRef.current?.focus());
-    } else {
-      restorePasswordFocusOnDismiss.current = true;
-    }
   }
 
   async function handleLogin() {
@@ -143,12 +149,19 @@ export default function LoginScreen() {
               label="Correo electrónico"
               iconName="mail-outline"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(value) => {
+                setEmailDraft(value);
+                setFormError(null);
+              }}
               placeholder="nombre@correo.com"
               keyboardType="email-address"
+              textContentType="emailAddress"
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="email"
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => passwordInputRef.current?.focus()}
               editable={!loading}
             />
           </View>
@@ -159,14 +172,19 @@ export default function LoginScreen() {
               iconName="lock-closed-outline"
               inputRef={passwordInputRef}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(value) => {
+                setPassword(value);
+                setFormError(null);
+              }}
               placeholder="Ingresá tu contraseña"
               passwordToggle
+              textContentType="password"
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="password"
+              returnKeyType="done"
               editable={!loading}
-              onSubmitEditing={handleLogin}
+              onSubmitEditing={() => void handleLogin()}
             />
           </View>
 
@@ -184,14 +202,17 @@ export default function LoginScreen() {
 
           <ActionButton title="Ingresar" onPress={() => void handleLogin()} loading={loading} />
 
-          <Pressable
+          <SpringPressable
             accessibilityRole="link"
+            pressScale={motion.scale.button}
             style={styles.textLink}
-            onPress={() => router.push('/forgot-password')}
+            onPress={() =>
+              router.push({ pathname: '/forgot-password', params: { email: email.trim() } })
+            }
             disabled={loading}
           >
             <Text style={styles.textLinkLabel}>Olvidé mi contraseña</Text>
-          </Pressable>
+          </SpringPressable>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
@@ -206,8 +227,9 @@ export default function LoginScreen() {
             disabled={loading}
           />
 
-          <Pressable
+          <SpringPressable
             accessibilityRole="link"
+            pressScale={motion.scale.button}
             style={styles.textLink}
             disabled={loading}
             onPress={() =>
@@ -219,139 +241,127 @@ export default function LoginScreen() {
             }
           >
             <Text style={styles.textLinkLabel}>Seguir como visitante</Text>
-          </Pressable>
+          </SpringPressable>
         </View>
       </ScrollView>
 
-      <Modal
+      <AnimatedSheetModal
         visible={authErrorVisible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => {
-          closeAuthError(true);
-        }}
-        onDismiss={() => {
-          if (restorePasswordFocusOnDismiss.current) {
-            restorePasswordFocusOnDismiss.current = false;
-            passwordInputRef.current?.focus();
-          }
-        }}
+        presentation="dialog"
+        onClose={() => closeAuthError(true)}
+        containerStyle={styles.modalCard}
       >
-        <View style={styles.modalOverlay}>
-          <View accessibilityViewIsModal accessibilityRole="alert" style={styles.modalCard}>
-            <View style={styles.modalIconCircle}>
-              <Text style={styles.modalIcon}>!</Text>
-            </View>
-            <Text style={styles.modalTitle}>No pudimos iniciar sesión</Text>
-            <Text style={styles.modalMessage}>
-              El correo o la contraseña no son correctos. Revisá los datos e intentá nuevamente.
-            </Text>
+        <View accessibilityRole="alert" style={styles.modalBody}>
+          <View style={styles.modalIconCircle}>
+            <Ionicons name="alert-circle-outline" size={28} color={colors.danger} />
+          </View>
+          <Text accessibilityRole="header" style={styles.modalTitle}>
+            No pudimos iniciar sesión
+          </Text>
+          <Text style={styles.modalMessage}>
+            El correo o la contraseña no son correctos. Revisá los datos e intentá nuevamente.
+          </Text>
 
-            <View style={styles.modalActions}>
-              <ActionButton title="Reintentar" onPress={() => closeAuthError(true)} />
-              <ActionButton
-                title="Recuperar contraseña"
-                secondary
-                onPress={() => {
-                  closeAuthError(false);
-                  router.push('/forgot-password');
-                }}
-              />
-            </View>
+          <View style={styles.modalActions}>
+            <ActionButton title="Reintentar" onPress={() => closeAuthError(true)} />
+            <ActionButton
+              title="Recuperar contraseña"
+              secondary
+              onPress={() => {
+                closeAuthError(false);
+                router.push({ pathname: '/forgot-password', params: { email: email.trim() } });
+              }}
+            />
           </View>
         </View>
-      </Modal>
+      </AnimatedSheetModal>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
-  screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
-  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { flexGrow: 1, padding: 24, paddingBottom: 32 },
+    screen: { width: '100%', maxWidth: 420, alignSelf: 'center', gap: 16 },
+    error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.danger },
 
-  hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 26,
-    lineHeight: 34,
-    textAlign: 'center',
-    color: colors.text,
-  },
-  subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-    color: colors.textSecondary,
-  },
-  field: { width: '100%' },
-  textLink: { minHeight: 44, alignSelf: 'center', justifyContent: 'center' },
-  textLinkLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.primaryDark,
-    textDecorationLine: 'underline',
-  },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
-  feedback: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textSecondary,
-  },
+    hero: { alignItems: 'center', gap: 8, marginBottom: 6 },
+    title: {
+      fontFamily: fonts.bold,
+      fontSize: 26,
+      lineHeight: 34,
+      textAlign: 'center',
+      color: colors.text,
+    },
+    subtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+      color: colors.textSecondary,
+    },
+    field: { width: '100%' },
+    textLink: {
+      minHeight: 44,
+      minWidth: 44,
+      paddingHorizontal: 8,
+      alignSelf: 'center',
+      justifyContent: 'center',
+    },
+    textLinkLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.primaryDark,
+      textDecorationLine: 'underline',
+    },
+    divider: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+    dividerText: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
+    feedback: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+    },
 
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: 'rgba(16, 40, 44, 0.55)',
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 380,
-    alignItems: 'center',
-    padding: 24,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalIconCircle: {
-    width: 52,
-    height: 52,
-    marginBottom: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 26,
-    backgroundColor: colors.primarySoft,
-  },
-  modalIcon: {
-    fontFamily: fonts.bold,
-    fontSize: 28,
-    lineHeight: 32,
-    color: colors.primary,
-  },
-  modalTitle: {
-    marginBottom: 10,
-    fontFamily: fonts.bold,
-    fontSize: 20,
-    lineHeight: 26,
-    textAlign: 'center',
-    color: colors.brandDark,
-  },
-  modalMessage: {
-    marginBottom: 22,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-    color: colors.textSecondary,
-  },
-  modalActions: { width: '100%', gap: 8 },
-});
+    modalCard: {
+      width: '100%',
+      maxWidth: 380,
+      padding: 24,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalBody: {
+      width: '100%',
+      alignItems: 'center',
+    },
+    modalIconCircle: {
+      width: 52,
+      height: 52,
+      marginBottom: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 26,
+      backgroundColor: colors.dangerBackground,
+    },
+    modalTitle: {
+      marginBottom: 10,
+      fontFamily: fonts.bold,
+      fontSize: 20,
+      lineHeight: 26,
+      textAlign: 'center',
+      color: colors.brandDark,
+    },
+    modalMessage: {
+      marginBottom: 22,
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+      color: colors.textSecondary,
+    },
+    modalActions: { width: '100%', gap: 8 },
+  });

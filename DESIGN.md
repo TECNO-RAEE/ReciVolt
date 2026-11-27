@@ -3,6 +3,7 @@ name: ReciVolt
 description: Lenguaje de diseño compartido basado en la vista del ciudadano.
 colors:
   primary: '#246440'
+  primaryAction: '#246440'
   primaryDark: '#174F32'
   primarySoft: '#E7F3EB'
   surfaceSoft: '#F1F7F3'
@@ -11,18 +12,77 @@ colors:
   impactValue: '#0B5C27'
   impactWeight: '#0E5C28'
   danger: '#A30303'
+  dangerAction: '#A30303'
   dangerBackground: 'rgba(179, 38, 30, 0.16)'
+  overlay: 'rgba(16, 40, 44, 0.55)'
+  warning: '#6D4C00'
+  warningSecondary: '#8D6B00'
+  warningSoft: '#FFF8E1'
+  warningSurface: '#FFF0B2'
+  warningBorder: '#FFE082'
+  info: '#0B4B75'
+  infoSecondary: '#155B8A'
+  infoSoft: '#E8F3FA'
+  infoSurface: '#CEE8F7'
+  infoBorder: '#BFE0F2'
+  successBorder: '#B9DFC4'
+  successIconBackground: '#D1EBD9'
   background: '#F8FBF9'
   surface: '#FFFFFF'
   tabBarBackground: '#FFFFFF'
   impactBackground: '#E8F3EC'
   avatarBackground: '#D9D9D9'
+  skeletonHighlight: '#D6E7DB'
+  qrBackground: '#FFFFFF'
   text: '#102530'
   textSecondary: '#53676D'
   textOnPrimary: '#FFFFFF'
+  navInactive: '#53676D'
   border: '#E2EBE6'
+  borderControl: '#748591'
   borderPrimary: '#246440'
-  navInactive: '#748591'
+  cardBorderSubtle: '#FFFFFF'
+darkColors:
+  primary: '#5CD08C'
+  primaryAction: '#256D46'
+  primaryDark: '#8CE4AF'
+  primarySoft: '#193426'
+  surfaceSoft: '#1D3027'
+  accent: '#5CD08C'
+  brandDark: '#E4F2EA'
+  impactValue: '#6EE09B'
+  impactWeight: '#82E4A8'
+  danger: '#FF8A80'
+  dangerAction: '#B9261E'
+  dangerBackground: 'rgba(255, 92, 82, 0.18)'
+  overlay: 'rgba(4, 10, 7, 0.72)'
+  warning: '#F6D06B'
+  warningSecondary: '#E8BA46'
+  warningSoft: '#2D2512'
+  warningSurface: '#3D3116'
+  warningBorder: '#5C491F'
+  info: '#86CCFA'
+  infoSecondary: '#74BEF0'
+  infoSoft: '#132635'
+  infoSurface: '#1A354A'
+  infoBorder: '#284D6B'
+  successBorder: '#2D543D'
+  successIconBackground: '#214231'
+  background: '#0C1511'
+  surface: '#15231C'
+  tabBarBackground: '#121F19'
+  impactBackground: '#193426'
+  avatarBackground: '#263B30'
+  skeletonHighlight: '#284435'
+  qrBackground: '#FFFFFF'
+  text: '#EDF5F0'
+  textSecondary: '#A7BBB1'
+  textOnPrimary: '#FFFFFF'
+  navInactive: '#9BB0A5'
+  border: '#263A30'
+  borderControl: '#6E877A'
+  borderPrimary: '#5CD08C'
+  cardBorderSubtle: '#2D4739'
 typography:
   greeting:
     fontFamily: Roboto
@@ -92,8 +152,8 @@ rounded:
   note: 14px
   reward: 15px
   button: 16px
+  search-trigger: 16px
   card: 18px
-  quick-access: 19px
   points: 22px
   chip: 24px
 spacing:
@@ -106,7 +166,7 @@ spacing:
   bottom: 32px
 components:
   button-primary:
-    backgroundColor: '{colors.primary}'
+    backgroundColor: '{colors.primaryAction}'
     textColor: '{colors.textOnPrimary}'
     typography: '{typography.button-label}'
     rounded: '{rounded.button}'
@@ -134,7 +194,7 @@ components:
     typography: '{typography.chip-label}'
     rounded: '{rounded.chip}'
   chip-selected:
-    backgroundColor: '{colors.primaryDark}'
+    backgroundColor: '{colors.primaryAction}'
     textColor: '{colors.textOnPrimary}'
     typography: '{typography.chip-label}'
     rounded: '{rounded.chip}'
@@ -169,7 +229,7 @@ Este documento es obligatorio para agentes, desarrolladores, diseñadores y cual
 - Verde profundo para acciones y selección; verde suave para información y acompañamiento.
 - Texto oscuro, títulos claros y espacios que permiten leer sin esfuerzo.
 - Bordes curvos, capas blancas y sombras ambientales discretas.
-- Fotos de premios, mapa real e ilustraciones ecológicas propias según su función.
+- Fotos de premios, mapa real, fotografías conceptuales de escenas cotidianas en onboarding e ilustraciones ecológicas propias según su función.
 - Español cercano con voseo y nombres consistentes.
 
 **The Una sola identidad Rule.** Cambiar de rol cambia las tareas disponibles, no la marca, la familia tipográfica ni el header.
@@ -178,7 +238,7 @@ Este documento es obligatorio para agentes, desarrolladores, diseñadores y cual
 
 Las decisiones explícitas más recientes del usuario tienen prioridad. Para el resto, esta guía rige el diseño; el mockup original sirve como referencia visual y no revierte cambios posteriores de navegación o contenido. Las recomendaciones genéricas de herramientas o skills se adaptan a esta identidad.
 
-Los valores del frontmatter son la referencia documentada. Su implementación está en [colors.ts](src/theme/colors.ts), [typography.ts](src/theme/typography.ts) y los componentes compartidos indicados más abajo. `navInactive` documenta un valor observado en la navegación; todavía no es una propiedad del objeto `colors`. Las escalas de tamaño, radio y espaciado documentan estilos existentes, no un módulo de tokens ya implementado. Las medidas se expresan en unidades de layout de React Native; `px` permite exportarlas a herramientas web.
+Los valores del frontmatter son la referencia documentada. Su implementación está en [colors.ts](src/theme/colors.ts), [typography.ts](src/theme/typography.ts) y los componentes compartidos indicados más abajo. `navInactive` y `borderControl` forman parte de `colors` para cumplir contraste AA en pestañas inactivas y bordes de controles. Las escalas de tamaño, radio y espaciado documentan estilos existentes, no un módulo de tokens ya implementado. Las medidas se expresan en unidades de layout de React Native; `px` permite exportarlas a herramientas web.
 
 Si código y guía difieren, identificar la desviación y corregirla dentro del alcance del trabajo. No convertir un estilo aislado en una nueva regla ni cambiar la identidad global de manera incidental. Cuando se apruebe un cambio del sistema, actualizar componente, tema, esta guía y su representación en `.impeccable/design.json` juntos. Los ejemplos de ese archivo son muestras estáticas para documentación, no componentes de producción.
 
@@ -194,17 +254,17 @@ El autor y quien revisa usan la checklist final de esta guía. Una desviación d
 
 ## Colors
 
-Usar los nombres semánticos del tema mediante `@/theme`. Las ilustraciones y el mapa pueden tener sus propios colores; esos colores no crean variantes de botones ni una segunda paleta para formularios.
+Usar los tokens semánticos dinámicos de `@/theme` (`useColors()`, `useThemedStyles()`, `useThemePreference()`, `usePortalStyles()`, `useRewardStyles()`). La app sigue por defecto la apariencia clara u oscura del sistema (`userInterfaceStyle: "automatic"`) y permite elegir manualmente `Automático`, `Claro` u `Oscuro` desde `Configuraciones`, o alternar entre `Claro` y `Oscuro` desde el botón superior derecho de `Inicio` (`sol` en modo claro, `luna` en modo oscuro) (decisión explícita del usuario). Las ilustraciones adaptan sus superficies y trazos en modo oscuro; el marco de códigos QR conserva `qrBackground` (`#FFFFFF`) para garantizar lectura óptica confiable sin deslumbramiento en el resto de la pantalla.
 
-| Familia            | Tokens                                                | Uso                                                                                         |
-| ------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Verde bosque       | `primary`, `primaryDark`, `borderPrimary`             | Acción principal, selección, enlaces y contornos de acciones secundarias.                   |
-| Verde suave        | `primarySoft`, `surfaceSoft`, `impactBackground`      | Resumen de puntos, avisos informativos, categorías y bloques de impacto.                    |
-| Verde de impacto   | `accent`, `impactValue`, `impactWeight`               | Detalles de ilustración y métricas ambientales existentes; no sustituye el verde de acción. |
-| Superficies claras | `background`, `surface`, `tabBarBackground`, `border` | Fondo de pantalla, tarjetas, navegación y separación de contenido.                          |
-| Tinta y gris       | `text`, `textSecondary`, `brandDark`                  | Títulos, contenido principal, ayudas y metadatos.                                           |
-| Estado crítico     | `danger`, `dangerBackground`                          | Errores y acciones destructivas con texto que explique su efecto.                           |
-| Apoyos existentes  | `avatarBackground`, `navInactive`, `overlay`         | Avatar sin foto, navegación inactiva y capa modal translúcida.                             |
+| Familia                  | Tokens                                                                                                          | Uso                                                                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Verde bosque y acción    | `primary`, `primaryAction`, `primaryDark`, `borderPrimary`                                                      | `primary` para enlaces, pestañas, íconos y contornos; `primaryAction` para botones sólidos con `textOnPrimary`.                 |
+| Verde suave              | `primarySoft`, `surfaceSoft`, `impactBackground`, `skeletonHighlight`, `successIconBackground`, `successBorder` | Resumen de puntos, avisos informativos, categorías, estados de carga y bloques de impacto.                                      |
+| Verde de impacto         | `accent`, `impactValue`, `impactWeight`                                                                         | Detalles de ilustración y métricas ambientales existentes; no sustituye el verde de acción.                                     |
+| Superficies              | `background`, `surface`, `tabBarBackground`, `border`, `cardBorderSubtle`, `qrBackground`                       | Base de pantalla, tarjetas elevadas en modo oscuro (`surface` > `background`), navegación, separadores y zona silenciosa de QR. |
+| Tinta y contraste        | `text`, `textSecondary`, `brandDark`, `textOnPrimary`                                                           | Títulos, contenido principal, ayudas y encabezados adaptados al esquema activo.                                                 |
+| Estado crítico y alertas | `danger`, `dangerAction`, `dangerBackground`, `warning*`, `info*`                                               | Errores, acciones destructivas y banners de estado con contraste AA mínimo 4.5:1 en claro y oscuro.                             |
+| Apoyos existentes        | `avatarBackground`, `navInactive`, `borderControl`, `overlay`                                                   | Avatar sin foto, navegación inactiva, bordes de controles y capa modal translúcida.                                             |
 
 **The Color con significado Rule.** El verde identifica acciones y selección; el rojo identifica problemas o consecuencias destructivas. Un estado siempre lleva texto o icono comprensible además del color.
 
@@ -233,14 +293,14 @@ Mantener mayúsculas y minúsculas naturales: “Puntos verdes”, “Ver detall
 
 La composición parte del móvil y se amplía con contenedores centrados. No estirar formularios o tarjetas a todo el ancho de un monitor.
 
-| Superficie               | Implementación de referencia                                                                                                       |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Inicio                   | Contenido centrado, ancho máximo (720), margen interior `spacing.page` y separación `spacing.block`.                               |
-| Vista ciudadana interior | `CitizenPage`: ancho máximo (960), margen interior `spacing.page`, separación `spacing.block` y espacio inferior `spacing.bottom`. |
-| Formulario de portal     | `PortalPage`: ancho máximo (960), margen y separación `spacing.section`.                                                           |
-| Empresa                  | `CompanyPage` sobre `PortalPage`: panel "Mi empresa" con menú de filas y una pantalla por sección, ancho máximo (960).           |
+| Superficie               | Implementación de referencia                                                                                                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inicio                   | Contenido centrado, ancho máximo (720), margen interior `spacing.page` y separación `spacing.block`.                                                                                                |
+| Vista ciudadana interior | `CitizenPage`: ancho máximo (960), margen interior `spacing.page`, separación `spacing.block` y espacio inferior `spacing.bottom`.                                                                  |
+| Formulario de portal     | `PortalPage`: ancho máximo (960), margen y separación `spacing.section`.                                                                                                                            |
+| Empresa                  | `CompanyPage` sobre `PortalPage`: panel "Mi empresa" con menú de filas y una pantalla por sección, ancho máximo (960).                                                                              |
 | Admin                    | `AdminPage`: pestañas bajo el header, contenido sin panel envolvente con margen `spacing.block`, ancho máximo (960) y acción fija inferior opcional; en web, botón Actualizar junto a las pestañas. |
-| Catálogo de premios      | Lista vertical de tarjetas horizontales (foto a la izquierda, chevron a la derecha) en todos los anchos; mantener el límite del contenedor. |
+| Catálogo de premios      | Lista vertical de tarjetas horizontales (foto a la izquierda, chevron a la derecha) en todos los anchos; mantener el límite del contenedor.                                                         |
 
 La escala documentada es una selección de espacios repetidos, no una orden de redondear todos los valores existentes a múltiplos de ocho. Reutilizar las medidas del componente correspondiente.
 
@@ -254,17 +314,17 @@ Al volver a una sección, su scroll vertical comienza arriba mediante `useScroll
 
 La profundidad se obtiene con superficies blancas sobre el fondo claro, verdes suaves y sombras de baja opacidad. Evitar sombras negras duras, brillo y capas translúcidas que dificulten leer.
 
-| Tratamiento existente | Sombra                           | Referencia                |
-| --------------------- | -------------------------------- | ------------------------- |
-| Tarjeta ciudadana     | `0 4px 16px rgba(22,65,39,0.05)` | `rewardStyles.card`       |
-| Premio                | `0 3px 12px rgba(22,65,39,0.06)` | `RewardCard`              |
-| Resumen de puntos     | `0 7px 20px rgba(22,65,39,0.10)` | `PointsCard`              |
-| Acceso rápido         | `0 5px 16px rgba(22,65,39,0.08)` | `QuickAccess`             |
-| Mapa de Inicio        | `0 5px 18px rgba(31,75,48,0.07)` | Tarjeta de mapa en Inicio |
+| Tratamiento existente | Sombra                           | Referencia                        |
+| --------------------- | -------------------------------- | --------------------------------- |
+| Tarjeta ciudadana     | `0 4px 16px rgba(22,65,39,0.05)` | `rewardStyles.card`               |
+| Premio                | `0 3px 12px rgba(22,65,39,0.06)` | `RewardCard`                      |
+| Resumen de puntos     | `0 7px 20px rgba(22,65,39,0.10)` | `PointsCard`                      |
+| Buscador de Inicio    | `0 4px 16px rgba(22,65,39,0.05)` | Campo "¿Qué tenés para reciclar?" |
+| Mapa de Inicio        | `0 5px 18px rgba(31,75,48,0.07)` | Tarjeta de mapa en Inicio         |
 
 **The Profundidad discreta Rule.** Las tarjetas ciudadanas pueden usar su sombra compartida. Las filas y paneles de gestión se separan con borde y espacio; no acumular una sombra en cada nivel anidado.
 
-El degradado existente de `PointsCoin` pertenece a la ilustración de la moneda. No extenderlo a fondos de pantalla ni a los botones sólidos. Los cambios de estado usan respuesta visual breve, como la opacidad del botón; evitar animaciones decorativas continuas. Respetar movimiento reducido si se incorpora una animación nueva.
+El degradado existente de `PointsCoin` pertenece a la ilustración de la moneda. No extenderlo a fondos de pantalla ni a los botones sólidos. Las interacciones táctiles, modales y hojas (`SpringPressable`, `AnimatedSheetModal` y `motion`) usan resortes y transiciones en hilo de interfaz de UI/compositor (`transform` y `opacity`, con salidas más rápidas que las entradas); los indicadores de carga muestran pulso suave únicamente mientras esperan datos y no se agregan animaciones decorativas continuas. Todas las animaciones y transiciones de navegación respetan la preferencia del sistema para movimiento reducido (reduciendo escala/desplazamiento a fundido breve).
 
 ## Shapes
 
@@ -279,37 +339,43 @@ Las curvas transmiten cercanía y ayudan a distinguir controles, tarjetas y figu
 | Tarjeta de premio                     | `rounded.reward`                                     |
 | Botón principal y secundario          | `rounded.button`                                     |
 | Tarjeta ciudadana                     | `rounded.card`                                       |
-| Acceso rápido de Inicio               | `rounded.quick-access`                               |
+| Buscador de Inicio                    | `rounded.search-trigger`                             |
 | Resumen de puntos                     | `rounded.points`                                     |
 | Categoría                             | `rounded.chip`                                       |
-| Avatar y moneda                       | Círculo; no usar esta forma para todas las acciones. |
+| Botón de apariencia y moneda          | Círculo; no usar esta forma para todas las acciones. |
 
 Conservar el recorte de las fotos dentro de sus tarjetas y separar la imagen del texto. Hojas y planeta usan las formas de `EcoArtwork`; no sustituirlas por emojis o ilustraciones de otro estilo.
+
+**Decisión aprobada el 27/11/2026:** la introducción (`src/app/(auth)/onboarding.tsx`) usa fotografías conceptuales de escenas cotidianas (persona separando dispositivos en desuso, persona consultando el mapa frente a un punto verde verificado, persona canjeando un QR en un comercio aliado) en lugar de los íconos vectoriales anteriores. Las fotos deben evitar elementos que puedan confundirse con la función real de la app (por ejemplo, tachos de basura callejeros en vez de un punto verde verificado) y respetar tono, paleta e iluminación cálida y natural consistentes entre las tres escenas.
 
 ## Components
 
 ### Componentes que se deben reutilizar
 
-| Necesidad                                           | Fuente compartida                                                                                 |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Header de pantalla                                  | [ScreenHeader](src/components/ui/ScreenHeader.tsx)                                                |
-| Acción principal o secundaria                       | [ActionButton](src/components/ui/ActionButton.tsx)                                                |
-| Tarjeta informativa, fila de datos y código         | [InfoCard](src/components/ui/InfoCard.tsx)                                                        |
-| Selector numérico accesible (+ / -)                 | [NumericStepper](src/components/ui/NumericStepper.tsx)                                             |
-| Página, tarjetas, saldo, premio y aviso ciudadano   | [RewardsUI](src/components/rewards/RewardsUI.tsx)                                                 |
-| Página, campos, selector, menú, pestañas y estados de gestión | [PortalUI](src/components/portal/PortalUI.tsx), [CompanyPage](src/components/portal/CompanyPage.tsx) y [AdminPage](src/components/portal/AdminPage.tsx) |
-| Campo de autenticación (con `passwordToggle` para mostrar/ocultar la contraseña) | [AuthTextField](src/components/auth/AuthTextField.tsx)                                            |
-| Buscar puntos verdes                                | [SearchBar](src/components/discovery/SearchBar.tsx)                                               |
-| Hoja, moneda, planta, planeta y escenas de cuenta (`AuthArtwork`: candado, cuenta, recuperación) | [EcoArtwork](src/components/ui/EcoArtwork.tsx)                                                    |
-| Scroll al regresar                                  | [useScrollReset](src/hooks/useScrollReset.ts)                                                     |
+| Necesidad                                                                                        | Fuente compartida                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header de pantalla                                                                               | [ScreenHeader](src/components/ui/ScreenHeader.tsx)                                                                                                      |
+| Acción principal o secundaria                                                                    | [ActionButton](src/components/ui/ActionButton.tsx)                                                                                                      |
+| Interacción táctil fluida (resorte 60fps / ReducedMotion)                                        | [SpringPressable](src/components/ui/SpringPressable.tsx)                                                                                                |
+| Hoja inferior o diálogo modal animado                                                            | [AnimatedSheetModal](src/components/ui/AnimatedSheetModal.tsx)                                                                                          |
+| Diálogo modal de confirmación destructiva o crítica                                              | [ConfirmModal](src/components/ui/ConfirmModal.tsx)                                                                                                      |
+| Tarjeta informativa, fila de datos y código                                                      | [InfoCard](src/components/ui/InfoCard.tsx)                                                                                                              |
+| Selector numérico accesible (+ / -)                                                              | [NumericStepper](src/components/ui/NumericStepper.tsx)                                                                                                  |
+| Página, tarjetas, saldo, premio y aviso ciudadano                                                | [RewardsUI](src/components/rewards/RewardsUI.tsx)                                                                                                       |
+| Página, campos, selector, menú, pestañas y estados de gestión                                    | [PortalUI](src/components/portal/PortalUI.tsx), [CompanyPage](src/components/portal/CompanyPage.tsx) y [AdminPage](src/components/portal/AdminPage.tsx) |
+| Campo de autenticación (con `passwordToggle` para mostrar/ocultar la contraseña)                 | [AuthTextField](src/components/auth/AuthTextField.tsx)                                                                                                  |
+| Buscar puntos verdes y listar resultados                                                         | [SearchBar](src/components/discovery/SearchBar.tsx) y [PointRow](src/components/discovery/PointRow.tsx)                                                 |
+| Buscador de dispositivos en Inicio                                                               | [RecycleFinderModal](src/components/discovery/RecycleFinderModal.tsx)                                                                                   |
+| Hoja, moneda, planta, planeta y escenas de cuenta (`AuthArtwork`: candado, cuenta, recuperación) | [EcoArtwork](src/components/ui/EcoArtwork.tsx)                                                                                                          |
+| Scroll al regresar                                                                               | [useScrollReset](src/hooks/useScrollReset.ts)                                                                                                           |
 
 **The Reutilizar antes de crear Rule.** Revisar estos componentes antes de escribir una nueva versión local. Si falta una variante repetible, ampliar el componente compartido en lugar de copiarlo en cada pantalla.
 
 ### Header y navegación
 
-`ScreenHeader` tiene altura mínima (72), controles de volver y acción con ancho (44), y título de hasta dos líneas. El espacio derecho se conserva aunque no tenga acción, para mantener el título centrado. Inicio usa su hoja, nombre de marca y acceso al perfil.
+`ScreenHeader` tiene altura mínima (72), controles de volver y acción con ancho (44), y título de hasta dos líneas. El espacio derecho se conserva aunque no tenga acción, para mantener el título centrado. Inicio usa su hoja, nombre de marca y el botón circular de apariencia (sol en modo claro, luna en modo oscuro); el acceso a Perfil permanece en la barra de navegación inferior. La barra ciudadana, las hojas inferiores (`AnimatedSheetModal`, `PointFilterSheet`) y las vistas raíz respetan los márgenes seguros del dispositivo (`useSafeAreaInsets`) y todas las pilas de navegación adaptan sus transiciones cuando el sistema activa movimiento reducido (`useReducedMotion`).
 
-La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en ese orden. Sección activa en verde con icono lleno; inactiva con icono de contorno. “Mis entregas” se encuentra en Perfil; el acceso rápido de Inicio puede llevar allí. La sección del mapa se llama “Puntos verdes”. El mapa ocupa el bloque de Inicio que antes mostraba premios destacados. Las capturas antiguas con otra navegación no son referencia de estructura.
+La barra ciudadana contiene **Inicio · Puntos verdes · Premios · Perfil**, en ese orden. Sección activa en verde con icono lleno; inactiva con icono de contorno. “Mis entregas” se encuentra en Perfil. En Inicio, el bloque superior bajo `PointsCard` ofrece el buscador `"¿Qué tenés para reciclar?"` que abre el sheet modal con chips de categorías y puntos verdes más cercanos; `Mis puntos` permanece accesible desde `PointsCard`, `Premios` desde la barra inferior y `Preparar equipos` desde la tarjeta de impacto inferior. La sección del mapa se llama “Puntos verdes”. El mapa ocupa el bloque de Inicio que antes mostraba premios destacados. Las capturas antiguas con otra navegación no son referencia de estructura.
 
 **Decisión aprobada el 26/10/2026, pendiente de implementación:** agregar Marketplace junto a Premios: **Inicio · Puntos verdes · Premios · Marketplace · Perfil**. La sección se llama Marketplace y sus productos, “Dispositivos reacondicionados”. Empresa administra su catálogo; el detalle del punto verde muestra hasta cuatro productos y “Ver catálogo completo”; Marketplace reúne los productos de todas las empresas. Las tareas MK-01 a MK-08 están en Trello. Esta decisión no significa que las pantallas ya estén implementadas; al implementarlas, actualizar también la muestra de navegación de `.impeccable/design.json`.
 
@@ -317,17 +383,17 @@ Empresa navega desde el panel "Mi empresa": `OrganizationCard` con nombre y rol,
 
 ### Botones y campos
 
-`ActionButton` usa altura mínima (50), variante sólida o secundaria con borde. Elegir una acción principal por bloque de tarea. Durante el envío, mostrar carga y deshabilitar el control; la opacidad actual de pulsación, carga o deshabilitado es (0.7). No comunicar una acción destructiva sólo cambiando el color.
+`ActionButton` usa altura mínima (50), variante sólida, secundaria con borde o destructiva. Elegir una acción principal por bloque de tarea. Durante el envío, conserva la etiqueta visible junto al indicador de carga y deshabilita el control; la opacidad actual de pulsación, carga o deshabilitado es (0.7). No comunicar una acción destructiva sólo cambiando el color; las confirmaciones destructivas o críticas reutilizan `ConfirmModal` (en iOS, Android y Web) con verbos explícitos y opción de cancelar.
 
-Los campos tienen etiqueta persistente, borde suave y fondo blanco. El placeholder muestra un ejemplo o una pista y no reemplaza la etiqueta. Reutilizar la variante de autenticación o gestión según el contexto. Los campos compactos numéricos de gestión usan el ancho existente (96); no aplicar ese ancho a direcciones o nombres. Mostrar validación junto al campo y conservar el contenido cuando falla el envío. Para elegir entre pocas opciones fijas (estado de un punto, rol, modo de recepción) usar `PortalSelect`: etiqueta persistente y opciones desplegadas en línea; la variante compacta pone la etiqueta a la izquierda y fija el selector en (208). Un `PortalField` con `suffix` muestra la unidad dentro del mismo borde, por ejemplo "puntos por unidad".
+Los campos tienen etiqueta persistente, borde suave, fondo de superficie y tamaño de texto mínimo de entrada (16) para legibilidad y evitar zoom automático al enfocar en Safari iOS (`AuthTextField`, `PortalField`, `SearchBar` y `ScannerLookupView`). En web y navegadores móviles, los campos de texto suprimen el contorno azul de enfoque del navegador (`webInputReset` + `src/app/global.css`) y usan cursor de marca (`selectionColor`), manteniendo el contorno verde accesible `:focus-visible` sólo por teclado en botones, chips y enlaces. Configurar `keyboardType`, `textContentType`, `autoComplete` y encadenamiento `returnKeyType` según el dato solicitado, con desplazamiento seguro ante el teclado (`KeyboardAvoidingView`). El placeholder muestra un ejemplo o una pista y no reemplaza la etiqueta. Reutilizar la variante de autenticación o gestión según el contexto. Los campos compactos numéricos de gestión usan el ancho existente (96); no aplicar ese ancho a direcciones o nombres. Mostrar validación junto al campo y conservar el contenido cuando falla el envío. Para elegir entre pocas opciones fijas (estado de un punto, rol, modo de recepción) usar `PortalSelect`: etiqueta persistente y opciones desplegadas en línea; la variante compacta pone la etiqueta a la izquierda y fija el selector en (208). Un `PortalField` con `suffix` muestra la unidad dentro del mismo borde, por ejemplo "puntos por unidad". `SearchBar` usa radio (12) y variante `sheet` en modales, mientras que `PointRow` presenta cada punto verde como tarjeta (`surface`) o fila anidada (`surfaceSoft`) con icono de estado (44 × 44, radio 12), distancia tabular, etiquetas de estado/retiro y hasta 3 categorías aceptadas con indicador numérico del resto.
 
 ### Tarjetas, puntos y premios
 
 `InfoCard` provee la estructura unificada de tarjeta con icono circular, título, subtítulo, accesorio lateral (`CodePill` o badge de estado) y contenido expandible opcional (stepper, subtotales o divisores). Soporta variante estándar y destacada (`highlight`).
 
-`PointsCard` muestra “Tus puntos”, moneda ecológica y saldo global con protagonismo. El resumen general no se presenta como una cuenta distinta por empresa. Los puntos canjeables son el único saldo del ciudadano. No hay XP, niveles ni barras de progreso. El impacto se explica con orientación para entregar RAEE, sin métricas inventadas.
+`PointsCard` muestra “Tus puntos”, moneda ecológica y saldo global con protagonismo (con variante `compact` para Inicio y versión completa en `Mis puntos`). En Inicio, se prioriza el buscador `"¿Qué tenés para reciclar?"` junto al saldo compacto (en una fila de dos columnas desde 760 px), el punto verde más cercano (`PointRow` sobre la vista previa compacta de `PointsMap`) con acceso directo de ubicación y la fila informativa `"Preparar tus dispositivos"` hacia `/impact`. El resumen general no se presenta como una cuenta distinta por empresa. Los puntos canjeables son el único saldo del ciudadano. No hay XP, niveles ni barras de progreso. El impacto se explica con orientación para entregar RAEE, sin métricas inventadas.
 
-En el catálogo, un premio es una fila con foto, título, entidad, badge de costo (`PointsBadge`: “1 punto”, “100 puntos”) y chevron hacia el detalle. El detalle muestra foto grande, badge de costo con regalo, “Condiciones del beneficio”, “Ubicación” y la acción “Canjear por X puntos” fija abajo (`CitizenPage` con `footer`). El canje reservado usa `StatusBanner` pendiente, QR, `CopyableCode` y `DetailList`; el entregado, `StatusBanner` de éxito y “Ver mis canjes”. Los estados usan la paleta verde: no agregar azul para “Reservado”. El costo debe ser fácil de encontrar. Usar fotos pertinentes, con recorte consistente; si falta la imagen, usar el placeholder existente. Los chips cambian de fondo claro a verde profundo al seleccionarse; conservar el texto legible y comunicar la selección a tecnologías de asistencia.
+En `Premios`, la pantalla conserva `ScreenHeader`, un `RewardsBalance` compacto en una línea cuando hay sesión, selector segmentado pill (`Disponibles` / `Mis canjes`), `SearchBar` siempre visible arriba, chips de categoría con icono (`minHeight: 44`) y grilla de 2 columnas en anchos desde 720 px. Un premio es una tarjeta con foto, título, entidad, badge de costo (`PointsBadge`: “1 punto”, “100 puntos”), señal de disponibilidad frente al saldo actual o stock bajo cuando aplica, y chevron hacia el detalle. El detalle muestra foto grande, badge de costo con regalo, “Condiciones del beneficio”, “Ubicación” y la acción “Canjear por X puntos” fija abajo (`CitizenPage` con `footer`). El canje reservado usa `StatusBanner` pendiente, QR, `CopyableCode` y `DetailList`; el entregado, `StatusBanner` de éxito y “Ver mis canjes”. Los estados usan la paleta verde: no agregar azul para “Reservado”. El costo debe ser fácil de encontrar. Usar fotos pertinentes, con recorte consistente; si falta la imagen, usar el placeholder existente. Los chips cambian de fondo claro a verde profundo al seleccionarse; conservar el texto legible y comunicar la selección a tecnologías de asistencia.
 
 No mostrar datos ficticios como saldo, stock, canje o impacto real. Los ejemplos del catálogo deben conservar su aviso de muestra y no habilitar un canje real. Un dato que no cargó no se representa como cero.
 

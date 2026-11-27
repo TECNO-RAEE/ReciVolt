@@ -55,6 +55,28 @@ test('registro con confirmación de email mantiene resultado y usa trigger, sin 
   assert.equal(input.options.data.terms_accepted_at, '2026-11-01T12:00:00.000Z');
   assert.equal(input.options.data.terms_url, null);
 });
+test('registro pre-lanzamiento permite términos sin publicar con termsAcceptedAt y termsUrl en null', async () => {
+  let input;
+  const data = { user: { id: 'user-b' }, session: null };
+  const service = authService({
+    signUp: async (value) => {
+      input = value;
+      return { data, error: null };
+    },
+  });
+  assert.equal(
+    await service.register({
+      name: ' Luis ',
+      email: 'luis@example.test',
+      password: 'password',
+      termsAcceptedAt: null,
+      termsUrl: null,
+    }),
+    data
+  );
+  assert.equal(input.options.data.terms_accepted_at, null);
+  assert.equal(input.options.data.terms_url, null);
+});
 test('login no depende de poder insertar perfiles ni cierra sesión exitosamente creada', async () => {
   let input;
   const data = { user: { id: 'user-a' }, session: { access_token: 'local-token' } };

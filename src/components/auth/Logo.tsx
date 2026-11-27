@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 
 type Props = {
@@ -10,6 +10,8 @@ type Props = {
 };
 
 export function Logo({ variant = 'dark', compact = false }: Readonly<Props>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const light = variant === 'light';
 
   return (
@@ -28,30 +30,31 @@ export function Logo({ variant = 'dark', compact = false }: Readonly<Props>) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
 
-  text: {
-    fontSize: 25,
-    fontWeight: '800',
-    color: colors.brandDark,
-  },
+    text: {
+      fontFamily: fonts.bold,
+      fontSize: 25,
+      color: colors.brandDark,
+    },
 
-  textLight: {
-    color: colors.textOnPrimary,
-  },
+    textLight: {
+      color: colors.textOnPrimary,
+    },
 
-  green: {
-    color: colors.accent,
-  },
-  compact: {
-    fontFamily: fonts.bold,
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-});
+    green: {
+      color: colors.accent,
+    },
+    compact: {
+      fontFamily: fonts.bold,
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+  });

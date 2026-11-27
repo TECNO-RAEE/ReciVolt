@@ -1,40 +1,61 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { useAuth } from '@/providers/AuthProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { brand } from '@/config/brand';
 
 const slides = [
   {
     title: 'Dale una segunda vida a tu tecnología',
     description:
-      'Celulares, notebooks y otros aparatos en desuso pueden convertirse en nuevos recursos.',
+      'Celulares, notebooks, cables y otros aparatos en desuso pueden convertirse en nuevos recursos en vez de contaminar.',
+    image: require('../../../assets/images/onboarding/step-1-devices.jpg'),
+    imageAlt: 'Una persona junta un celular y una notebook en desuso para reciclarlos',
   },
   {
-    title: 'Encontrá puntos verdes cerca tuyo',
+    title: 'Encontrá el punto verde más cercano',
     description:
-      'Buscá por dispositivo y consultá qué recibe cada punto, su dirección y sus horarios.',
+      'Buscá por el dispositivo que querés entregar y mirá qué categorías acepta cada punto, su dirección y horarios. Si compartís tu ubicación, también vas a ver qué tan lejos te queda.',
+    image: require('../../../assets/images/onboarding/step-2-map.jpg'),
+    imageAlt: 'Una persona mirando el mapa en su celular frente a un punto verde verificado',
   },
   {
-    title: 'Reciclá, generá impacto y obtené beneficios',
-    description: 'Creá tu cuenta para registrar tus entregas y acompañar cada paso de tu impacto.',
+    title: 'Sumá puntos y canjealos por premios',
+    description:
+      'Creá tu cuenta para registrar tus entregas, llevar tu saldo global y canjear premios de los comercios aliados.',
+    image: require('../../../assets/images/onboarding/step-3-rewards.jpg'),
+    imageAlt: 'Una persona canjeando un código QR por un premio en un comercio aliado',
   },
 ] as const;
 export default function OnboardingScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const reducedMotion = useReducedMotion();
   const { replay } = useLocalSearchParams<{ replay?: string }>();
   const { onboardingComplete, continueAsGuest } = useAuth();
   const [index, setIndex] = useState(0);
-  const [saving, setSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'guest' | 'register' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  if (onboardingComplete && replay !== '1') return <Redirect href="/" />;
+  const [leavingToAuth, setLeavingToAuth] = useState(false);
+  const saving = pendingAction !== null;
+
+  if (onboardingComplete && replay !== '1' && !leavingToAuth) {
+    return <Redirect href="/" />;
+  }
+
   const slide = slides[index];
+  const canGoBack = router.canGoBack();
+
   async function finish() {
     if (saving) return;
-    setSaving(true);
+    setPendingAction('guest');
     setError(null);
     try {
       await continueAsGuest();
@@ -42,73 +63,77 @@ export default function OnboardingScreen() {
     } catch {
       setError('No pudimos guardar tu preferencia. Intentá nuevamente.');
     } finally {
-      setSaving(false);
+      setPendingAction(null);
     }
   }
+
+  async function handleCreateAccount() {
+    if (saving) return;
+    setPendingAction('register');
+    setError(null);
+    setLeavingToAuth(true);
+    try {
+      await continueAsGuest();
+      router.push('/register');
+    } catch {
+      setLeavingToAuth(false);
+      setError('No pudimos guardar tu preferencia. Intentá nuevamente.');
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <ScreenHeader
         title={`Conocé ${brand.name}`}
         back="/"
+        hideBack={index === 0 && !canGoBack}
         onBack={() => {
           if (saving) return;
           if (index > 0) setIndex(index - 1);
-          else if (router.canGoBack()) router.back();
-          else void finish();
+          else if (canGoBack) router.back();
         }}
         action={
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel="Saltar introducción"
             onPress={() => void finish()}
             disabled={saving}
+            pressScale={motion.scale.button}
             style={styles.skip}
           >
             <Text style={styles.link}>Saltar</Text>
-          </Pressable>
+          </SpringPressable>
         }
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.steps} accessibilityLabel="Pasos de la introducción">
           {slides.map((item, step) => (
-            <Pressable
+            <SpringPressable
               key={item.title}
               accessibilityRole="button"
               accessibilityLabel={`Ir al paso ${step + 1} de ${slides.length}`}
               accessibilityState={{ selected: step === index, disabled: saving }}
               disabled={saving}
               onPress={() => setIndex(step)}
+              pressScale={motion.scale.chip}
               style={styles.stepButton}
             >
               <View style={[styles.stepLine, step <= index && styles.stepComplete]} />
-            </Pressable>
+            </SpringPressable>
           ))}
         </View>
         <View style={styles.slide}>
-          <View
-            style={styles.illustration}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-            aria-hidden
-          >
-            {index === 0 ? (
-              <>
-                <Ionicons name="laptop-outline" size={104} color={colors.primary} />
-                <Ionicons name="phone-portrait-outline" size={48} color={colors.primary} />
-                <Ionicons name="arrow-forward-outline" size={24} color={colors.brandDark} />
-                <Ionicons name="leaf-outline" size={48} color={colors.primary} />
-              </>
-            ) : index === 1 ? (
-              <>
-                <Ionicons name="map-outline" size={120} color={colors.primary} />
-                <Ionicons name="location-outline" size={72} color={colors.primary} />
-              </>
-            ) : (
-              <>
-                <Ionicons name="leaf-outline" size={112} color={colors.primary} />
-                <Ionicons name="checkmark-circle-outline" size={64} color={colors.primary} />
-              </>
-            )}
+          <View style={styles.illustration}>
+            <Image
+              source={slide.image}
+              style={styles.illustrationImage}
+              contentFit="cover"
+              transition={reducedMotion ? 0 : 150}
+              accessible
+              accessibilityLabel={slide.imageAlt}
+            />
           </View>
           <View style={styles.copy} accessibilityLiveRegion="polite">
             <Text accessibilityRole="header" style={styles.title}>
@@ -123,15 +148,16 @@ export default function OnboardingScreen() {
               {index + 1} de {slides.length}
             </Text>
             {index > 0 && (
-              <Pressable
+              <SpringPressable
                 accessibilityRole="button"
                 disabled={saving}
                 onPress={() => setIndex(index - 1)}
+                pressScale={motion.scale.button}
                 style={styles.back}
               >
                 <Ionicons name="arrow-back" size={18} color={colors.primary} />
                 <Text style={styles.link}>Anterior</Text>
-              </Pressable>
+              </SpringPressable>
             )}
           </View>
           {error && (
@@ -139,61 +165,95 @@ export default function OnboardingScreen() {
               {error}
             </Text>
           )}
-          <ActionButton
-            title={index === 2 ? 'Comenzar' : 'Siguiente'}
-            loading={saving}
-            onPress={() => {
-              if (index === 2) void finish();
-              else setIndex(index + 1);
-            }}
-          />
-          <Pressable
+          {index === 2 ? (
+            <>
+              <ActionButton
+                title="Crear cuenta"
+                loading={pendingAction === 'register'}
+                disabled={saving}
+                onPress={() => void handleCreateAccount()}
+              />
+              <ActionButton
+                title="Explorar sin cuenta"
+                secondary
+                loading={pendingAction === 'guest'}
+                disabled={saving}
+                onPress={() => void finish()}
+              />
+            </>
+          ) : (
+            <ActionButton title="Siguiente" disabled={saving} onPress={() => setIndex(index + 1)} />
+          )}
+          <SpringPressable
             accessibilityRole="button"
             style={styles.skip}
             disabled={saving}
+            pressScale={motion.scale.button}
             onPress={() => router.push('/login')}
           >
             <Text style={styles.link}>Ya tengo cuenta · Iniciar sesión</Text>
-          </Pressable>
+          </SpringPressable>
         </View>
       </ScrollView>
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', padding: 24 },
-  skip: { paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center' },
-  link: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 14 },
-  steps: { flexDirection: 'row', gap: 8 },
-  stepButton: { flex: 1, minHeight: 44, justifyContent: 'center' },
-  stepLine: { height: 3, borderRadius: 2, backgroundColor: colors.border },
-  stepComplete: { backgroundColor: colors.primary },
-  slide: { flex: 1, justifyContent: 'center', gap: 24, paddingVertical: 24 },
-  illustration: {
-    minHeight: 200,
-    paddingVertical: 32,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-  },
-  copy: { gap: 12, minHeight: 164 },
-  title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 36, color: colors.text },
-  description: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.brandDark },
-  footer: { gap: 12 },
-  footerHeading: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    minHeight: 44,
-  },
-  back: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
-  progress: { fontFamily: fonts.regular, fontSize: 14, color: colors.brandDark },
-  error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', padding: 24 },
+    skip: {
+      minHeight: 44,
+      minWidth: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    link: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 14 },
+    steps: { flexDirection: 'row', gap: 8 },
+    stepButton: { flex: 1, minHeight: 44, justifyContent: 'center' },
+    stepLine: { height: 3, borderRadius: 2, backgroundColor: colors.border },
+    stepComplete: { backgroundColor: colors.primaryAction },
+    slide: { flex: 1, justifyContent: 'center', gap: 24, paddingVertical: 24 },
+    illustration: {
+      width: '100%',
+      maxWidth: 345,
+      alignSelf: 'center',
+      aspectRatio: 3 / 2,
+      maxHeight: 230,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+    },
+    illustrationImage: { width: '100%', height: '100%' },
+    copy: { gap: 12, minHeight: 164 },
+    title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 36, color: colors.text },
+    description: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.brandDark,
+    },
+    footer: { gap: 12 },
+    footerHeading: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      minHeight: 44,
+    },
+    back: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      minHeight: 44,
+      minWidth: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 4,
+    },
+    progress: { fontFamily: fonts.regular, fontSize: 14, color: colors.brandDark },
+    error: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.danger },
+  });

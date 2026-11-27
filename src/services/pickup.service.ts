@@ -86,6 +86,18 @@ export async function getPickupHistory(
   return (data ?? []).map((row) => mapPickup(row as Row));
 }
 
+export async function getPickupByCode(companyId: string, code: string): Promise<Pickup | null> {
+  const normalized = code.trim().toUpperCase();
+  const { data, error } = await supabase
+    .from('pickups')
+    .select('*, pickup_items(*)')
+    .eq('company_id', companyId)
+    .eq('verification_token', normalized)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapPickup(data as Row) : null;
+}
+
 export async function getActivePickupCount(companyId: string): Promise<number> {
   const { count, error } = await supabase
     .from('pickups')

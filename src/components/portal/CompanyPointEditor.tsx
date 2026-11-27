@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
 import {
   PortalChoice,
@@ -9,11 +9,11 @@ import {
   PortalFeedback,
   PortalLink,
   PortalSelect,
-  portalFieldStyle,
-  portalStyles as s,
+  usePortalFieldStyle,
+  usePortalStyles,
 } from './PortalUI';
 import { usePortalAction } from '@/hooks/usePortalData';
-import type { CompanyPortalData, ManagedPoint, PointInput } from '@/models/Portal';
+import type { CompanyPortalData, ManagedPoint } from '@/models/Portal';
 import {
   formatTimeInput,
   groupScheduleText,
@@ -25,25 +25,41 @@ import {
   type ScheduleRange,
 } from '@/models/PointSchedule';
 import { getDeviceCategoryGroupKey, type DeviceIntakeMode } from '@/models/DeviceCategory';
-import { portalCommand, saveGreenPointDevicePolicy } from '@/services/portal.service';
+import { useAuth } from '@/providers/AuthProvider';
+import { savePoint as defaultSavePoint, type PointSaveInput } from '@/services/portal.service';
 import { AddressField } from './AddressField';
 import { LocationPicker } from './LocationPicker';
 import { joinPointAddress, splitPointAddress } from '@/models/PointAddress';
-import { colors } from '@/theme';
+import { useColors, useThemedStyles, type ThemeColors } from '@/theme';
+
+const supportedTimeZones: { value: string; label: string }[] = [
+  { value: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires (GMT-3)' },
+  { value: 'America/Argentina/Cordoba', label: 'Córdoba (GMT-3)' },
+  { value: 'America/Argentina/Mendoza', label: 'Mendoza (GMT-3)' },
+];
 
 export function CompanyPointEditor({
   data,
   point,
   onSaved,
   onCancel,
-  savePoint = (input) => portalCommand('save_point', input),
+  cancelLabel,
+  isAdmin: isAdminProp,
+  savePoint = defaultSavePoint,
 }: Readonly<{
   data: CompanyPortalData;
   point: ManagedPoint | null;
   onSaved: () => Promise<void>;
   onCancel?: () => void;
-  savePoint?: (input: PointInput) => Promise<unknown>;
+  cancelLabel?: string;
+  isAdmin?: boolean;
+  savePoint?: (input: PointSaveInput) => Promise<unknown>;
 }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const styles = useThemedStyles(makeStyles);
+  const { role } = useAuth();
+  const isAdmin = isAdminProp ?? role === 'platform_admin';
   const initialAddress = splitPointAddress(point?.address ?? '');
   const [name, setName] = useState(point?.name ?? ''),
     [address, setAddress] = useState(initialAddress.address);
@@ -52,6 +68,12 @@ export function CompanyPointEditor({
   const [advanced, setAdvanced] = useState(false);
   const [more, setMore] = useState(false);
   const [editingAddress, setEditingAddress] = useState(!point?.address);
+  const [addressSnapshot, setAddressSnapshot] = useState<{
+    address: string;
+    crossStreets: string;
+    latitude: string;
+    longitude: string;
+  } | null>(null);
   const [latitude, setLatitude] = useState(point ? String(point.latitude) : ''),
     [longitude, setLongitude] = useState(point ? String(point.longitude) : '');
   const [phone, setPhone] = useState(point?.phone ?? data.details?.phone ?? ''),
@@ -66,6 +88,18 @@ export function CompanyPointEditor({
       Object.fromEntries((point?.categories ?? []).map((id) => [id, 'onsite' as const]))
   );
   const [intakeConfirmed, setIntakeConfirmed] = useState(point?.intakeConfirmed ?? false);
+  const timeZoneOptions = useMemo(() => {
+    const custom = point?.timeZone;
+    if (custom && !supportedTimeZones.some((option) => option.value === custom)) {
+      return [{ value: custom, label: custom }, ...supportedTimeZones];
+    }
+    return supportedTimeZones;
+  }, [point?.timeZone]);
+  const hasPickupPolicy = useMemo(
+    () => data.categories.some((category) => intakePolicies[category.id] === 'pickup'),
+    [data.categories, intakePolicies]
+  );
+  const effectivePickupEnabled = pickupEnabled || hasPickupPolicy;
   const intakeGroups = [
     { key: 'informatica', title: 'Informática y comunicación' },
     { key: 'electrodomesticos', title: 'Electrodomésticos' },
@@ -83,11 +117,15 @@ export function CompanyPointEditor({
     }))
     .filter((group) => group.categories.length > 0);
   const setIntakeMode = (categoryId: string, mode: DeviceIntakeMode | '') => {
-    setIntakePolicies((current) => {
-      const { [categoryId]: _previous, ...rest } = current;
-      return mode ? { ...rest, [categoryId]: mode } : rest;
-    });
-    if (mode === 'pickup') setPickupEnabled(true);
+    const wasPickup = intakePolicies[categoryId] === 'pickup';
+    const { [categoryId]: _previous, ...rest } = intakePolicies;
+    const nextPolicies = mode ? { ...rest, [categoryId]: mode } : rest;
+    setIntakePolicies(nextPolicies);
+    if (mode === 'pickup') {
+      setPickupEnabled(true);
+    } else if (wasPickup && !Object.values(nextPolicies).includes('pickup')) {
+      setPickupEnabled(false);
+    }
   };
   const [days, setDays] = useState(scheduleText(point?.schedules ?? []));
   const [ranges, setRanges] = useState(groupScheduleText(days));
@@ -113,6 +151,7 @@ export function CompanyPointEditor({
         labelStyle={s.label}
         value={name}
         onChangeText={setName}
+        maxLength={150}
         editable={!action.busy}
       />
       <Text style={s.label}>Ubicación</Text>
@@ -133,11 +172,7 @@ export function CompanyPointEditor({
         <>
           <AddressField
             value={address}
-            onChange={(value) => {
-              setAddress(value);
-              setLatitude('');
-              setLongitude('');
-            }}
+            onChange={setAddress}
             onSelect={(value) => {
               setAddress(value.address);
               setLatitude(String(value.latitude));
@@ -155,6 +190,20 @@ export function CompanyPointEditor({
           <Text style={s.hint}>
             La dirección y las entrecalles serán visibles para los usuarios.
           </Text>
+          {addressSnapshot && (
+            <PortalLink
+              title="Mantener dirección actual"
+              disabled={action.busy}
+              onPress={() => {
+                setAddress(addressSnapshot.address);
+                setCrossStreets(addressSnapshot.crossStreets);
+                setLatitude(addressSnapshot.latitude);
+                setLongitude(addressSnapshot.longitude);
+                setAddressSnapshot(null);
+                setEditingAddress(false);
+              }}
+            />
+          )}
         </>
       ) : (
         <View
@@ -175,7 +224,10 @@ export function CompanyPointEditor({
         <PortalLink
           title="Cambiar dirección"
           disabled={action.busy}
-          onPress={() => setEditingAddress(true)}
+          onPress={() => {
+            setAddressSnapshot({ address, crossStreets, latitude, longitude });
+            setEditingAddress(true);
+          }}
         />
       )}
       <Text style={s.label}>Horarios de atención</Text>
@@ -227,7 +279,7 @@ export function CompanyPointEditor({
       {intakeGroups.map((group) => (
         <View key={group.key} style={{ gap: 8 }}>
           <Text style={s.hint}>{group.title}</Text>
-          <View style={intakeCard}>
+          <View style={styles.intakeCard}>
             {group.categories.map((c, i) => (
               <View
                 key={c.id}
@@ -285,6 +337,8 @@ export function CompanyPointEditor({
             label="Teléfono de contacto"
             value={phone}
             onChangeText={setPhone}
+            keyboardType="phone-pad"
+            autoComplete="tel"
             editable={!action.busy}
           />
           <PortalField
@@ -300,19 +354,25 @@ export function CompanyPointEditor({
             disabled={action.busy}
           />
           {advanced && (
-            <PortalField
+            <PortalSelect
               label="Zona horaria"
               value={timeZone}
-              onChangeText={setTimeZone}
-              editable={!action.busy}
+              options={timeZoneOptions}
+              onChange={setTimeZone}
+              disabled={action.busy}
             />
           )}
           <PortalToggle
             label="Ofrece retiros"
-            value={pickupEnabled}
+            value={effectivePickupEnabled}
             onChange={setPickupEnabled}
-            disabled={action.busy}
+            disabled={action.busy || hasPickupPolicy}
           />
+          {hasPickupPolicy && (
+            <Text style={s.hint}>
+              Activado automáticamente porque hay dispositivos configurados para retiro.
+            </Text>
+          )}
         </>
       )}
       <PortalSelect
@@ -327,14 +387,20 @@ export function CompanyPointEditor({
         disabled={action.busy}
       />
       <Text style={s.hint}>
-        Los puntos publicados aparecen en Puntos verdes; los borradores sólo los ve tu equipo.
+        {isAdmin
+          ? 'Los puntos publicados aparecen en Puntos verdes; los borradores no se publican para ciudadanos.'
+          : 'Los puntos publicados aparecen en Puntos verdes; los borradores sólo los ve tu equipo.'}
       </Text>
-      <PortalFeedback error={action.error} />
+      <PortalFeedback error={action.error} notice={action.notice} />
       <ActionButton
         title="Guardar cambios"
         loading={action.busy}
         onPress={() =>
           void action.run(async () => {
+            if (!name.trim()) throw new Error('Ingresá el nombre del punto verde.');
+            if (name.trim().length > 150)
+              throw new Error('El nombre del punto verde puede tener hasta 150 caracteres.');
+            if (!address.trim()) throw new Error('Ingresá la dirección del punto verde.');
             const lat = Number(latitude.replace(',', '.')),
               lon = Number(longitude.replace(',', '.'));
             if (
@@ -348,11 +414,28 @@ export function CompanyPointEditor({
               lon > 180
             )
               throw new Error('Ingresá coordenadas válidas para ubicar el punto en el mapa.');
+            const hasAcceptedDevice = data.categories.some(
+              (category) =>
+                intakePolicies[category.id] === 'onsite' || intakePolicies[category.id] === 'pickup'
+            );
+            if (!hasAcceptedDevice)
+              throw new Error(
+                'Asigná al menos un dispositivo para recibir en el lugar o por retiro.'
+              );
             if (intakeConfirmed && data.categories.some((category) => !intakePolicies[category.id]))
               throw new Error(
                 'Asigná un estado a cada dispositivo antes de confirmar la política.'
               );
-            const saved = await savePoint({
+            const schedules = parseSchedules(ranges ? groupedDays(ranges) : days);
+            if (active && schedules.length === 0)
+              throw new Error('Agregá horarios antes de publicar.');
+            const entries = data.categories
+              .filter((category) => Boolean(intakePolicies[category.id]))
+              .map((category) => ({
+                deviceCategoryId: category.id,
+                mode: intakePolicies[category.id],
+              }));
+            await savePoint({
               id: point?.id,
               companyId: data.company.id,
               name,
@@ -363,30 +446,24 @@ export function CompanyPointEditor({
               description,
               timeZone,
               active,
-              pickupEnabled,
+              pickupEnabled: effectivePickupEnabled,
               categories: data.categories
                 .filter((category) => intakePolicies[category.id] === 'onsite')
                 .map((category) => category.id),
-              schedules: parseSchedules(ranges ? groupedDays(ranges) : days),
+              intakeConfirmed,
+              intakePolicies: entries,
+              schedules,
             });
-            const savedId =
-              point?.id ??
-              (saved && typeof saved === 'object' && 'id' in saved
-                ? String((saved as { id: unknown }).id)
-                : '');
-            if (!savedId)
-              throw new Error('No pudimos identificar el punto para guardar su política.');
-            const entries = Object.entries(intakePolicies).map(([deviceCategoryId, mode]) => ({
-              deviceCategoryId,
-              mode,
-            }));
-            await saveGreenPointDevicePolicy(savedId, intakeConfirmed, entries);
             await onSaved();
           })
         }
       />
       {onCancel && (
-        <PortalLink title="Cancelar edición" disabled={action.busy} onPress={onCancel} />
+        <PortalLink
+          title={cancelLabel ?? 'Cancelar edición'}
+          disabled={action.busy}
+          onPress={onCancel}
+        />
       )}
     </View>
   );
@@ -400,6 +477,9 @@ function ScheduleGrid({
   onChange: (ranges: ScheduleRange[]) => void;
   disabled: boolean;
 }>) {
+  const colors = useColors();
+  const s = usePortalStyles();
+  const portalFieldStyle = usePortalFieldStyle();
   const set = (i: number, key: keyof ScheduleRange, value: string) =>
     onChange(ranges.map((r, j) => (i === j ? { ...r, [key]: formatTimeInput(value) } : r)));
   const input = (i: number, key: keyof ScheduleRange, label: string) => (
@@ -408,7 +488,8 @@ function ScheduleGrid({
       value={ranges[i][key]}
       onChangeText={(value) => set(i, key, value)}
       placeholder="--:--"
-      placeholderTextColor={s.hint.color}
+      placeholderTextColor={colors.textSecondary}
+      selectionColor={colors.primary}
       keyboardType="number-pad"
       maxLength={5}
       editable={!disabled}
@@ -434,9 +515,12 @@ const intakeOptions: { value: DeviceIntakeMode | ''; label: string }[] = [
   { value: 'pickup', label: 'Requiere coordinar retiro' },
   { value: 'not_accepted', label: 'No se recibe' },
 ];
-const intakeCard = {
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: 12,
-  backgroundColor: colors.surface,
-} as const;
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    intakeCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+    },
+  });

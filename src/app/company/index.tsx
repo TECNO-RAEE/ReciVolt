@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { brand } from '@/config/brand';
 import {
   OrganizationCard,
@@ -13,32 +14,34 @@ import {
 import { activeMemberships } from '@/models/Access';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCompanyPortal } from '@/providers/CompanyPortalProvider';
-import { colors } from '@/theme';
+import { motion, useColors } from '@/theme';
 
 export default function CompanyScreen() {
+  const colors = useColors();
   const { company, access, selectCompany } = useAuth();
-  const { data, loading, error, refresh, owner } = useCompanyPortal();
+  const { data, loading, refreshing, error, refresh, owner } = useCompanyPortal();
   const memberships = activeMemberships(access);
   return (
     <PortalPage
       title="Mi empresa"
       back="/"
+      refreshing={refreshing}
       onRefresh={() => void refresh()}
       action={
-        <Pressable
+        <SpringPressable
           accessibilityRole="button"
           accessibilityLabel="Configuraciones"
+          pressScale={motion.scale.icon}
           onPress={() => router.push('/settings')}
-          style={({ pressed }) => ({
+          style={{
             minWidth: 44,
             minHeight: 44,
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: pressed ? 0.6 : 1,
-          })}
+          }}
         >
           <Ionicons name="settings-outline" size={24} color={colors.text} />
-        </Pressable>
+        </SpringPressable>
       }
     >
       <OrganizationCard
@@ -53,6 +56,7 @@ export default function CompanyScreen() {
           onChange={selectCompany}
         />
       )}
+      <PortalLoading loading={loading && !data} error={error} retry={() => void refresh()} />
       <ActionButton
         title="Recibir entrega o validar premio"
         icon={<Ionicons name="scan-outline" size={22} color={colors.textOnPrimary} />}
@@ -83,7 +87,7 @@ export default function CompanyScreen() {
               onPress={() => router.push('/company/rewards')}
             />
             <PortalMenuItem
-              title="Datos"
+              title="Datos de la empresa"
               icon="business-outline"
               onPress={() => router.push('/company/profile')}
             />
@@ -108,7 +112,6 @@ export default function CompanyScreen() {
           </>
         )}
       </View>
-      <PortalLoading loading={loading && !data} error={error} retry={() => void refresh()} />
     </PortalPage>
   );
 }

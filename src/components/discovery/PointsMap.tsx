@@ -4,7 +4,7 @@ import { Platform, View } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { PointsMapProps } from './PointsMap.types';
 import { OsmPointsMap } from './OsmPointsMap';
-import { colors } from '@/theme';
+import { useColorSchemeName, useColors } from '@/theme';
 
 // Sin clave de Google Maps, MapView aborta la app en Android (fuera de Expo Go).
 const googleMapsAvailable =
@@ -20,10 +20,13 @@ function NativePointsMap({
   points,
   location,
   preview = false,
+  previewHeight = 230,
   fill = false,
   selectedId = null,
   onSelect,
 }: PointsMapProps) {
+  const colors = useColors();
+  const scheme = useColorSchemeName();
   const map = useRef<MapView>(null);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -39,13 +42,19 @@ function NativePointsMap({
     <View
       style={
         fill
-          ? { flex: 1, overflow: 'hidden' }
-          : { height: preview ? 230 : 380, overflow: 'hidden', borderRadius: 8 }
+          ? { flex: 1, overflow: 'hidden', backgroundColor: colors.surfaceSoft }
+          : {
+              height: preview ? previewHeight : 380,
+              overflow: 'hidden',
+              borderRadius: 12,
+              backgroundColor: colors.surfaceSoft,
+            }
       }
     >
       <MapView
         ref={map}
         style={{ flex: 1 }}
+        userInterfaceStyle={scheme}
         onMapReady={() => setReady(true)}
         initialRegion={{
           latitude: location?.latitude ?? -34.6037,

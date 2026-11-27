@@ -2,50 +2,70 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { PickupTimeline } from '@/components/pickup/PickupTimeline';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { InfoCard } from '@/components/ui/InfoCard';
+import { ScanSuccessModal } from '@/components/ui/ScanSuccessModal';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
 import { useScrollReset } from '@/hooks/useScrollReset';
+import { useStatusPolling } from '@/hooks/useStatusPolling';
 import { getCategoryVisual } from '@/models/DeviceCategory';
-import {
-  formatPickupDate,
-  getPickupTimeline,
-  pickupQr,
-  pickupStatusNames,
-} from '@/models/Pickup';
+import { formatPickupDate, getPickupTimeline, pickupQr, pickupStatusNames } from '@/models/Pickup';
+import { humanizePortalError } from '@/models/PortalError';
+import { pointsLabel } from '@/models/Reward';
 import { useAuth } from '@/providers/AuthProvider';
+import { useWallet } from '@/providers/WalletProvider';
 import { getPickupPhotoUrl, pickupCommand } from '@/services/pickup.service';
-import { colors, fonts } from '@/theme';
+import { fonts, lightColors, motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
+
+const PENDING_PICKUP_STATUSES = ['REQUESTED', 'COORDINATED', 'IN_TRANSIT'] as const;
+const CONFIRMED_PICKUP_STATUSES = ['COMPLETED'] as const;
 
 export default function PickupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <PickupDetail key={id ?? 'missing'} id={id} />;
+}
+
+function PickupDetail({ id }: Readonly<{ id: string }>) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   const { session } = useAuth();
+  const { refresh: refreshWallet } = useWallet();
   const loader = useCallback(() => pickupCommand('get', { id }), [id]);
-  const { data: pickup, loading, error, refresh } = usePortalData(loader);
+  const { data: pickup, loading, error, refresh, silentRefresh } = usePortalData(loader);
   const action = usePortalAction();
   const scroll = useScrollReset();
 
   const [copied, setCopied] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [scanSuccessVisible, setScanSuccessVisible] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useStatusPolling({
+    resetKey: id,
+    status: session && pickup ? pickup.status : null,
+    pendingStatuses: PENDING_PICKUP_STATUSES,
+    confirmedStatuses: CONFIRMED_PICKUP_STATUSES,
+    poll: silentRefresh,
+    onConfirmed: () => {
+      setDetailsModalVisible(false);
+      setCancelModalVisible(false);
+      setScanSuccessVisible(true);
+      void refreshWallet();
+    },
+  });
 
   useEffect(() => {
     return () => {
@@ -57,7 +77,9 @@ export default function PickupDetailScreen() {
 
   useEffect(() => {
     if (pickup?.photoPath) {
-      void getPickupPhotoUrl(pickup.photoPath).then(setPhotoUrl).catch(() => {});
+      void getPickupPhotoUrl(pickup.photoPath)
+        .then(setPhotoUrl)
+        .catch(() => {});
     }
   }, [pickup?.photoPath]);
 
@@ -88,26 +110,22 @@ export default function PickupDetailScreen() {
   };
 
   const handleConfirmCancel = () => {
-    setCancelModalVisible(false);
+    setCancelError(null);
     void action.run(async () => {
-      await pickupCommand('cancel', { id });
-      await refresh();
+      try {
+        await pickupCommand('cancel', { id });
+        await refresh();
+        setCancelModalVisible(false);
+      } catch (err) {
+        setCancelError(humanizePortalError(err, 'No pudimos cancelar el retiro.'));
+        throw err;
+      }
     }, 'Solicitud de retiro cancelada.');
   };
 
   const handleCancelPress = () => {
-    if (Platform.OS === 'web') {
-      setCancelModalVisible(true);
-    } else {
-      Alert.alert(
-        'Cancelar solicitud de retiro',
-        '¿Estás seguro de que querés cancelar esta solicitud? La empresa será notificada.',
-        [
-          { text: 'No, conservar', style: 'cancel' },
-          { text: 'Sí, cancelar', style: 'destructive', onPress: handleConfirmCancel },
-        ]
-      );
-    }
+    setCancelError(null);
+    setCancelModalVisible(true);
   };
 
   const timelineSteps = useMemo(() => {
@@ -124,7 +142,11 @@ export default function PickupDetailScreen() {
       <View style={styles.screen}>
         <ScreenHeader title="Tu retiro" back="/my-raee" />
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator
+            size="large"
+            color={colors.primary}
+            accessibilityLabel="Cargando retiro"
+          />
           <Text style={styles.loadingText}>Cargando información del retiro…</Text>
         </View>
       </View>
@@ -153,7 +175,13 @@ export default function PickupDetailScreen() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Tu retiro" back="/my-raee" />
-      <ScrollView ref={scroll} contentContainerStyle={styles.container}>
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={[
+          styles.container,
+          insets.bottom > 0 && { paddingBottom: 32 + insets.bottom },
+        ]}
+      >
         {action.notice && (
           <View style={styles.noticeBanner}>
             <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
@@ -172,7 +200,7 @@ export default function PickupDetailScreen() {
         {isRequested && (
           <View style={styles.yellowBanner}>
             <View style={styles.bannerIconCircleYellow}>
-              <Ionicons name="time-outline" size={24} color="#8D6B00" />
+              <Ionicons name="time-outline" size={24} color={colors.warningSecondary} />
             </View>
             <View style={styles.bannerTextCol}>
               <Text style={styles.yellowBannerTitle}>Por coordinar</Text>
@@ -202,7 +230,7 @@ export default function PickupDetailScreen() {
         {isInTransit && (
           <View style={styles.blueBanner}>
             <View style={styles.bannerIconCircleBlue}>
-              <Ionicons name="car-outline" size={24} color="#0B4B75" />
+              <Ionicons name="car-outline" size={24} color={colors.info} />
             </View>
             <View style={styles.bannerTextCol}>
               <Text style={styles.blueBannerTitle}>Vehículo en camino</Text>
@@ -278,7 +306,10 @@ export default function PickupDetailScreen() {
         <View style={styles.card}>
           <Text style={styles.cardHeaderTitle}>Material a retirar</Text>
           {pickup.items.map((it) => {
-            const visual = getCategoryVisual({ name: it.categoryName, slug: it.categoryName.toLowerCase() });
+            const visual = getCategoryVisual({
+              name: it.categoryName,
+              slug: it.categoryName.toLowerCase(),
+            });
             return (
               <View key={it.categoryId} style={styles.itemRow}>
                 <View style={styles.itemIconCircle}>
@@ -294,7 +325,10 @@ export default function PickupDetailScreen() {
                 </View>
                 <View style={styles.quantityBadge}>
                   <Text style={styles.quantityText}>
-                    {it.confirmedQuantity ?? it.declaredQuantity} {it.declaredQuantity === 1 ? 'unidad' : 'unidades'}
+                    {(() => {
+                      const displayQuantity = it.confirmedQuantity ?? it.declaredQuantity;
+                      return `${displayQuantity} ${displayQuantity === 1 ? 'unidad' : 'unidades'}`;
+                    })()}
                   </Text>
                 </View>
               </View>
@@ -320,14 +354,15 @@ export default function PickupDetailScreen() {
         <View style={styles.creditNoticeBox}>
           <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
           <Text style={styles.creditNoticeText}>
-            Los puntos finales se calculan y acreditan en tu saldo de red una vez que la empresa verifique físicamente los residuos retirados.
+            Los puntos finales se calculan y acreditan en tu saldo de red una vez que la empresa
+            verifique físicamente los residuos retirados.
           </Text>
         </View>
 
         {/* 7. Acciones principales */}
         <View style={styles.actionsContainer}>
           <ActionButton
-            title="Ver detalle de la solicitud"
+            title="Ver código / QR de retiro"
             secondary
             onPress={() => setDetailsModalVisible(true)}
           />
@@ -342,556 +377,557 @@ export default function PickupDetailScreen() {
           )}
 
           {isCompleted && (
-            <ActionButton
-              title="Ver mis puntos"
-              onPress={() => router.push('/my-points')}
-            />
+            <ActionButton title="Ver mis puntos" onPress={() => router.push('/my-points')} />
           )}
         </View>
       </ScrollView>
 
       {/* Modal: Detalle de la solicitud (QR y código legible) */}
-      <Modal
+      <AnimatedSheetModal
         visible={detailsModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setDetailsModalVisible(false)}
+        onClose={() => setDetailsModalVisible(false)}
+        presentation="sheet"
+        containerStyle={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 16) }]}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Detalle del retiro</Text>
-              <Pressable
+        <View style={styles.modalHandle} />
+        <View style={styles.modalHeader}>
+          <Text accessibilityRole="header" style={styles.modalTitle}>
+            Detalle del retiro
+          </Text>
+          <SpringPressable
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar modal"
+            pressScale={motion.scale.icon}
+            style={styles.modalCloseBtn}
+            onPress={() => setDetailsModalVisible(false)}
+          >
+            <Ionicons name="close" size={24} color={colors.text} />
+          </SpringPressable>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.modalBody}>
+          <View
+            accessibilityRole="image"
+            accessibilityLabel="Código QR del retiro"
+            style={styles.qrContainer}
+          >
+            <QRCode
+              value={pickupQr(pickup.code)}
+              size={190}
+              quietZone={12}
+              ecl="M"
+              color={lightColors.text}
+              backgroundColor={colors.qrBackground}
+            />
+          </View>
+
+          <View style={styles.codeContainer}>
+            <Text style={styles.codeLabel}>Código de retiro:</Text>
+            <View style={styles.codeRow}>
+              <Text selectable style={styles.codeText}>
+                {pickup.code}
+              </Text>
+              <SpringPressable
                 accessibilityRole="button"
-                accessibilityLabel="Cerrar modal"
-                onPress={() => setDetailsModalVisible(false)}
+                accessibilityLabel="Copiar código"
+                pressScale={motion.scale.icon}
+                style={styles.copyBtn}
+                onPress={() => void handleCopyCode(pickup.code)}
               >
-                <Ionicons name="close" size={24} color={colors.text} />
-              </Pressable>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.modalBody}>
-              <View style={styles.qrContainer}>
-                <QRCode
-                  value={pickupQr(pickup.code)}
-                  size={190}
-                  color={colors.text}
-                  backgroundColor={colors.surface}
+                <Ionicons
+                  name={copied ? 'checkmark' : 'copy-outline'}
+                  size={20}
+                  color={copied ? colors.primary : colors.textSecondary}
                 />
-              </View>
-
-              <View style={styles.codeContainer}>
-                <Text style={styles.codeLabel}>Código de retiro:</Text>
-                <View style={styles.codeRow}>
-                  <Text selectable style={styles.codeText}>
-                    {pickup.code}
-                  </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Copiar código"
-                    style={styles.copyBtn}
-                    onPress={() => handleCopyCode(pickup.code)}
-                  >
-                    <Ionicons
-                      name={copied ? 'checkmark' : 'copy-outline'}
-                      size={18}
-                      color={copied ? colors.primary : colors.textSecondary}
-                    />
-                  </Pressable>
-                </View>
-                {copied && <Text style={styles.copiedNotice}>¡Copiado al portapapeles!</Text>}
-              </View>
-
-              <View style={styles.metadataList}>
-                <View style={styles.metadataRow}>
-                  <Text style={styles.metadataLabel}>Estado:</Text>
-                  <Text style={styles.metadataValue}>{pickupStatusNames[pickup.status]}</Text>
-                </View>
-                <View style={styles.metadataRow}>
-                  <Text style={styles.metadataLabel}>Fecha de pedido:</Text>
-                  <Text style={styles.metadataValue}>{formatPickupDate(pickup.createdAt)}</Text>
-                </View>
-                {pickup.scheduledDate && (
-                  <View style={styles.metadataRow}>
-                    <Text style={styles.metadataLabel}>Fecha coordinada:</Text>
-                    <Text style={styles.metadataValue}>{formatPickupDate(pickup.scheduledDate)}</Text>
-                  </View>
-                )}
-                {pickup.scheduledTimeSlot && (
-                  <View style={styles.metadataRow}>
-                    <Text style={styles.metadataLabel}>Franja horaria:</Text>
-                    <Text style={styles.metadataValue}>{pickup.scheduledTimeSlot}</Text>
-                  </View>
-                )}
-                {pickup.driverName && (
-                  <View style={styles.metadataRow}>
-                    <Text style={styles.metadataLabel}>Responsable:</Text>
-                    <Text style={styles.metadataValue}>{pickup.driverName}</Text>
-                  </View>
-                )}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal: Confirmación de cancelación (Web) */}
-      <Modal
-        visible={cancelModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCancelModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmModalBox}>
-            <Ionicons name="alert-circle" size={36} color={colors.danger} />
-            <Text style={styles.confirmModalTitle}>¿Cancelar solicitud?</Text>
-            <Text style={styles.confirmModalText}>
-              ¿Estás seguro de que querés cancelar esta solicitud de retiro? La organización receptora será notificada.
-            </Text>
-            <View style={styles.confirmModalActions}>
-              <ActionButton
-                title="Conservar solicitud"
-                secondary
-                onPress={() => setCancelModalVisible(false)}
-              />
-              <ActionButton
-                title="Sí, cancelar retiro"
-                loading={action.busy}
-                onPress={handleConfirmCancel}
-              />
+              </SpringPressable>
             </View>
+            {copied && (
+              <Text accessibilityLiveRegion="polite" style={styles.copiedNotice}>
+                ¡Copiado al portapapeles!
+              </Text>
+            )}
           </View>
-        </View>
-      </Modal>
+
+          <View style={styles.metadataList}>
+            <View style={styles.metadataRow}>
+              <Text style={styles.metadataLabel}>Estado:</Text>
+              <Text style={styles.metadataValue}>{pickupStatusNames[pickup.status]}</Text>
+            </View>
+            <View style={styles.metadataRow}>
+              <Text style={styles.metadataLabel}>Fecha de pedido:</Text>
+              <Text style={styles.metadataValue}>{formatPickupDate(pickup.createdAt)}</Text>
+            </View>
+            {pickup.scheduledDate && (
+              <View style={styles.metadataRow}>
+                <Text style={styles.metadataLabel}>Fecha coordinada:</Text>
+                <Text style={styles.metadataValue}>{formatPickupDate(pickup.scheduledDate)}</Text>
+              </View>
+            )}
+            {pickup.scheduledTimeSlot && (
+              <View style={styles.metadataRow}>
+                <Text style={styles.metadataLabel}>Franja horaria:</Text>
+                <Text style={styles.metadataValue}>{pickup.scheduledTimeSlot}</Text>
+              </View>
+            )}
+            {pickup.driverName && (
+              <View style={styles.metadataRow}>
+                <Text style={styles.metadataLabel}>Responsable:</Text>
+                <Text style={styles.metadataValue}>{pickup.driverName}</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </AnimatedSheetModal>
+
+      <ConfirmModal
+        visible={cancelModalVisible}
+        onClose={() => {
+          setCancelModalVisible(false);
+          setCancelError(null);
+        }}
+        onConfirm={handleConfirmCancel}
+        title="¿Cancelar solicitud?"
+        message="¿Estás seguro de que querés cancelar esta solicitud de retiro? La organización receptora será notificada."
+        confirmLabel="Cancelar retiro"
+        cancelLabel="Conservar retiro"
+        destructive
+        loading={action.busy}
+        error={cancelError}
+      />
+
+      <ScanSuccessModal
+        visible={Boolean(scanSuccessVisible && pickup.status === 'COMPLETED')}
+        title="¡Retiro confirmado!"
+        highlight={pickup.points > 0 ? `+${pointsLabel(pickup.points)}` : null}
+        message={`${pickup.pointName ? `${pickup.pointName} (${pickup.companyName})` : pickup.companyName} confirmó la recepción de tu retiro${pickup.points > 0 ? ' y acreditó tus puntos' : ''}.`}
+        onPrimary={() => {
+          setScanSuccessVisible(false);
+          router.replace('/home');
+        }}
+        onDismiss={() => setScanSuccessVisible(false)}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    padding: 16,
-    paddingBottom: 40,
-    gap: 14,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 12,
-  },
-  loadingText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.danger,
-    textAlign: 'center',
-  },
-  yellowBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#FFF8E1',
-    borderWidth: 1,
-    borderColor: '#FFE082',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  bannerIconCircleYellow: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFF0B2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  yellowBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: '#6D4C00',
-  },
-  yellowBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: '#8D6B00',
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  greenBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: '#C3E4CD',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  bannerIconCircleGreen: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#D1EBD9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  greenBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.primaryDark,
-  },
-  greenBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.primaryDark,
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  blueBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#E8F3FA',
-    borderWidth: 1,
-    borderColor: '#BFE0F2',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  bannerIconCircleBlue: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#CEE8F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  blueBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: '#0B4B75',
-  },
-  blueBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: '#155B8A',
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  successBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: '#B9DFC4',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  successBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.primaryDark,
-  },
-  successBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.primaryDark,
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  cancelledBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  bannerIconCircleGrey: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelledBannerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    color: colors.textSecondary,
-  },
-  cancelledBannerSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  bannerTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    gap: 12,
-  },
-  cardHeaderTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: colors.text,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 4,
-  },
-  itemIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemName: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
-    color: colors.text,
-  },
-  itemRate: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  quantityBadge: {
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  quantityText: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.text,
-  },
-  notesBox: {
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 10,
-    gap: 4,
-    marginTop: 6,
-  },
-  notesLabel: {
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  notesText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.text,
-    lineHeight: 18,
-  },
-  photoContainer: {
-    marginTop: 6,
-    gap: 6,
-  },
-  photoPreview: {
-    width: '100%',
-    height: 160,
-    borderRadius: 10,
-  },
-  photoCaption: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  creditNoticeBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.surfaceSoft,
-    borderRadius: 12,
-    padding: 14,
-    gap: 10,
-  },
-  creditNoticeText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  actionsContainer: {
-    gap: 10,
-    marginTop: 4,
-  },
-  noticeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primarySoft,
-    borderRadius: 10,
-    padding: 12,
-    gap: 8,
-  },
-  noticeBannerText: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.primaryDark,
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.dangerBackground,
-    borderRadius: 10,
-    padding: 12,
-    gap: 8,
-  },
-  errorBannerText: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.danger,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '85%',
-    padding: 20,
-    gap: 16,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-  },
-  modalBody: {
-    alignItems: 'center',
-    gap: 16,
-    paddingBottom: 24,
-  },
-  qrContainer: {
-    padding: 14,
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  codeContainer: {
-    alignItems: 'center',
-    gap: 6,
-    width: '100%',
-  },
-  codeLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  codeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  codeText: {
-    fontFamily: fonts.bold,
-    fontSize: 15,
-    color: colors.primaryDark,
-    letterSpacing: 0.5,
-  },
-  copyBtn: {
-    padding: 4,
-  },
-  copiedNotice: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: colors.primary,
-  },
-  metadataList: {
-    width: '100%',
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-  },
-  metadataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  metadataLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  metadataValue: {
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.text,
-  },
-  confirmModalBox: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    margin: 24,
-    padding: 24,
-    alignItems: 'center',
-    gap: 14,
-    alignSelf: 'center',
-    maxWidth: 400,
-    width: '90%',
-  },
-  confirmModalTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 18,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  confirmModalText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  confirmModalActions: {
-    width: '100%',
-    gap: 10,
-    marginTop: 6,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 16,
+      paddingBottom: 40,
+      gap: 14,
+    },
+    centerContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      gap: 12,
+    },
+    loadingText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    errorText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: colors.danger,
+      textAlign: 'center',
+    },
+    yellowBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.warningSoft,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    bannerIconCircleYellow: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.warningSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    yellowBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.warning,
+    },
+    yellowBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.warningSecondary,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    greenBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.successBorder,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    bannerIconCircleGreen: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.successIconBackground,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    greenBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.primaryDark,
+    },
+    greenBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.primaryDark,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    blueBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.infoSoft,
+      borderWidth: 1,
+      borderColor: colors.infoBorder,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    bannerIconCircleBlue: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.infoSurface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    blueBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.info,
+    },
+    blueBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.infoSecondary,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    successBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.successBorder,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    successBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.primaryDark,
+    },
+    successBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.primaryDark,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    cancelledBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    bannerIconCircleGrey: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cancelledBannerTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 17,
+      color: colors.textSecondary,
+    },
+    cancelledBannerSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    bannerTextCol: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      gap: 12,
+    },
+    cardHeaderTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: colors.text,
+    },
+    itemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 4,
+    },
+    itemIconCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    itemName: {
+      fontFamily: fonts.bold,
+      fontSize: 14,
+      color: colors.text,
+    },
+    itemRate: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    quantityBadge: {
+      backgroundColor: colors.surfaceSoft,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    quantityText: {
+      fontFamily: fonts.bold,
+      fontSize: 13,
+      color: colors.text,
+    },
+    notesBox: {
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      padding: 10,
+      gap: 4,
+      marginTop: 6,
+    },
+    notesLabel: {
+      fontFamily: fonts.bold,
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    notesText: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.text,
+      lineHeight: 18,
+    },
+    photoContainer: {
+      marginTop: 6,
+      gap: 6,
+    },
+    photoPreview: {
+      width: '100%',
+      height: 160,
+      borderRadius: 10,
+    },
+    photoCaption: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    creditNoticeBox: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.surfaceSoft,
+      borderRadius: 12,
+      padding: 14,
+      gap: 10,
+    },
+    creditNoticeText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    actionsContainer: {
+      gap: 10,
+      marginTop: 4,
+    },
+    noticeBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primarySoft,
+      borderRadius: 10,
+      padding: 12,
+      gap: 8,
+    },
+    noticeBannerText: {
+      flex: 1,
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.primaryDark,
+    },
+    errorBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.dangerBackground,
+      borderRadius: 10,
+      padding: 12,
+      gap: 8,
+    },
+    errorBannerText: {
+      flex: 1,
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.danger,
+    },
+    modalContent: {
+      width: '100%',
+      maxWidth: 960,
+      alignSelf: 'center',
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: '85%',
+      paddingTop: 10,
+      paddingHorizontal: 20,
+      gap: 12,
+    },
+    modalHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.borderControl,
+      alignSelf: 'center',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 12,
+    },
+    modalTitle: {
+      flex: 1,
+      minWidth: 0,
+      fontFamily: fonts.bold,
+      fontSize: 18,
+      color: colors.text,
+    },
+    modalCloseBtn: {
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalBody: {
+      alignItems: 'center',
+      gap: 16,
+      paddingBottom: 12,
+    },
+    qrContainer: {
+      padding: 14,
+      backgroundColor: colors.qrBackground,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    codeContainer: {
+      alignItems: 'center',
+      gap: 6,
+      width: '100%',
+    },
+    codeLabel: {
+      fontFamily: fonts.semiBold,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    codeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.surfaceSoft,
+      paddingLeft: 14,
+      paddingRight: 4,
+      paddingVertical: 4,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    codeText: {
+      fontFamily: fonts.bold,
+      fontSize: 15,
+      color: colors.primaryDark,
+      letterSpacing: 0.5,
+    },
+    copyBtn: {
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    copiedNotice: {
+      fontFamily: fonts.semiBold,
+      fontSize: 12,
+      color: colors.primary,
+    },
+    metadataList: {
+      width: '100%',
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 14,
+      gap: 8,
+    },
+    metadataRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 8,
+    },
+    metadataLabel: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    metadataValue: {
+      fontFamily: fonts.bold,
+      fontSize: 13,
+      color: colors.text,
+    },
+  });

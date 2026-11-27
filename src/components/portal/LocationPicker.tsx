@@ -2,19 +2,31 @@ import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import type { LocationPickerProps } from './LocationPicker.types';
-import { colors } from '@/theme';
+import { useColors, useColorSchemeName } from '@/theme';
+
+const MAP_MARKER_COLOR = '#256D46';
 
 export function LocationPicker({ value, onChange, disabled = false }: LocationPickerProps) {
+  const colors = useColors();
+  const scheme = useColorSchemeName();
   const map = useRef<MapView>(null);
   useEffect(() => {
     if (value)
       map.current?.animateToRegion({ ...value, latitudeDelta: 0.01, longitudeDelta: 0.01 }, 200);
   }, [value]);
   return (
-    <View style={{ height: 300, borderRadius: 8, overflow: 'hidden' }}>
+    <View
+      style={{
+        height: 300,
+        borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: colors.surfaceSoft,
+      }}
+    >
       <MapView
         ref={map}
         style={{ flex: 1 }}
+        userInterfaceStyle={scheme}
         initialRegion={{
           latitude: value?.latitude ?? -34.6037,
           longitude: value?.longitude ?? -58.3816,
@@ -40,7 +52,7 @@ export function LocationPicker({ value, onChange, disabled = false }: LocationPi
           <Marker
             coordinate={value}
             title="Ubicación del punto verde"
-            pinColor={colors.primary}
+            pinColor={MAP_MARKER_COLOR}
             draggable={!disabled}
             onDragEnd={(event) => onChange(event.nativeEvent.coordinate)}
           />

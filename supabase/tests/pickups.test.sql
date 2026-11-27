@@ -126,8 +126,9 @@ select set_config('request.jwt.claim.sub', '34000000-0000-0000-0000-000000000004
 set local role authenticated;
 
 insert into pickup_test_results select lives_ok(
-  format($$select pickup_command('coordinate', jsonb_build_object('id', '%s', 'scheduledDate', '2026-11-05', 'scheduledTimeSlot', '09:00 - 13:00', 'driverName', 'Carlos Chofer'))$$,
-    (select id from pickup_fixture)),
+  format($$select pickup_command('coordinate', jsonb_build_object('id', '%s', 'scheduledDate', '%s', 'scheduledTimeSlot', '09:00 - 13:00', 'driverName', 'Carlos Chofer'))$$,
+    (select id from pickup_fixture),
+    to_char(current_date + 2, 'YYYY-MM-DD')),
   'company worker can coordinate pickup'
 );
 

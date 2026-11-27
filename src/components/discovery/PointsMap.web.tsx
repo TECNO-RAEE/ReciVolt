@@ -2,17 +2,28 @@ import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import './leaflet.web.css';
 import type { PointsMapProps } from './PointsMap.types';
-import { colors, fonts } from '@/theme';
+import { fonts, useColorSchemeName, useColors } from '@/theme';
+
+// Keep map pins legible over bright OpenStreetMap tiles in both light and dark appearances.
+const MAP_PIN_COLORS = {
+  normal: '#256D46',
+  selected: '#14452B',
+  me: '#10282C',
+} as const;
 
 // Leaflet touches window on import; load it only after mounting (Expo static rendering).
 export function PointsMap({
   points,
   location,
   preview = false,
+  previewHeight = 230,
   fill = false,
   selectedId = null,
   onSelect,
 }: PointsMapProps) {
+  const colors = useColors();
+  const dark = useColorSchemeName() === 'dark';
+  const darkRef = useRef(dark);
   const element = useRef<HTMLDivElement>(null);
   const [error, setError] = useState(false);
   // onSelect se llama desde un listener de Leaflet creado una sola vez; una ref evita
@@ -20,6 +31,7 @@ export function PointsMap({
   const onSelectRef = useRef(onSelect);
   useEffect(() => {
     onSelectRef.current = onSelect;
+    darkRef.current = dark;
   });
   // markers + iconos por id, para que el efecto de selección solo cambie el ícono
   // (marker.setIcon) en vez de reconstruir todo el mapa en cada tap.
@@ -47,6 +59,10 @@ export function PointsMap({
           maxZoom: 19,
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(map);
+        const tilePane = map.getPane('tilePane');
+        if (tilePane) {
+          tilePane.style.filter = darkRef.current ? 'brightness(0.86) contrast(1.06)' : '';
+        }
         tiles.on('tileerror', () => {
           if (!cancelled) setError(true);
         });
@@ -57,8 +73,8 @@ export function PointsMap({
             iconSize: [26, 34],
             iconAnchor: [13, 34],
           });
-        const icon = makeIcon(colors.primary);
-        const selectedIcon = makeIcon(colors.primaryDark);
+        const icon = makeIcon(MAP_PIN_COLORS.normal);
+        const selectedIcon = makeIcon(MAP_PIN_COLORS.selected);
         iconsRef.current = { normal: icon, selected: selectedIcon };
         markersRef.current = new Map();
         const bounds: [number, number][] = [];
@@ -83,7 +99,13 @@ export function PointsMap({
         if (location) {
           const coordinate: [number, number] = [location.latitude, location.longitude];
           bounds.push(coordinate);
-          L.circleMarker(coordinate, { radius: 6, color: colors.brandDark, fillOpacity: 1 })
+          L.circleMarker(coordinate, {
+            radius: 6,
+            color: '#FFFFFF',
+            weight: 2,
+            fillColor: MAP_PIN_COLORS.me,
+            fillOpacity: 1,
+          })
             .addTo(map)
             .bindTooltip('Tu ubicación');
         }
@@ -109,6 +131,13 @@ export function PointsMap({
     // cambia el ícono del marker correspondiente en vez de recrear el mapa entero.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points, location, preview]);
+  // Dim bright OSM street tiles slightly in Dark Mode without inverting labels or pins.
+  useEffect(() => {
+    const tilePane = element.current?.querySelector('.leaflet-tile-pane');
+    if (tilePane instanceof HTMLElement) {
+      tilePane.style.filter = dark ? 'brightness(0.86) contrast(1.06)' : '';
+    }
+  }, [dark]);
   // Resalta el punto seleccionado sin reconstruir el mapa (evita el parpadeo/reset
   // de zoom y centro que ocurría cuando selectedId estaba en el efecto de arriba).
   useEffect(() => {
@@ -124,11 +153,12 @@ export function PointsMap({
         ref={element}
         aria-label="Mapa de puntos verdes"
         style={{
-          height: fill ? '100%' : preview ? 230 : 380,
+          height: fill ? '100%' : preview ? previewHeight : 380,
           width: '100%',
-          borderRadius: fill ? 0 : 14,
+          borderRadius: fill ? 0 : 12,
           overflow: 'hidden',
           zIndex: 0,
+          backgroundColor: colors.surfaceSoft,
         }}
       />
       {error && (

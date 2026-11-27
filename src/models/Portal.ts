@@ -119,3 +119,13 @@ export interface AdminPortalData {
   companies: PortalCompany[];
   limitRequests: CompanyLimitRequest[];
 }
+export function pointWorkspaceBackTarget(input: {
+  hasCompany: boolean;
+  hasPointId: boolean;
+  newPoint: boolean;
+  isEditingPoint: boolean;
+}): 'points_list' | 'workspace_parent' {
+  return input.isEditingPoint && input.hasCompany && !input.hasPointId && !input.newPoint
+    ? 'points_list'
+    : 'workspace_parent';
+}

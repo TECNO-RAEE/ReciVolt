@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState, type ComponentProps, type ReactNode, type Ref } from 'react';
 import {
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -10,7 +9,15 @@ import {
   View,
 } from 'react-native';
 
-import { colors, fonts } from '@/theme';
+import { SpringPressable } from '@/components/ui/SpringPressable';
+import {
+  fonts,
+  motion,
+  useColors,
+  useThemedStyles,
+  webInputReset,
+  type ThemeColors,
+} from '@/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -31,6 +38,8 @@ export function AuthTextField({
   style,
   ...inputProps
 }: AuthTextFieldProps) {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [visible, setVisible] = useState(false);
   return (
     <>
@@ -42,6 +51,7 @@ export function AuthTextField({
         <TextInput
           ref={inputRef}
           accessibilityLabel={label}
+          selectionColor={colors.primary}
           style={[styles.input, style]}
           placeholderTextColor={colors.textSecondary}
           {...inputProps}
@@ -49,11 +59,12 @@ export function AuthTextField({
         />
 
         {passwordToggle && (
-          <Pressable
+          <SpringPressable
             accessibilityRole="button"
             accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             disabled={inputProps.editable === false}
             onPress={() => setVisible((value) => !value)}
+            pressScale={motion.scale.icon}
             style={styles.toggle}
           >
             <Ionicons
@@ -61,7 +72,7 @@ export function AuthTextField({
               size={25}
               color={colors.text}
             />
-          </Pressable>
+          </SpringPressable>
         )}
         {trailing}
       </View>
@@ -69,42 +80,51 @@ export function AuthTextField({
   );
 }
 
-const styles = StyleSheet.create({
-  label: {
-    height: 24,
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    lineHeight: 17,
-    color: colors.text,
-  },
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    label: {
+      minHeight: 24,
+      paddingVertical: 2,
+      fontFamily: fonts.semiBold,
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.text,
+    },
 
-  inputContainer: {
-    height: 52,
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-  },
+    inputContainer: {
+      minHeight: 52,
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.borderControl,
+      borderRadius: 10,
+    },
 
-  toggle: { width: 45, height: '100%', alignItems: 'center', justifyContent: 'center' },
+    toggle: {
+      minWidth: 45,
+      minHeight: 44,
+      alignSelf: 'stretch',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  inputIcon: {
-    marginLeft: 11,
-    marginRight: 10,
-  },
+    inputIcon: {
+      marginLeft: 11,
+      marginRight: 10,
+    },
 
-  input: {
-    flex: 1,
-    minWidth: 0,
-    height: '100%',
-    paddingVertical: 0,
-    paddingRight: 14,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 23,
-    color: colors.text,
-  },
-});
+    input: {
+      ...webInputReset,
+      flex: 1,
+      minWidth: 0,
+      minHeight: 50,
+      paddingVertical: 12,
+      paddingRight: 14,
+      fontFamily: fonts.regular,
+      fontSize: 16,
+      lineHeight: 23,
+      color: colors.text,
+    },
+  });

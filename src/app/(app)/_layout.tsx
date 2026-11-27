@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-
-import type { ColorValue } from 'react-native';
-import { colors, fonts } from '@/theme';
+import { Platform, View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenLoadingBackdrop } from '@/components/ui/ScreenLoadingBackdrop';
+import { fonts, useColors } from '@/theme';
 
 type TabIconName = 'home' | 'map' | 'gift' | 'person';
 
@@ -23,20 +24,38 @@ function tabIcon(name: TabIconName) {
 }
 
 export default function AppLayout() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 10);
+
   return (
     <Tabs
+      screenLayout={
+        Platform.OS === 'web'
+          ? ({ children }) => (
+              <View style={{ flex: 1, backgroundColor: colors.background }}>
+                <ScreenLoadingBackdrop />
+                {children}
+              </View>
+            )
+          : undefined
+      }
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: '#748591',
+        tabBarInactiveTintColor: colors.navInactive,
         tabBarLabelStyle: {
           fontFamily: fonts.regular,
           fontSize: 11,
         },
+        tabBarItemStyle: {
+          minHeight: 48,
+        },
         tabBarStyle: {
-          minHeight: 72,
+          minHeight: 58 + bottomInset,
           paddingTop: 8,
-          paddingBottom: 12,
+          paddingBottom: bottomInset,
           backgroundColor: colors.tabBarBackground,
           borderTopColor: colors.border,
         },
@@ -65,10 +84,6 @@ export default function AppLayout() {
           tabBarIcon: tabIcon('gift'),
         }}
       />
-
-      {/* Keep these routes pushable from the app while omitting their tab buttons. */}
-      <Tabs.Screen name="my-activity" options={{ tabBarButton: () => null }} />
-      <Tabs.Screen name="my-points" options={{ tabBarButton: () => null }} />
 
       <Tabs.Screen
         name="profile"

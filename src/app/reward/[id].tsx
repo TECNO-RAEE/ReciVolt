@@ -2,8 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { AnimatedSheetModal } from '@/components/ui/AnimatedSheetModal';
+import { SpringPressable } from '@/components/ui/SpringPressable';
 import { PortalFeedback, PortalLoading } from '@/components/portal/PortalUI';
 import {
   CitizenPage,
@@ -11,7 +13,7 @@ import {
   InfoSection,
   PointsBadge,
   RewardPhoto,
-  rewardStyles as s,
+  useRewardStyles,
 } from '@/components/rewards/RewardsUI';
 import { rewardExamples } from '@/data/rewardExamples';
 import { usePortalAction, usePortalData } from '@/hooks/usePortalData';
@@ -20,7 +22,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useWallet } from '@/providers/WalletProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
 import { getReward, rewardCommand } from '@/services/reward.service';
-import { colors } from '@/theme';
+import { motion, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 
 export default function RewardDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,6 +30,9 @@ export default function RewardDetailScreen() {
   return <RewardDetail key={`${id}:${user?.id ?? 'guest'}`} id={id} />;
 }
 function RewardDetail({ id }: Readonly<{ id: string }>) {
+  const colors = useColors();
+  const s = useRewardStyles();
+  const styles = useThemedStyles(makeStyles);
   const { session } = useAuth();
   const wallet = useWallet();
   const { now } = useDiscovery();
@@ -61,9 +66,13 @@ function RewardDetail({ id }: Readonly<{ id: string }>) {
           : 'Premio no disponible'
         : !session
           ? 'Ingresá para canjear'
-          : !enough && !wallet.loading
-            ? 'Te faltan puntos'
-            : `Canjear por ${pointsLabel(reward.pointsCost)}`;
+          : wallet.loading
+            ? `Canjear por ${pointsLabel(reward.pointsCost)}`
+            : wallet.error || wallet.data == null
+              ? 'Saldo no disponible'
+              : !enough
+                ? 'Te faltan puntos'
+                : `Canjear por ${pointsLabel(reward.pointsCost)}`;
   return (
     <CitizenPage
       title="Detalle del premio"
@@ -95,7 +104,12 @@ function RewardDetail({ id }: Readonly<{ id: string }>) {
       }
     >
       <PortalLoading loading={loading} error={error} retry={() => void refresh()} />
-      {!loading && !error && !reward && <InfoNote>Este premio ya no está disponible.</InfoNote>}
+      {!loading && !error && !reward && (
+        <>
+          <InfoNote>Este premio ya no está disponible.</InfoNote>
+          <ActionButton title="Ver otros premios" onPress={() => router.replace('/rewards')} />
+        </>
+      )}
       {reward && (
         <>
           <View style={styles.hero}>
@@ -124,85 +138,82 @@ function RewardDetail({ id }: Readonly<{ id: string }>) {
               {!!reward.hours && <Text style={s.body}>{reward.hours}</Text>}
             </InfoSection>
           )}
-          <Modal
-            transparent
+          <AnimatedSheetModal
             visible={confirming}
-            animationType="fade"
-            onRequestClose={() => {
+            dismissible={!action.busy}
+            presentation="dialog"
+            onClose={() => {
               if (!action.busy) setConfirming(false);
             }}
+            containerStyle={styles.modal}
           >
-            <View style={styles.backdrop}>
-              <View accessibilityViewIsModal style={styles.modal}>
-                <Ionicons name="gift-outline" size={32} color={colors.primaryDark} />
-                <Text style={s.subtitle}>¿Querés canjear este premio?</Text>
-                <Text style={s.label}>{reward.title}</Text>
-                <Text style={s.body}>{reward.businessName}</Text>
-                <Text style={s.body}>Costo: {pointsLabel(reward.pointsCost)}</Text>
-                <Text style={s.body}>
-                  Tu saldo:{' '}
-                  {wallet.loading ? 'Actualizando…' : (wallet.data?.points ?? 'No disponible')}{' '}
-                  puntos
-                </Text>
-                {wallet.data && (
-                  <Text style={s.label}>
-                    Después del canje:{' '}
-                    {pointsLabel(Math.max(0, wallet.data.points - reward.pointsCost))}
-                  </Text>
-                )}
-                <PortalFeedback error={action.error} />
-                <ActionButton
-                  title="Confirmar canje"
-                  loading={action.busy}
-                  disabled={wallet.loading || !enough}
-                  onPress={() =>
-                    void action.run(async () => {
-                      requestId.current ??= Crypto.randomUUID();
-                      const redemption = await rewardCommand('reserve', {
-                        rewardId: reward.id,
-                        requestId: requestId.current,
-                      });
-                      setConfirming(false);
-                      void refreshWallet();
-                      router.replace({
-                        pathname: '/redemption/[id]',
-                        params: { id: redemption.id },
-                      });
-                    }, '')
-                  }
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={action.busy}
-                  onPress={() => setConfirming(false)}
-                  style={styles.cancel}
-                >
-                  <Text style={s.link}>Cancelar</Text>
-                </Pressable>
-              </View>
-            </View>
-          </Modal>
+            <Ionicons name="gift-outline" size={32} color={colors.primaryDark} />
+            <Text accessibilityRole="header" style={s.subtitle}>
+              ¿Querés canjear este premio?
+            </Text>
+            <Text style={s.label}>{reward.title}</Text>
+            <Text style={s.body}>{reward.businessName}</Text>
+            <Text style={s.body}>Costo: {pointsLabel(reward.pointsCost)}</Text>
+            <Text style={s.body}>
+              Tu saldo:{' '}
+              {wallet.loading
+                ? 'Actualizando…'
+                : wallet.data != null
+                  ? pointsLabel(wallet.data.points)
+                  : 'No disponible'}
+            </Text>
+            {wallet.data && (
+              <Text style={s.label}>
+                Después del canje:{' '}
+                {pointsLabel(Math.max(0, wallet.data.points - reward.pointsCost))}
+              </Text>
+            )}
+            <PortalFeedback error={action.error} />
+            <ActionButton
+              title="Confirmar canje"
+              loading={action.busy}
+              disabled={wallet.loading || !enough}
+              onPress={() =>
+                void action.run(async () => {
+                  requestId.current ??= Crypto.randomUUID();
+                  const redemption = await rewardCommand('reserve', {
+                    rewardId: reward.id,
+                    requestId: requestId.current,
+                  });
+                  setConfirming(false);
+                  void refreshWallet();
+                  router.replace({
+                    pathname: '/redemption/[id]',
+                    params: { id: redemption.id },
+                  });
+                }, '')
+              }
+            />
+            <SpringPressable
+              accessibilityRole="button"
+              disabled={action.busy}
+              onPress={() => setConfirming(false)}
+              pressScale={motion.scale.button}
+              style={styles.cancel}
+            >
+              <Text style={s.link}>Cancelar</Text>
+            </SpringPressable>
+          </AnimatedSheetModal>
         </>
       )}
     </CitizenPage>
   );
 }
-const styles = StyleSheet.create({
-  hero: { borderRadius: 18, overflow: 'hidden' },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10,30,20,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modal: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    gap: 14,
-  },
-  cancel: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    hero: { borderRadius: 18, overflow: 'hidden' },
+    modal: {
+      width: '100%',
+      maxWidth: 400,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 24,
+      gap: 14,
+    },
+    cancel: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
+  });

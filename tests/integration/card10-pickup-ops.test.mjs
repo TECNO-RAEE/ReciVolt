@@ -47,7 +47,7 @@ async function boot(page, email) {
   await page.goto(base, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Saltar introducción', exact: true }).click();
   await page.waitForURL(/\/home$/);
-  await page.getByRole('button', { name: 'Abrir perfil', exact: true }).click();
+  await page.getByRole('tab', { name: /Perfil/ }).click();
   await page.waitForURL(/\/profile$/);
   await page
     .getByRole('button', { name: /Iniciar sesión/ })
@@ -66,6 +66,7 @@ async function citizenFillPickupForm(page) {
   await page
     .getByPlaceholder('Ej. Av. Tratado del Pilar 1234', { exact: true })
     .fill('San Martín 123');
+  await page.getByPlaceholder('Ej. Pilar', { exact: true }).fill('Pilar');
   await page.getByPlaceholder('Ej. 11 2345-6789', { exact: true }).fill('1122334455');
   await page.getByRole('button', { name: 'Enviar solicitud', exact: true }).click();
   await page.waitForURL(/\/pickup\/[0-9a-f]{8}-[0-9a-f]{4}-/, { timeout: 15000 });
@@ -78,10 +79,9 @@ async function citizenRequestPickup(page) {
     await page.getByRole('button', { name: 'Volver', exact: true }).click();
     await page.waitForURL(/\/my-raee$/);
   } else {
-    await page
-      .getByRole('button', { name: /Entregas/ })
-      .first()
-      .click();
+    await page.getByRole('tab', { name: /Perfil/ }).click();
+    await page.waitForURL(/\/profile$/);
+    await page.getByRole('button', { name: 'Mis entregas', exact: true }).click();
     await page.waitForURL(/\/my-raee$/);
   }
   await page.getByRole('tab', { name: 'Retiros', exact: true }).click();

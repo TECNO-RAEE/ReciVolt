@@ -61,7 +61,6 @@ test('invitado encuentra el café y explora su ficha sin poder canjear', async (
     await page.goto(base + '/rewards', { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: cafeCard, exact: true }).waitFor();
     await page.getByRole('button', { name: /Medialuna gratis, Panadería La Plaza/ }).waitFor();
-    await page.getByRole('button', { name: 'Buscar premios', exact: true }).click();
     const search = page.getByRole('textbox', { name: 'Buscar por premio o comercio' });
     await search.fill('Pellegrini');
     await page.getByRole('button', { name: 'Gastronomía', exact: true }).click();
@@ -100,7 +99,7 @@ test('invitado encuentra el café y explora su ficha sin poder canjear', async (
     await capture(page, 'detail-desktop');
     await page.goto(base + '/rewards', { waitUntil: 'networkidle' });
     await page.getByRole('button', { name: cafeCard, exact: true }).waitFor();
-    await page.getByRole('button', { name: 'Buscar premios', exact: true }).focus();
+    await page.getByRole('textbox', { name: 'Buscar por premio o comercio' }).focus();
     await page.keyboard.press('Tab');
     assert.notEqual(await page.evaluate(() => document.activeElement?.tagName), 'BODY');
     await capture(page, 'catalog-desktop');
@@ -180,7 +179,7 @@ test('ciudadano con saldo de lectura simulado suficiente no reserva la muestra n
     await page.waitForURL('**/home');
     assert.equal(localLogin, true);
     await page.goto(base + '/rewards', { waitUntil: 'networkidle' });
-    await page.getByText('500 puntos disponibles', { exact: true }).waitFor();
+    await page.getByText('500 puntos', { exact: true }).waitFor();
     await page.getByRole('button', { name: cafeCard, exact: true }).click();
     await page.waitForURL('**/reward/example-cafe');
     const button = page.getByRole('button', { name: 'Premio de ejemplo', exact: true });

@@ -10,6 +10,7 @@ import { DevicePreparationArtwork } from '@/components/ui/EcoArtwork';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { DiscoveryState } from '@/components/discovery/DiscoveryState';
 import { PointsMap } from '@/components/discovery/PointsMap';
+import { PortalFeedback } from '@/components/portal/PortalUI';
 import { InfoNote } from '@/components/rewards/RewardsUI';
 import {
   distanceKm,
@@ -22,17 +23,32 @@ import {
 import { canRequestPickup } from '@/models/Pickup';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDiscovery } from '@/providers/DiscoveryProvider';
-import { colors, fonts } from '@/theme';
+import { fonts, useColors, useThemedStyles, type ThemeColors } from '@/theme';
 import { useScrollReset } from '@/hooks/useScrollReset';
 
 const PREVIEW_CATEGORY_LIMIT = 4;
 
+function formatPointTimeZone(timeZone: string): string {
+  if (
+    timeZone === 'America/Argentina/Buenos_Aires' ||
+    timeZone === 'America/Buenos_Aires' ||
+    timeZone.startsWith('America/Argentina/')
+  ) {
+    return 'Hora de Argentina (GMT-3)';
+  }
+  return 'Hora local del punto';
+}
+
 export default function PointDetailScreen() {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const scroll = useScrollReset();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { guest } = useAuth();
   const { points, loading, error, refresh, location, now } = useDiscovery();
-  const [needsAccount, setNeedsAccount] = useState(false);
+  const [pendingAccountTitle, setPendingAccountTitle] = useState<
+    'Registrar entrega' | 'Solicitar retiro a domicilio' | null
+  >(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const point = points.find((p) => p.id === id);
   const mapPoints = useMemo(() => (point ? [point] : []), [point]);
@@ -47,14 +63,9 @@ export default function PointDetailScreen() {
       );
     }
   };
-  if (needsAccount)
+  if (pendingAccountTitle)
     return (
-      <View style={styles.container}>
-        <AccountRequired title="Registrar entrega" onBack={() => setNeedsAccount(false)} />
-        <View style={{ padding: 24 }}>
-          <ActionButton title="Volver al punto" secondary onPress={() => setNeedsAccount(false)} />
-        </View>
-      </View>
+      <AccountRequired title={pendingAccountTitle} onBack={() => setPendingAccountTitle(null)} />
     );
   const acceptedPolicies = point
     ? point.intakePolicies.filter((policy) => policy.category && policy.mode !== 'not_accepted')
@@ -62,6 +73,7 @@ export default function PointDetailScreen() {
   const rejectedPolicies = point
     ? point.intakePolicies.filter((policy) => policy.category && policy.mode === 'not_accepted')
     : [];
+  const openStatus = point ? openingStatus(point, now) : 'unknown';
   return (
     <View style={styles.container}>
       <ScreenHeader title="Detalle del punto" back="/green-points" />
@@ -92,7 +104,6 @@ export default function PointDetailScreen() {
             >
               <DevicePreparationArtwork />
             </View>
-            <Text style={styles.photoCaption}>Foto del punto pendiente de publicar</Text>
             <View style={styles.heading}>
               <Text style={styles.title}>{point.name}</Text>
               {!point.demo && <Text style={styles.company}>{point.companyName}</Text>}
@@ -106,11 +117,17 @@ export default function PointDetailScreen() {
                 A {formatDistance(distanceKm(location, point))} en línea recta
               </Text>
             )}
-            <Text style={styles.status}>
+            <Text
+              style={[
+                styles.status,
+                openStatus === 'closed' && styles.statusClosed,
+                openStatus === 'unknown' && styles.statusUnknown,
+              ]}
+            >
               {point.demo ? 'Horario de ejemplo · ' : ''}
-              {openingStatus(point, now) === 'open'
+              {openStatus === 'open'
                 ? 'Abierto ahora'
-                : openingStatus(point, now) === 'closed'
+                : openStatus === 'closed'
                   ? 'Cerrado ahora'
                   : 'Horario sin informar'}
             </Text>
@@ -154,13 +171,18 @@ export default function PointDetailScreen() {
                       </Text>
                     </View>
                   ))}
-                  <ActionButton
-                    title="Ver listado completo"
-                    secondary
-                    onPress={() =>
-                      router.push({ pathname: '/device-categories', params: { pointId: point.id } })
-                    }
-                  />
+                  {acceptedPolicies.length > PREVIEW_CATEGORY_LIMIT && (
+                    <ActionButton
+                      title="Ver listado completo"
+                      secondary
+                      onPress={() =>
+                        router.push({
+                          pathname: '/device-categories',
+                          params: { pointId: point.id },
+                        })
+                      }
+                    />
+                  )}
                 </View>
               )}
             </InfoCard>
@@ -201,7 +223,7 @@ export default function PointDetailScreen() {
               )}
             </InfoCard>
             <Text style={styles.sectionTitle}>Horarios</Text>
-            <Text style={styles.caption}>Hora local del punto · {point.timeZone}</Text>
+            <Text style={styles.caption}>{formatPointTimeZone(point.timeZone)}</Text>
             {point.schedules.length ? (
               weekdayNames.map((day, index) => {
                 const intervals = point.schedules.filter((s) => s.weekday === index + 1);
@@ -237,11 +259,7 @@ export default function PointDetailScreen() {
                 />
               </>
             )}
-            {linkError && (
-              <Text accessibilityRole="alert" style={styles.text}>
-                {linkError}
-              </Text>
-            )}
+            <PortalFeedback error={linkError} />
             {!point.demo && (
               <Text style={styles.text}>
                 {point.intakePolicies.some((policy) => policy.mode === 'pickup')
@@ -257,7 +275,7 @@ export default function PointDetailScreen() {
                 secondary
                 onPress={() =>
                   guest
-                    ? setNeedsAccount(true)
+                    ? setPendingAccountTitle('Solicitar retiro a domicilio')
                     : router.push({ pathname: '/pickup/new', params: { pointId: point.id } })
                 }
               />
@@ -279,7 +297,7 @@ export default function PointDetailScreen() {
                 title="Registrar entrega"
                 onPress={() =>
                   guest
-                    ? setNeedsAccount(true)
+                    ? setPendingAccountTitle('Registrar entrega')
                     : router.push({ pathname: '/new-delivery', params: { pointId: point.id } })
                 }
               />
@@ -290,60 +308,57 @@ export default function PointDetailScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: {
-    width: '100%',
-    maxWidth: 720,
-    alignSelf: 'center',
-    padding: 24,
-    gap: 16,
-    paddingBottom: 40,
-  },
-  contentWithFooter: { paddingBottom: 24 },
-  photoHeader: {
-    height: 180,
-    borderRadius: 18,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  photoCaption: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  heading: { gap: 8 },
-  title: { fontFamily: fonts.bold, fontSize: 28, color: colors.primary },
-  company: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text },
-  text: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.text },
-  status: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 16 },
-  sectionTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.text, marginTop: 8 },
-  policyList: { marginTop: 12, gap: 10 },
-  policyRow: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  categoryText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.text,
-  },
-  caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.brandDark },
-  schedule: {
-    flexDirection: 'row',
-    gap: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingBottom: 12,
-  },
-  day: { width: 100, fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
-  hours: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.text },
-  footerOuter: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  footer: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16 },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    content: {
+      width: '100%',
+      maxWidth: 720,
+      alignSelf: 'center',
+      padding: 24,
+      gap: 16,
+      paddingBottom: 40,
+    },
+    contentWithFooter: { paddingBottom: 24 },
+    photoHeader: {
+      height: 180,
+      borderRadius: 18,
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    heading: { gap: 8 },
+    title: { fontFamily: fonts.bold, fontSize: 28, color: colors.primary },
+    company: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.text },
+    text: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.text },
+    status: { fontFamily: fonts.semiBold, color: colors.primary, fontSize: 16 },
+    statusClosed: { color: colors.danger },
+    statusUnknown: { color: colors.textSecondary },
+    sectionTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.text, marginTop: 8 },
+    policyList: { marginTop: 12, gap: 10 },
+    policyRow: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    categoryText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.text,
+    },
+    caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.brandDark },
+    schedule: {
+      flexDirection: 'row',
+      gap: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingBottom: 12,
+    },
+    day: { width: 100, fontFamily: fonts.semiBold, fontSize: 15, color: colors.text },
+    hours: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.text },
+    footerOuter: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    footer: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16 },
+  });

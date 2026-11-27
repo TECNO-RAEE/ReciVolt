@@ -107,3 +107,54 @@ test('categoryIds (checkboxes del filtro) combina varias categorías con OR y no
   // categoryIds tiene prioridad, pero categoryId sigue funcionando si no se envía el array.
   assert.equal(filterGreenPoints([point], { categoryId: 'notebooks' }, null).length, 1);
 });
+
+test('búsqueda cotidiana por sinónimos encuentra dispositivos sin falsos positivos y respeta not_accepted', () => {
+  const tvPoint = {
+    ...point,
+    id: 'tv-point',
+    name: 'Punto Audiovisual',
+    categories: [{ id: 'tv', name: 'Televisores', slug: 'televisores' }],
+  };
+  const phonePoint = {
+    ...point,
+    id: 'phone-point',
+    name: 'Punto Móvil',
+    categories: [{ id: 'phones', name: 'Celulares', slug: 'celulares' }],
+  };
+  const laptopPoint = {
+    ...point,
+    id: 'laptop-point',
+    name: 'Punto Portátil',
+    categories: [{ id: 'notebooks', name: 'Notebooks', slug: 'notebooks' }],
+  };
+  const rejectedPhonePoint = {
+    ...phonePoint,
+    id: 'rejected-phone',
+    intakePolicies: [
+      {
+        categoryId: 'phones',
+        mode: 'not_accepted',
+        category: { id: 'phones', name: 'Celulares', slug: 'celulares' },
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    filterGreenPoints([tvPoint, phonePoint], { search: 'tele' }, null).map((p) => p.id),
+    ['tv-point']
+  );
+  assert.deepEqual(
+    filterGreenPoints([tvPoint, phonePoint], { search: 'tv' }, null).map((p) => p.id),
+    ['tv-point']
+  );
+  assert.deepEqual(
+    filterGreenPoints([tvPoint, phonePoint], { search: 'teléfono' }, null).map((p) => p.id),
+    ['phone-point']
+  );
+  assert.deepEqual(
+    filterGreenPoints([tvPoint, laptopPoint], { search: 'laptop' }, null).map((p) => p.id),
+    ['laptop-point']
+  );
+  assert.equal(filterGreenPoints([rejectedPhonePoint], { categoryId: 'phones' }, null).length, 0);
+  assert.equal(filterGreenPoints([rejectedPhonePoint], { search: 'celu' }, null).length, 0);
+});
