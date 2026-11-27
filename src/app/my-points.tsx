@@ -5,10 +5,7 @@ import { Text, View } from 'react-native';
 import { AccountRequired } from '@/components/auth/AccountRequired';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { PortalFeedback, PortalLoading } from '@/components/portal/PortalUI';
-import {
-  CitizenPage,
-  useRewardStyles,
-} from '@/components/rewards/RewardsUI';
+import { CitizenPage, useRewardStyles } from '@/components/rewards/RewardsUI';
 import { CitizenBalanceCard } from '@/components/account/CitizenBalanceCard';
 import { usePortalData } from '@/hooks/usePortalData';
 import { useAuth } from '@/providers/AuthProvider';
@@ -71,6 +68,7 @@ function MyPoints() {
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 20,
+                fontVariant: ['tabular-nums'],
                 color: m.amount >= 0 ? colors.primaryDark : colors.danger,
               }}
             >

@@ -180,9 +180,7 @@ export default function HomeScreen() {
               points={wallet.data?.points ?? null}
               loading={!!session && wallet.loading}
               error={wallet.error}
-              onPress={() =>
-                wallet.error ? void refreshWallet() : router.push('/(app)/my-points')
-              }
+              onPress={() => (wallet.error ? void refreshWallet() : router.push('/my-points'))}
             />
           </View>
         </View>

@@ -16,6 +16,7 @@ import {
   type AppRole,
   type CompanyMembership,
 } from '@/models/Access';
+import { accountForUser } from '@/models/AuthAccount';
 import type { Profile } from '@/models/Profile';
 import type { AuthIntent } from '@/models/AuthFlow';
 import { getAccess } from '@/services/access.service';
@@ -50,7 +51,7 @@ type AuthContextValue = {
 };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 type LoadedAccount = {
-  token: string;
+  userId: string;
   profile: Profile | null;
   access: Access | null;
   error: string | null;
@@ -64,9 +65,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [recoveringPassword, setRecoveringPassword] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
-  const [postponedInvitationsUserId, setPostponedInvitationsUserId] = useState<string | null>(
-    null
-  );
+  const [postponedInvitationsUserId, setPostponedInvitationsUserId] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const [authIntent, prepareAuth] = useState<AuthIntent | null>(null);
   const clearAuthIntent = useCallback(() => prepareAuth(null), []);
@@ -114,12 +113,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     void Promise.all([getProfile(userId), getAccess(userId, session?.user.email)])
       .then(([profile, access]) => {
         if (!profile) throw new Error('No se encontró tu perfil.');
-        if (!cancelled) setAccount({ token, profile, access, error: null });
+        if (!cancelled) setAccount({ userId, profile, access, error: null });
       })
       .catch(() => {
         if (!cancelled)
           setAccount({
-            token,
+            userId,
             profile: null,
             access: null,
             error:
@@ -131,7 +130,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     };
   }, [token, userId, session?.user.email, revision]);
 
-  const currentAccount = account?.token === token ? account : null;
+  const currentAccount = accountForUser(account, userId);
   const access = currentAccount?.access ?? null;
   const role = session ? resolveRole(access, selectedCompanyId) : null;
   const company =

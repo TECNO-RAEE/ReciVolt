@@ -8,6 +8,7 @@ import {
   roleHome,
   shouldRedirectToPendingInvitations,
 } from '../src/models/Access.ts';
+import { accountForUser } from '../src/models/AuthAccount.ts';
 
 const membership = {
   id: 'membership-a',
@@ -94,4 +95,12 @@ test('ciudadano con invitación pendiente redirige salvo que la haya pospuesto',
     }),
     false
   );
+});
+test('accountForUser conserva la cuenta al refrescar el token del mismo usuario', () => {
+  const account = { userId: 'user-a', profile: null };
+  assert.equal(accountForUser(account, 'user-a'), account);
+  assert.equal(accountForUser(account, 'user-b'), null);
+  assert.equal(accountForUser(account, undefined), null);
+  assert.equal(accountForUser(account, ''), null);
+  assert.equal(accountForUser(null, 'user-a'), null);
 });
