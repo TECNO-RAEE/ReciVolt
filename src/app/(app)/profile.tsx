@@ -88,11 +88,6 @@ function Profile() {
       onPress: () => router.push('/my-raee'),
     },
     {
-      icon: 'time-outline' as const,
-      label: 'Mi actividad',
-      onPress: () => router.push('/my-activity'),
-    },
-    {
       icon: 'gift-outline' as const,
       label: 'Mis canjes',
       onPress: () => router.push({ pathname: '/rewards', params: { tab: 'canjes' } }),
@@ -100,7 +95,7 @@ function Profile() {
     {
       icon: 'bar-chart-outline' as const,
       label: 'Mis puntos',
-      onPress: () => router.push('/(app)/my-points'),
+      onPress: () => router.push('/my-points'),
     },
     {
       icon: 'hardware-chip-outline' as const,
@@ -133,7 +128,7 @@ function Profile() {
         <Text style={s.title}>{profile?.fullName ?? 'Mi cuenta'}</Text>
         <Text style={s.body}>{profile?.email}</Text>
       </View>
-      <CitizenBalanceCard onPress={() => router.push('/(app)/my-points')} />
+      <CitizenBalanceCard onPress={() => router.push('/my-points')} />
       <View style={s.card}>
         {menuItems.map(({ icon, label, onPress }) => (
           <SpringPressable

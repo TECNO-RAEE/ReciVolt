@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
-import { ActivityIndicator, View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
 
@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { DiscoveryProvider } from '@/providers/DiscoveryProvider';
 import { WalletProvider } from '@/providers/WalletProvider';
 import { canAccessCitizen } from '@/models/Access';
+import { ScreenLoadingBackdrop } from '@/components/ui/ScreenLoadingBackdrop';
 import { ThemeProvider, useColorSchemeName, useColors } from '@/theme';
 import { useFonts } from 'expo-font';
 import { Roboto_400Regular, Roboto_500Medium, Roboto_700Bold } from '@expo-google-fonts/roboto';
@@ -24,7 +25,13 @@ export default function RootLayout() {
   });
 
   if (!fontsLoaded && !fontError) {
-    return null;
+    return (
+      <ThemeProvider>
+        <View style={{ flex: 1 }}>
+          <ScreenLoadingBackdrop hideFromAccessibility={false} label="Cargando aplicación" />
+        </View>
+      </ThemeProvider>
+    );
   }
 
   return (
@@ -65,13 +72,25 @@ function Navigation() {
   if (!ready && !loading) setReady(true);
   // Delay initial routing, but keep the navigator mounted during later Auth events.
   if (!ready)
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator color={colors.primary} accessibilityLabel="Cargando sesión" />
-      </View>
-    );
+    return <ScreenLoadingBackdrop hideFromAccessibility={false} label="Cargando sesión" />;
   return (
     <Stack
+      screenLayout={
+        Platform.OS === 'web'
+          ? ({ route, children }) =>
+              route.name === '(app)' ||
+              route.name === '(auth)' ||
+              route.name === 'company' ||
+              route.name === 'admin' ? (
+                children
+              ) : (
+                <View style={{ flex: 1, backgroundColor: colors.background }}>
+                  <ScreenLoadingBackdrop />
+                  {children}
+                </View>
+              )
+          : undefined
+      }
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
@@ -90,6 +109,7 @@ function Navigation() {
       </Stack.Protected>
       <Stack.Protected guard={!loading && !recoveringPassword && canAccessCitizen(role, guest)}>
         <Stack.Screen name="(app)" />
+        <Stack.Screen name="my-points" />
         <Stack.Screen name="my-raee" />
         <Stack.Screen name="device-categories" />
         <Stack.Screen name="device-unaccepted" />

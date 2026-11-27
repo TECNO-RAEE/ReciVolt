@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
-import type { ColorValue } from 'react-native';
+import { Platform, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenLoadingBackdrop } from '@/components/ui/ScreenLoadingBackdrop';
 import { fonts, useColors } from '@/theme';
 
 type TabIconName = 'home' | 'map' | 'gift' | 'person';
@@ -26,10 +27,22 @@ export default function AppLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 10);
+
   return (
     <Tabs
+      screenLayout={
+        Platform.OS === 'web'
+          ? ({ children }) => (
+              <View style={{ flex: 1, backgroundColor: colors.background }}>
+                <ScreenLoadingBackdrop />
+                {children}
+              </View>
+            )
+          : undefined
+      }
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.navInactive,
         tabBarLabelStyle: {
@@ -71,9 +84,6 @@ export default function AppLayout() {
           tabBarIcon: tabIcon('gift'),
         }}
       />
-
-      <Tabs.Screen name="my-activity" options={{ href: null }} />
-      <Tabs.Screen name="my-points" options={{ href: null }} />
 
       <Tabs.Screen
         name="profile"
